@@ -30,3 +30,6 @@ tests/fixtures-private/
 # misc
 *.log
 .cache/
+
+# git worktrees (project-local, per superpowers:using-git-worktrees skill)
+.worktrees/
