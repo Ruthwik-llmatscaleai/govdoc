@@ -129,10 +129,11 @@ describe("computeDeliveryRecommendation", () => {
     expect(computeDeliveryRecommendation(mockRatings({ A1: "C" })).override_status).toHaveLength(9);
   });
 
-  it("M6 placeholder fields remain stubbed", () => {
+  it("M6 recommended_score and runner_up_score are back-filled (non-zero)", () => {
     const result = computeDeliveryRecommendation(mockRatings());
-    expect(result.recommended_score).toBe(0);
-    expect(result.runner_up_score).toBeNull();
-    expect(result.comparison_text).toBe("");
+    expect(result.recommended_score).toBeGreaterThan(0);
+    expect(result.runner_up_method).not.toBeNull();
+    expect(result.runner_up_score).toBeTypeOf("number");
+    expect((result.runner_up_score as number)).toBeGreaterThan(0);
   });
 });

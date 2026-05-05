@@ -2,6 +2,7 @@ import { RATING_VALUES, SECTION_WEIGHTS, type Rating } from "../rubric";
 import type { CmgcRating, KeyDriver, RecommendationResult } from "../types";
 import { determineMethod } from "./determine-method";
 import { applyOverrides, computeOverrideStatus } from "./apply-overrides";
+import { affinityScoreForMethod } from "./method-affinity";
 
 export type RatingsBreakdown = {
   section_scores: Record<string, number>;   // averages per section
@@ -10,6 +11,7 @@ export type RatingsBreakdown = {
   key_drivers: KeyDriver[];                  // top 5 by weighted_contribution desc
   rating_lookup: Record<string, Rating>;     // qid → Rating
   composite: number;                         // weighted sum, rounded to 3 decimals
+  section_ratings: Record<string, number[]>; // per-section raw numeric values (1-3)
 };
 
 const SECTION_KEYS = ["A", "B", "C", "D", "E", "F"] as const;
@@ -72,6 +74,7 @@ export function computeRatingsBreakdown(ratings: CmgcRating[]): RatingsBreakdown
     key_drivers: driverEntries.slice(0, 5),
     rating_lookup: ratingLookup,
     composite: round3(compositeUnrounded),
+    section_ratings: sectionRatings,
   };
 }
 
@@ -92,9 +95,8 @@ export function computeDeliveryRecommendation(ratings: CmgcRating[]): Recommenda
     runner_up_method: ov.runnerUp,
     is_borderline: det.isBorderline,
     override_reasons: ov.overrideReasons,
-    // Still placeholders for M6:
-    recommended_score: 0,
-    runner_up_score: null,
+    recommended_score: affinityScoreForMethod(ov.recommended, breakdown.section_ratings),
+    runner_up_score: ov.runnerUp ? affinityScoreForMethod(ov.runnerUp, breakdown.section_ratings) : null,
     comparison_text: "",
   };
 }
