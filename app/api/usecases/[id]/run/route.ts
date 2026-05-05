@@ -43,8 +43,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           if (ev.type === "stage-done") ctx.prior[step.id] = ev.data;
         }
       } catch (e) {
-        const message = e instanceof Error ? e.message : "Unknown error";
-        yield { type: "error", stage: step.id, message };
+        const internal = e instanceof Error ? e.message : String(e);
+        ctx.log("step error", { stage: step.id, error: internal });
+        yield { type: "error", stage: step.id, message: "Step failed — check server logs" };
         return;
       }
       if (req.signal.aborted) return;
