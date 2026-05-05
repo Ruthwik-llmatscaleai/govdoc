@@ -5,6 +5,8 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { username?: string; password?: string } | null;
   if (
     !body ||
+    !body.username ||
+    !body.password ||
     body.username !== process.env.GOVDOC_DEV_USER ||
     body.password !== process.env.GOVDOC_DEV_PASS
   ) {
