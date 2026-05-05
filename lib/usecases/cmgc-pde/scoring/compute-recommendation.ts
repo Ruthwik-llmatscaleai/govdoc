@@ -1,5 +1,7 @@
 import { RATING_VALUES, SECTION_WEIGHTS, type Rating } from "../rubric";
 import type { CmgcRating, KeyDriver, RecommendationResult } from "../types";
+import { determineMethod } from "./determine-method";
+import { applyOverrides, computeOverrideStatus } from "./apply-overrides";
 
 export type RatingsBreakdown = {
   section_scores: Record<string, number>;   // averages per section
@@ -75,21 +77,25 @@ export function computeRatingsBreakdown(ratings: CmgcRating[]): RatingsBreakdown
 
 export function computeDeliveryRecommendation(ratings: CmgcRating[]): RecommendationResult {
   const breakdown = computeRatingsBreakdown(ratings);
+  const det = determineMethod(breakdown.composite, breakdown.section_scores, breakdown.rating_lookup);
+  const ov = applyOverrides(det.recommended, det.runnerUp, breakdown.rating_lookup);
+  const overrideStatus = computeOverrideStatus(breakdown.rating_lookup);
+
   return {
     composite_score: breakdown.composite,
     section_scores: breakdown.section_scores,
     raw_scores: breakdown.raw_scores,
     weighted_scores: breakdown.weighted_scores,
     key_drivers: breakdown.key_drivers,
-    // Placeholders — filled by M5 (overrides) and M6 (affinity scoring)
-    override_status: [],
-    recommended_method: "",
+    override_status: overrideStatus,
+    recommended_method: ov.recommended,
+    runner_up_method: ov.runnerUp,
+    is_borderline: det.isBorderline,
+    override_reasons: ov.overrideReasons,
+    // Still placeholders for M6:
     recommended_score: 0,
-    runner_up_method: null,
     runner_up_score: null,
-    is_borderline: false,
     comparison_text: "",
-    override_reasons: [],
   };
 }
 

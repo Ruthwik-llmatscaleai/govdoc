@@ -107,15 +107,32 @@ describe("computeDeliveryRecommendation", () => {
     expect(result.key_drivers).toEqual(breakdown.key_drivers);
   });
 
-  it("M5/M6 placeholder fields are stubbed correctly", () => {
+  it("all-B mockRatings (composite 2.0) → CM/GC recommended, Design-Build/Best-Value runner_up", () => {
     const result = computeDeliveryRecommendation(mockRatings());
-    expect(result.recommended_method).toBe("");
+    expect(result.recommended_method).toBe("CM/GC");
+    expect(result.runner_up_method).toBe("Design-Build/Best-Value");
+  });
+
+  it("all-B mockRatings (composite 2.0) → is_borderline true (|2.0-2.10|=0.10 < 0.15)", () => {
+    const result = computeDeliveryRecommendation(mockRatings());
+    expect(result.is_borderline).toBe(true);
+  });
+
+  it("mockRatings({ A1: 'C' }) → override applied, recommended_method not DBB", () => {
+    const result = computeDeliveryRecommendation(mockRatings({ A1: "C" }));
+    expect(result.override_reasons.length).toBeGreaterThanOrEqual(1);
+    expect(result.recommended_method).not.toBe("Design-Bid-Build");
+  });
+
+  it("override_status always has 9 entries", () => {
+    expect(computeDeliveryRecommendation(mockRatings()).override_status).toHaveLength(9);
+    expect(computeDeliveryRecommendation(mockRatings({ A1: "C" })).override_status).toHaveLength(9);
+  });
+
+  it("M6 placeholder fields remain stubbed", () => {
+    const result = computeDeliveryRecommendation(mockRatings());
     expect(result.recommended_score).toBe(0);
-    expect(result.runner_up_method).toBeNull();
     expect(result.runner_up_score).toBeNull();
-    expect(result.is_borderline).toBe(false);
     expect(result.comparison_text).toBe("");
-    expect(result.override_reasons).toEqual([]);
-    expect(result.override_status).toEqual([]);
   });
 });
