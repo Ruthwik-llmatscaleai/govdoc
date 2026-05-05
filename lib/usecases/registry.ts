@@ -1,6 +1,7 @@
 import type { UseCase } from "./types";
+import { cmgcPde } from "./cmgc-pde/definition";
 
-export const USE_CASES = {} as const;
+export const USE_CASES = { cmgcPde } as const;
 
 const ALL: UseCase[] = Object.values(USE_CASES) as UseCase[];
 
