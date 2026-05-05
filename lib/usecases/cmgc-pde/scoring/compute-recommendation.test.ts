@@ -136,4 +136,23 @@ describe("computeDeliveryRecommendation", () => {
     expect(result.runner_up_score).toBeTypeOf("number");
     expect((result.runner_up_score as number)).toBeGreaterThan(0);
   });
+
+  it("comparison_text is non-empty when is_borderline is true", () => {
+    const result = computeDeliveryRecommendation(mockRatings());
+    // all-B → composite 2.0 → is_borderline true
+    expect(result.is_borderline).toBe(true);
+    expect(result.comparison_text.length).toBeGreaterThan(0);
+    expect(result.comparison_text).toContain("Project Composite Score:");
+  });
+
+  it("comparison_text is empty when not borderline", () => {
+    // All-A → composite 1.0 → is_borderline false (far from any threshold)
+    const allA = Object.fromEntries(
+      ["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10","B1","B2","C1","C2","D1","D2","D3","E1","E2","E3","E4","E5","F1","F2","F3"].map((k) => [k, "A" as const])
+    );
+    const result = computeDeliveryRecommendation(mockRatings(allA));
+    if (!result.is_borderline) {
+      expect(result.comparison_text).toBe("");
+    }
+  });
 });

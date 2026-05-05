@@ -3,6 +3,7 @@ import type { CmgcRating, KeyDriver, RecommendationResult } from "../types";
 import { determineMethod } from "./determine-method";
 import { applyOverrides, computeOverrideStatus } from "./apply-overrides";
 import { affinityScoreForMethod } from "./method-affinity";
+import { buildComparisonText } from "./build-comparison";
 
 export type RatingsBreakdown = {
   section_scores: Record<string, number>;   // averages per section
@@ -97,7 +98,16 @@ export function computeDeliveryRecommendation(ratings: CmgcRating[]): Recommenda
     override_reasons: ov.overrideReasons,
     recommended_score: affinityScoreForMethod(ov.recommended, breakdown.section_ratings),
     runner_up_score: ov.runnerUp ? affinityScoreForMethod(ov.runnerUp, breakdown.section_ratings) : null,
-    comparison_text: "",
+    comparison_text: det.isBorderline
+      ? buildComparisonText({
+          recommended: ov.recommended,
+          runnerUp: ov.runnerUp ?? null,
+          composite: breakdown.composite,
+          sectionScores: breakdown.section_scores,
+          recommendedScore: affinityScoreForMethod(ov.recommended, breakdown.section_ratings),
+          runnerUpScore: ov.runnerUp ? affinityScoreForMethod(ov.runnerUp, breakdown.section_ratings) : null,
+        })
+      : "",
   };
 }
 
