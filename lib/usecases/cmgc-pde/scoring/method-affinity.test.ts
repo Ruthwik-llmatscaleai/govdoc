@@ -28,27 +28,32 @@ describe("METHOD_PROS_CONS", () => {
 });
 
 describe("affinityScoreForMethod", () => {
-  it("all-B sections (raw 2.0) returns the middle (B) column weighted", () => {
+  it("all-B sections (raw 2.0 each) returns the middle (B) column weighted", () => {
     const sectionRatings = { A: [2,2,2,2,2,2,2,2,2,2], B: [2,2], C: [2,2], D: [2,2,2], E: [2,2,2,2,2], F: [2,2,2] };
-    // Score = Σ (B_value * weight) for each method.
     const dbb = affinityScoreForMethod("Design-Bid-Build", sectionRatings);
-    // From legacy METHOD_AFFINITY[*]["Design-Bid-Build"]["B"] values × SECTION_WEIGHTS:
-    // A:0.6*0.30 + B:0.5*0.15 + C:0.5*0.12 + D:0.5*0.10 + E:0.6*0.20 + F:0.5*0.13 = 0.18 + 0.075 + 0.06 + 0.05 + 0.12 + 0.065 = 0.55
+    // Σ DBB.B[sec] × SECTION_WEIGHTS[sec] = 0.6*0.30 + 0.5*0.15 + 0.5*0.12 + 0.5*0.10 + 0.6*0.20 + 0.5*0.13
+    // = 0.18 + 0.075 + 0.06 + 0.05 + 0.12 + 0.065 = 0.55
     expect(dbb).toBeCloseTo(0.55, 2);
   });
 
-  it("missing section defaults to 0.5 affinity", () => {
-    // Section ratings empty for one section
+  it("missing section ratings default to 'B' dominant (0.5 fallback)", () => {
     const sectionRatings = { A: [], B: [], C: [], D: [], E: [], F: [] };
     const score = affinityScoreForMethod("CM/GC", sectionRatings);
-    // All sections empty → dominant "B" → middle column
     expect(score).toBeGreaterThan(0);
+  });
+
+  it("all-3 sections (avg 3.0) maps to dominant 'A' in affinity table", () => {
+    const sectionRatings = { A: [3,3,3,3,3,3,3,3,3,3], B: [3,3], C: [3,3], D: [3,3,3], E: [3,3,3,3,3], F: [3,3,3] };
+    const dbb = affinityScoreForMethod("Design-Bid-Build", sectionRatings);
+    // Σ DBB.A[sec] × SECTION_WEIGHTS[sec] = 1.0*0.30 + 0.9*0.15 + 0.9*0.12 + 0.8*0.10 + 0.8*0.20 + 0.8*0.13
+    // = 0.30 + 0.135 + 0.108 + 0.08 + 0.16 + 0.104 = 0.887
+    expect(dbb).toBeCloseTo(0.887, 2);
   });
 
   it("returns rounded to 4 decimals", () => {
     const sectionRatings = { A: [3,3,3,3,3,3,3,3,3,3], B: [3,3], C: [3,3], D: [3,3,3], E: [3,3,3,3,3], F: [3,3,3] };
     const score = affinityScoreForMethod("CM/GC", sectionRatings);
-    expect(Number.isFinite(score)).toBe(true);
-    expect(String(score).length).toBeLessThan(8);  // not a long float
+    const decimals = (String(score).split(".")[1] ?? "").length;
+    expect(decimals).toBeLessThanOrEqual(4);
   });
 });
