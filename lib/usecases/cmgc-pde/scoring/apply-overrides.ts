@@ -123,11 +123,9 @@ export function applyOverrides(
   }
 
   // If recommended is blocked, try runnerUp first, else walk FALLBACK_ORDER
-  let swapped = false;
   if (blocked.has(recommended)) {
     if (runnerUp && !blocked.has(runnerUp)) {
       [recommended, runnerUp] = [runnerUp, recommended];
-      swapped = true;
     } else {
       for (const method of FALLBACK_ORDER) {
         if (!blocked.has(method) && method !== recommended) {
@@ -140,8 +138,8 @@ export function applyOverrides(
     }
   }
 
-  // If runnerUp is blocked (and didn't come from a direct swap), find next available
-  if (!swapped && blocked.has(runnerUp)) {
+  // If runnerUp is blocked, find next available (always checked, including after a swap)
+  if (blocked.has(runnerUp)) {
     for (const method of FALLBACK_ORDER) {
       if (!blocked.has(method) && method !== recommended) {
         runnerUp = method;

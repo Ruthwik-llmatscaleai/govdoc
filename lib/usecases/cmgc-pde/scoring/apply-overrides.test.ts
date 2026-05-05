@@ -9,10 +9,13 @@ describe("applyOverrides", () => {
     expect(r.overrideReasons).toContain(OVERRIDE_RULES[0]!.description);
   });
 
-  it("R2 (A2=C): blocks only DBB", () => {
+  it("R2 (A2=C): blocks only DBB, post-swap runner_up replaced since DBB is still blocked", () => {
+    // DBB is blocked; CM/GC (runnerUp) is clean → swap to recommended=CM/GC, runnerUp=DBB.
+    // Then the post-swap runner_up check fires: DBB is blocked, so replace with first
+    // non-blocked FALLBACK_ORDER entry that isn't CM/GC → Design-Build/Best-Value.
     const r = applyOverrides("Design-Bid-Build", "CM/GC", { A2: "C" });
     expect(r.recommended).toBe("CM/GC");
-    expect(r.runnerUp).toBe("Design-Bid-Build");  // swapped
+    expect(r.runnerUp).toBe("Design-Build/Best-Value");
   });
 
   it("R5 (C2=C): favor Design-Build/Best-Value", () => {
@@ -39,6 +42,20 @@ describe("applyOverrides", () => {
       A3: "C", E3: "A", F1: "A",
     });
     expect(r.recommended).toBe("CM/GC");
+  });
+
+  it("after swap, replaces blocked runner_up with first non-blocked from FALLBACK_ORDER", () => {
+    // R1 (A1=C) blocks DBB + Design-Sequencing.
+    // recommended=DBB (blocked), runnerUp=CM/GC (clean).
+    // After swap: recommended=CM/GC, runnerUp=DBB (still blocked).
+    // Expected: runnerUp replaced with first non-blocked from FALLBACK_ORDER that isn't CM/GC.
+    const r = applyOverrides("Design-Bid-Build", "CM/GC", { A1: "C" });
+    expect(r.recommended).toBe("CM/GC");
+    expect(r.runnerUp).not.toBe("Design-Bid-Build");
+    expect(r.runnerUp).not.toBe("CM/GC");
+    // FALLBACK_ORDER is [CM/GC, DB-BV, DB-LB, PDB, Design-Sequencing, DBB]
+    // First non-blocked, non-CM/GC = DB-BV
+    expect(r.runnerUp).toBe("Design-Build/Best-Value");
   });
 
   it("returns all 9 rules in computeOverrideStatus regardless of triggers", () => {
