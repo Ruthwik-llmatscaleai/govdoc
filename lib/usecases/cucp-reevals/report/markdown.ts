@@ -46,7 +46,14 @@ export function generateFinalMarkdownReport(
     md += `- **How/Magnitude:** ${f.magnitude ?? "NOT PROVIDED"}\n\n`;
   });
 
-  // Analyst overrides block — Task 6.2 will add this
+  if (analystOverrides.length > 0) {
+    md += `### 🧑‍⚖️ ANALYST OVERRIDES\n`;
+    md += `The following external facts or manual adjustments were provided by the human reviewer:\n`;
+    for (const o of analystOverrides) {
+      md += `- **${o.field}:** ${o.value} *(Justification: ${o.reasoning})*\n`;
+    }
+    md += `\n`;
+  }
 
   md += `---\n\n`;
 

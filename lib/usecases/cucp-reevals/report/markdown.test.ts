@@ -135,4 +135,24 @@ describe("generateFinalMarkdownReport", () => {
     expect(md).toContain("Evaluation Date:");
   });
 
+  it("injects ANALYST OVERRIDES block when overrides are present, between PRE-SCORING AUDIT and CLASSIFICATION SUMMARY", () => {
+    const ovs: AnalystOverride[] = [
+      { s_no: 1, field: "pass_fail", value: "Fail", reasoning: "missing evidence" },
+      { s_no: 4, field: "request_info", value: "Yes", reasoning: "need more docs" },
+    ];
+    const md = generateFinalMarkdownReport(baseL1, baseL2, baseL3, ovs, "2026-05-05T00:00:00.000Z");
+    expect(md).toContain("ANALYST OVERRIDES");
+    expect(md).toContain("**pass_fail:** Fail *(Justification: missing evidence)*");
+    expect(md).toContain("**request_info:** Yes *(Justification: need more docs)*");
+    // Position check: ANALYST OVERRIDES must appear before CLASSIFICATION SUMMARY
+    const overridesIdx = md.indexOf("ANALYST OVERRIDES");
+    const classIdx = md.indexOf("CLASSIFICATION SUMMARY");
+    expect(overridesIdx).toBeGreaterThan(0);
+    expect(overridesIdx).toBeLessThan(classIdx);
+  });
+
+  it("does NOT inject ANALYST OVERRIDES when overrides is empty", () => {
+    const md = generateFinalMarkdownReport(baseL1, baseL2, baseL3, [], "2026-05-05T00:00:00.000Z");
+    expect(md).not.toContain("ANALYST OVERRIDES");
+  });
 });
