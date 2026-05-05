@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import type { Exporter } from "@/lib/usecases/types";
 import type { CmgcRunResult } from "../types";
+import { SECTION_WEIGHTS } from "../rubric";
 
 export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: string): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
@@ -27,7 +28,6 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   dashboard.getRow(10).values = ["Section", "Avg Score", "Weight", "Weighted"];
   dashboard.getRow(10).font = { bold: true };
 
-  const SECTION_WEIGHTS: Record<string, number> = { A: 0.20, B: 0.15, C: 0.20, D: 0.15, E: 0.15, F: 0.15 };
   let rowIdx = 11;
   for (const [sec, avg] of Object.entries(result.recommendation.section_scores)) {
     const weight = SECTION_WEIGHTS[sec] ?? 0;

@@ -54,6 +54,24 @@ describe("buildEvaluationXlsx", () => {
     const val = wb.getWorksheet("Validation")!;
     expect(String(val.getCell("A1").value)).toContain("Validation skipped");
   });
+
+  it("Dashboard section weights match the canonical rubric", async () => {
+    const buf = await buildEvaluationXlsx(mockRunResult(), "Test");
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(buf);
+    const dashboard = wb.getWorksheet("Dashboard")!;
+    // Section rows are written as [sec, avg, weight, weighted] where sec is "A", "B", etc.
+    let foundWeights: string[] = [];
+    dashboard.eachRow((row) => {
+      const first = String(row.getCell(1).value ?? "");
+      if (/^[ABCDEF]$/.test(first)) {
+        foundWeights.push(String(row.getCell(3).value ?? ""));
+      }
+    });
+    expect(foundWeights.length).toBe(6);
+    // Canonical weight for section A is 0.30 — verify it's not the old fabricated 0.20
+    expect(Number(foundWeights[0])).toBeCloseTo(0.30, 5);
+  });
 });
 
 describe("xlsxExporter", () => {
