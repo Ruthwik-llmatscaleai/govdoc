@@ -61,7 +61,8 @@ export const evaluateStep: PipelineStep<FormData> = {
       }
     }
     if (!parsed) {
-      yield { type: "error", stage: "evaluate", message: `AI evaluation failed: invalid JSON (${lastError ?? "unknown"})` };
+      ctx.log("evaluate JSON parse failure", { error: lastError });
+      yield { type: "error", stage: "evaluate", message: "AI evaluation failed" };
       return;
     }
     yield { type: "stage-done", stage: "evaluate", data: parsed };

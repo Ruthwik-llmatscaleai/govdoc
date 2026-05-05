@@ -63,6 +63,18 @@ describe("evaluateStep", () => {
     expect((last as Extract<StepEvent, { type: "error" }>).message).toBe("AI evaluation failed");
   });
 
+  it("yields sanitized error when both attempts return malformed JSON", async () => {
+    const fd = new FormData();
+    const call = vi.fn()
+      .mockResolvedValueOnce({ text: "not valid json {{{" })
+      .mockResolvedValueOnce({ text: "also bad json >>>" });
+    const events = await collect(evaluateStep.run(fd, makeCtx(call))) as StepEvent[];
+    expect(call).toHaveBeenCalledTimes(2);
+    const last = events.at(-1)! as Extract<StepEvent, { type: "error" }>;
+    expect(last.type).toBe("error");
+    expect(last.message).toBe("AI evaluation failed");
+  });
+
   it("yields error when narrative is missing", async () => {
     const fd = new FormData();
     const ctx: StepContext = {
