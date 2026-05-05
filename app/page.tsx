@@ -1,10 +1,9 @@
-import { Button } from "@/components/ui/button";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { verifySession } from "@/lib/auth/mock-session";
 
-export default function Home() {
-  return (
-    <main className="p-8 space-y-4">
-      <h1 className="text-2xl font-semibold text-govdoc-primary">GovDoc</h1>
-      <Button>Test</Button>
-    </main>
-  );
+export default async function Home() {
+  const cookie = (await cookies()).get("govdoc_session")?.value;
+  const session = await verifySession(cookie);
+  redirect(session ? "/landing" : "/login");
 }
