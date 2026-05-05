@@ -1,0 +1,62 @@
+import type { LlmRouter } from "@/lib/llm/types";
+
+export type InputSpec =
+  | { kind: "file"; id: string; label: string; accept: string[]; multiple?: boolean; required?: boolean }
+  | { kind: "select"; id: string; label: string; options: { value: string; label: string }[]; default?: string }
+  | { kind: "text"; id: string; label: string; placeholder?: string; required?: boolean }
+  | { kind: "json-upload"; id: string; label: string; help?: string }
+  | { kind: "model-pick"; id: string; label: string; providers: ("openai" | "anthropic" | "groq")[] };
+
+export type HumanInput = {
+  kind: "approve-or-override";
+  category: string;
+  proposed: { decision: string; rationale: string };
+};
+
+export type StepEvent =
+  | { type: "progress"; stage: string; pct: number; message?: string }
+  | { type: "partial"; stage: string; data: unknown }
+  | { type: "stage-done"; stage: string; data: unknown }
+  | { type: "needs-input"; stage: string; prompt: HumanInput }
+  | { type: "done"; result: unknown }
+  | { type: "error"; stage: string; message: string };
+
+export type StepContext = {
+  userId: string;
+  runId: string;
+  prior: Record<string, unknown>;
+  llm: LlmRouter;
+  abortSignal: AbortSignal;
+  log: (msg: string, data?: unknown) => void;
+};
+
+export type PipelineStep<TIn = unknown> = {
+  id: string;
+  label: string;
+  run: (input: TIn, ctx: StepContext) => AsyncIterable<StepEvent>;
+};
+
+export type Exporter = {
+  id: string;
+  label: string;
+  contentType: string;
+  build: (result: unknown) => Promise<Uint8Array>;
+};
+
+export type ResultView =
+  | { kind: "wizard" }
+  | { kind: "pass-fail-criteria" }
+  | { kind: "score-table" };
+
+export type UseCaseId = "cmgc-pde" | "cucp-reevals" | "row-appraisal";
+
+export type UseCase = {
+  id: UseCaseId;
+  label: string;
+  blurb: string;
+  tile: "review";
+  inputs: InputSpec[];
+  pipeline: PipelineStep[];
+  exporters: Exporter[];
+  resultView: ResultView;
+};
