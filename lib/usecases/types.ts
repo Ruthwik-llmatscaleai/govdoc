@@ -56,7 +56,7 @@ export type UseCase = {
   blurb: string;
   tile: "review";
   inputs: InputSpec[];
-  pipeline: PipelineStep[];
+  pipeline: PipelineStep<any>[];
   exporters: Exporter[];
   resultView: ResultView;
 };
