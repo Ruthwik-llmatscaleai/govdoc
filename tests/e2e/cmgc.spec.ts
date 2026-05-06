@@ -1,9 +1,8 @@
-// @e2e — requires real OpenAI API key + running dev server
-// Run manually: npx playwright test tests/e2e/cmgc.spec.ts
+// @e2e — runs against a deployed instance, requires real OpenAI API key.
+// Local: BASE_URL=http://localhost:3000 npx playwright test --project=deployed
+// Deployed: BASE_URL=https://govdoc-xxx.run.app npx playwright test --project=deployed
 //
-// NOTE: playwright.config.ts sets testDir="./tests/smoke", so this file is NOT
-// picked up by the default "npx playwright test" run. It is intentionally gated
-// to manual execution only — it calls the real OpenAI API and can take ~2 minutes.
+// Skipped automatically if OPENAI_API_KEY is not set.
 import { test, expect } from "@playwright/test";
 
 test.describe("CMGC happy path", () => {
