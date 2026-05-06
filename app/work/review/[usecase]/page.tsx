@@ -14,8 +14,12 @@ import { CriteriaTable } from "@/components/work/cucp/criteria-table";
 import { FactsList } from "@/components/work/cucp/facts-list";
 import { ClassificationsList } from "@/components/work/cucp/classifications-list";
 import { ReportView } from "@/components/work/cucp/report-view";
+import { InputsForm as RowInputsForm } from "@/components/work/row/inputs-form";
+import { ResultsTable as RowResultsTable } from "@/components/work/row/results-table";
+import { ScoreSummary as RowScoreSummary } from "@/components/work/row/score-summary";
 import type { CmgcRunResult } from "@/lib/usecases/cmgc-pde/types";
 import type { Level1Data, Level2Data, Level3Data } from "@/lib/usecases/cucp-reevals/types";
+import type { RowRunResult } from "@/lib/usecases/row-appraisal/types";
 
 type RouteParams = { usecase: string };
 
@@ -40,6 +44,9 @@ export default function UseCasePage({ params }: { params: Promise<RouteParams> }
   }
   if (usecase === "cucp-reevals") {
     return <CucpView ucLabel={uc.label} ucBlurb={uc.blurb} exporters={uc.exporters} current={current} reset={reset} />;
+  }
+  if (usecase === "row-appraisal") {
+    return <RowView ucLabel={uc.label} ucBlurb={uc.blurb} exporters={uc.exporters} current={current} reset={reset} />;
   }
   return <div className="p-6">Use case <code>{usecase}</code> not yet implemented.</div>;
 }
@@ -143,6 +150,40 @@ function CucpView({ ucLabel, ucBlurb, exporters, current, reset }: ViewProps) {
       <div className="p-6 space-y-6 max-w-6xl">
         <DoneHeader ucLabel={ucLabel} useCaseId="cucp-reevals" exporters={exporters} result={result} reset={reset} />
         <ReportView markdown={report?.markdown_report ?? "_No report generated._"} />
+      </div>
+    );
+  }
+  return null;
+}
+
+function RowView({ ucLabel, ucBlurb, exporters, current, reset }: ViewProps) {
+  if (!current || (current.status === "idle" && Object.keys(current.stages).length === 0)) {
+    return (
+      <div className="p-6 space-y-4 max-w-2xl">
+        <h1 className="text-2xl font-bold">{ucLabel}</h1>
+        <p className="text-muted-foreground">{ucBlurb}</p>
+        <RowInputsForm />
+      </div>
+    );
+  }
+
+  if (current.status === "running" || current.status === "needs-input") {
+    return <RunningPanel ucLabel={ucLabel} current={current} reset={reset} />;
+  }
+
+  if (current.status === "error") {
+    return <ErrorPanel ucLabel={ucLabel} current={current} reset={reset} />;
+  }
+
+  if (current.status === "done" && current.result) {
+    const prior = current.result as Record<string, unknown>;
+    const rowResult = prior.consolidate as RowRunResult;
+    if (!rowResult?.evaluation_results) return <div className="p-6">Result missing expected stages.</div>;
+    return (
+      <div className="p-6 space-y-6 max-w-6xl">
+        <DoneHeader ucLabel={ucLabel} useCaseId="row-appraisal" exporters={exporters} result={rowResult} reset={reset} />
+        <RowScoreSummary results={rowResult.evaluation_results} />
+        <RowResultsTable results={rowResult.evaluation_results} />
       </div>
     );
   }
