@@ -33,3 +33,11 @@ tests/fixtures-private/
 
 # git worktrees (project-local, per superpowers:using-git-worktrees skill)
 .worktrees/
+
+# AI agent configs (project-local instructions, not for the repo)
+CLAUDE.md
+GEMINI.md
+AGENTS.md
+.cursorrules
+.aider*
+.continue/
