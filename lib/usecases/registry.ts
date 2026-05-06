@@ -1,8 +1,9 @@
 import type { UseCase } from "./types";
 import { cmgcPde } from "./cmgc-pde/definition";
 import { cucpReevals } from "./cucp-reevals/definition";
+import { rowAppraisal } from "./row-appraisal/definition";
 
-export const USE_CASES = { cmgcPde, cucpReevals } as const;
+export const USE_CASES = { cmgcPde, cucpReevals, rowAppraisal } as const;
 
 const ALL: UseCase[] = Object.values(USE_CASES) as UseCase[];
 

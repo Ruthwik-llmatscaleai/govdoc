@@ -81,4 +81,34 @@ describe("use case registry", () => {
     const inputIds = USE_CASES.cucpReevals.inputs.map((i) => i.id);
     expect(inputIds).toEqual(["narrative", "revenues", "model"]);
   });
+
+  it("registers rowAppraisal", () => {
+    expect(USE_CASES.rowAppraisal).toBeDefined();
+    expect(USE_CASES.rowAppraisal.id).toBe("row-appraisal");
+  });
+
+  it("getUseCase('row-appraisal') returns the rowAppraisal use case", () => {
+    const uc = getUseCase("row-appraisal");
+    expect(uc).toBeDefined();
+    expect(uc?.id).toBe("row-appraisal");
+    expect(uc?.tile).toBe("review");
+  });
+
+  it("USE_CASES_BY_TILE.review contains rowAppraisal", () => {
+    expect(USE_CASES_BY_TILE.review).toContain(USE_CASES.rowAppraisal);
+  });
+
+  it("rowAppraisal has a 3-step pipeline (extract, evaluate, consolidate)", () => {
+    expect(USE_CASES.rowAppraisal.pipeline.map((s) => s.id)).toEqual(["extract", "evaluate", "consolidate"]);
+  });
+
+  it("rowAppraisal has 2 exporters (xlsx, docx)", () => {
+    const ids = USE_CASES.rowAppraisal.exporters.map((e) => e.id);
+    expect(ids).toEqual(["xlsx", "docx"]);
+  });
+
+  it("rowAppraisal has 2 inputs (pdf, model)", () => {
+    const inputIds = USE_CASES.rowAppraisal.inputs.map((i) => i.id);
+    expect(inputIds).toEqual(["pdf", "model"]);
+  });
 });
