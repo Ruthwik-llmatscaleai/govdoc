@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { docxExporter, buildCucpDocx } from "./docx";
+import { docxExporter } from "./docx";
 import type { Level1Data, Level2Data, Level3Data, Criterion } from "@/lib/usecases/cucp-reevals/types";
 
 const seven = (): Criterion[] =>

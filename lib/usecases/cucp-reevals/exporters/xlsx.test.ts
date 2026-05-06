@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import ExcelJS from "exceljs";
-import { xlsxExporter, buildCucpXlsx } from "./xlsx";
+import { xlsxExporter } from "./xlsx";
 import type { Level1Data, Level2Data, Level3Data, Criterion } from "@/lib/usecases/cucp-reevals/types";
 
 const seven = (): Criterion[] =>

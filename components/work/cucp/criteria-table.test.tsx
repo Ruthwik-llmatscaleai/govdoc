@@ -54,8 +54,8 @@ describe("CriteriaTable", () => {
     fireEvent.change(reason, { target: { value: "Insufficient evidence" } });
     fireEvent.click(screen.getByRole("button", { name: /submit overrides/i }));
     await waitFor(() => expect(onSubmitted).toHaveBeenCalledOnce());
-    const call = (globalThis.fetch as unknown as { mock: { calls: [string, { body: string }][] } }).mock.calls[0];
-    const body = JSON.parse(call[1].body);
+    const calls = (globalThis.fetch as unknown as { mock: { calls: [string, { body: string }][] } }).mock.calls;
+    const body = JSON.parse(calls[0]![1].body);
     expect(body.overrides).toEqual([
       { s_no: 3, field: "pass_fail", value: "Fail", reasoning: "Insufficient evidence" },
     ]);

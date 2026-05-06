@@ -30,9 +30,9 @@ describe("CUCP InputsForm", () => {
 
     await new Promise((r) => setTimeout(r, 0));
     expect(startSpy).toHaveBeenCalledOnce();
-    const [useCaseId, fd] = startSpy.mock.calls[0]!;
-    expect(useCaseId).toBe("cucp-reevals");
-    expect(fd).toBeInstanceOf(FormData);
+    const args = startSpy.mock.calls[0] as unknown as [string, FormData];
+    expect(args[0]).toBe("cucp-reevals");
+    expect(args[1]).toBeInstanceOf(FormData);
   });
 
   it("provider select defaults to openai", () => {

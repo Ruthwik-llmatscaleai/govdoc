@@ -1,6 +1,6 @@
 import { describe, it, expectTypeOf } from "vitest";
 import type {
-  ExtractedFact, Level1Data, Classification, Level2Data,
+  Classification,
   Criterion, Level3Data, AnalystOverride, CucpRunResult,
 } from "./types";
 
