@@ -5,13 +5,13 @@ import { orderCategoriesByDependencyGroups } from "@/lib/usecases/row-appraisal/
 import { runOneChunk } from "@/lib/usecases/row-appraisal/chunking/run-chunk";
 import type { ChunkRubric } from "@/lib/usecases/row-appraisal/rules/prompt-builder";
 import rubricSchema from "@/lib/usecases/row-appraisal/assets/rubric_schema.json";
+import { applyVisionFallback } from "@/lib/usecases/row-appraisal/vision/apply-vision-fallback";
 
 const CHUNK_SIZE = 8;
 
 type ExtractPrior = {
   extracted_text: string;
-  provider: string;
-  model: string;
+  pdf_bytes_b64?: string;
 };
 
 export const evaluateStep: PipelineStep<unknown> = {
@@ -20,8 +20,8 @@ export const evaluateStep: PipelineStep<unknown> = {
   async *run(_input, ctx) {
     const prior = (ctx.prior.extract ?? {}) as ExtractPrior;
     const extractedText = prior.extracted_text ?? "";
-    const provider = (prior.provider ?? "openai") as LlmProvider;
-    const model = prior.model ?? "gpt-4.1";
+    const provider: LlmProvider = "openai";
+    const model = "gpt-4.1";
 
     const ordered = orderCategoriesByDependencyGroups(
       rubricSchema as Record<string, Record<string, string>>,
@@ -60,10 +60,23 @@ export const evaluateStep: PipelineStep<unknown> = {
       } satisfies StepEvent;
     }
 
+    const pdfB64 = prior.pdf_bytes_b64;
+    let finalResults = allResults;
+    if (pdfB64) {
+      yield {
+        type: "progress",
+        stage: "evaluate",
+        pct: 95,
+        message: "Running vision fallback for map categories",
+      } satisfies StepEvent;
+      const pdfBytes = Buffer.from(pdfB64, "base64");
+      finalResults = await applyVisionFallback(allResults, pdfBytes, ctx.llm);
+    }
+
     yield {
       type: "stage-done",
       stage: "evaluate",
-      data: { raw_results: allResults },
+      data: { raw_results: finalResults },
     } satisfies StepEvent;
   },
 };

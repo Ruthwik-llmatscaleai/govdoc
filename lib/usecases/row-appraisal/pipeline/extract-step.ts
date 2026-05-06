@@ -23,6 +23,7 @@ export const extractStep: PipelineStep<FormData> = {
     }
 
     const file = pdf as File;
+    const pdfBuffer = Buffer.from(await file.arrayBuffer());
     const result = await loadBundledMarkdownForFilename(file.name);
 
     if (result === null) {
@@ -33,9 +34,6 @@ export const extractStep: PipelineStep<FormData> = {
       } satisfies StepEvent;
       return;
     }
-
-    const provider = (formData.get("provider") as string | null) ?? "openai";
-    const model = (formData.get("model") as string | null) ?? "gpt-4.1";
 
     yield {
       type: "progress",
@@ -49,10 +47,11 @@ export const extractStep: PipelineStep<FormData> = {
       stage: "extract",
       data: {
         pdf_filename: file.name,
+        pdf_bytes_b64: pdfBuffer.toString("base64"),
         markdown_asset: result.asset,
         extracted_text: result.text,
-        provider,
-        model,
+        provider: "openai",
+        model: "gpt-4.1",
       },
     } satisfies StepEvent;
   },

@@ -29,7 +29,7 @@ function makeResults(categories: string[]): EvaluationResult[] {
   }));
 }
 
-function makeCtx(callResponses: string[]): StepContext {
+function makeCtx(callResponses: string[], pdfB64?: string): StepContext {
   let idx = 0;
   return {
     userId: "u",
@@ -39,6 +39,7 @@ function makeCtx(callResponses: string[]): StepContext {
         extracted_text: "fake appraisal document text",
         provider: "openai",
         model: "gpt-4.1",
+        ...(pdfB64 ? { pdf_bytes_b64: pdfB64 } : {}),
       },
     },
     llm: {
@@ -111,5 +112,54 @@ describe("row-appraisal evaluateStep", () => {
     expect(progressEvents[0].pct).toBe(0);
     expect(progressEvents[0].message).toContain("1/5");
     expect(progressEvents[4].message).toContain("5/5");
+  });
+
+  it("does NOT call applyVisionFallback when prior has no pdf_bytes_b64", async () => {
+    const responses = CHUNK_CATEGORIES.map((cats) => JSON.stringify(makeResults(cats)));
+    const ctx = makeCtx(responses); // no pdf
+    await collect(evaluateStep.run(undefined as any, ctx));
+    expect((ctx.llm.call as any).mock.calls).toHaveLength(5); // 5 chunks, no vision
+  });
+
+  it("calls applyVisionFallback with PDF bytes when prior includes pdf_bytes_b64 (no score=1 candidates → no extra LLM calls)", async () => {
+    const responses = CHUNK_CATEGORIES.map((cats) => JSON.stringify(makeResults(cats))); // all score=4
+    const ctx = makeCtx(responses, "JVBERg=="); // dummy base64
+    const events = await collect(evaluateStep.run(undefined as any, ctx));
+    // No score=1 candidates, so applyVisionFallback returns early — still only 5 LLM calls
+    expect((ctx.llm.call as any).mock.calls).toHaveLength(5);
+    // But the "Running vision fallback..." progress event MUST fire when pdf_bytes_b64 is present
+    const visionProgress = events.find(
+      (e) => e.type === "progress" && e.stage === "evaluate" && e.message?.includes("vision"),
+    );
+    expect(visionProgress).toBeDefined();
+    expect(visionProgress.pct).toBe(95);
+  });
+
+  it("triggers vision LLM call when a score=1 vision-fallback category exists", async () => {
+    // Generate per-chunk responses — but for the chunk containing "Subject Assessor Map", set score=1
+    const responses = CHUNK_CATEGORIES.map((cats) => JSON.stringify(
+      cats.map((category) => ({
+        category,
+        score: category === "Subject Assessor Map" ? 1 : 4,
+        criteria_met: "x",
+        evidence: category === "Subject Assessor Map" ? "NOT FOUND" : "ok",
+        status: category === "Subject Assessor Map" ? "❌ Fail" : "✅ Pass",
+        comments: "ok",
+      }))
+    ));
+    const ctx = makeCtx(responses, "JVBERg==");
+
+    // Mock the vision module so we don't actually render PDFs / call OpenAI
+    const visionMod = await import("@/lib/usecases/row-appraisal/vision/apply-vision-fallback");
+    const spy = vi.spyOn(visionMod, "applyVisionFallback").mockImplementation(async (results) => results);
+
+    await collect(evaluateStep.run(undefined as any, ctx));
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const callArgs = spy.mock.calls[0]!;
+    expect(Buffer.isBuffer(callArgs[1])).toBe(true);
+    expect((callArgs[1] as Buffer).length).toBeGreaterThan(0); // non-empty pdf bytes
+
+    spy.mockRestore();
   });
 });

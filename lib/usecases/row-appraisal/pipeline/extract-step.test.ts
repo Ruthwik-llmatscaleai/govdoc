@@ -68,24 +68,7 @@ describe("row-appraisal extractStep", () => {
     spy.mockRestore();
   });
 
-  it("propagates provider and model into stage-done data", async () => {
-    const file = new File(
-      [new Uint8Array([1])],
-      "Appraisal_EA2F590_Parcel_36668.pdf",
-      { type: "application/pdf" },
-    );
-    const fd = new FormData();
-    fd.append("pdf", file);
-    fd.append("provider", "anthropic");
-    fd.append("model", "claude-opus-4-5");
-
-    const events = await collect(extractStep.run(fd, fakeCtx));
-    const done = events.find((e: any) => e.type === "stage-done") as any;
-    expect(done.data.provider).toBe("anthropic");
-    expect(done.data.model).toBe("claude-opus-4-5");
-  });
-
-  it("uses default provider openai and model gpt-4.1 when not specified", async () => {
+  it("emits hardcoded openai provider and gpt-4.1 model in stage-done", async () => {
     const file = new File(
       [new Uint8Array([1])],
       "Appraisal_EA2F590_Parcel_36668.pdf",
@@ -98,5 +81,22 @@ describe("row-appraisal extractStep", () => {
     const done = events.find((e: any) => e.type === "stage-done") as any;
     expect(done.data.provider).toBe("openai");
     expect(done.data.model).toBe("gpt-4.1");
+  });
+
+  it("emits pdf_bytes_b64 (non-empty base64) in stage-done", async () => {
+    const file = new File(
+      [new Uint8Array([0x25, 0x50, 0x44, 0x46])], // %PDF magic
+      "Appraisal_EA2F590_Parcel_36668.pdf",
+      { type: "application/pdf" },
+    );
+    const fd = new FormData();
+    fd.append("pdf", file);
+
+    const events = await collect(extractStep.run(fd, fakeCtx));
+    const done = events.find((e: any) => e.type === "stage-done") as any;
+    expect(typeof done.data.pdf_bytes_b64).toBe("string");
+    expect(done.data.pdf_bytes_b64.length).toBeGreaterThan(0);
+    // 4-byte input encodes to a known base64 prefix
+    expect(done.data.pdf_bytes_b64).toBe("JVBERg==");
   });
 });
