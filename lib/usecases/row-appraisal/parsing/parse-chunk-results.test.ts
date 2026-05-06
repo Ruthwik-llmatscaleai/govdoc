@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseChunkResults } from "./parse-chunk-results";
+import { parseChunkResults, normalizeStatus } from "./parse-chunk-results";
 
 const SAMPLE_ITEMS = [
   {
@@ -119,5 +119,44 @@ describe("parseChunkResults", () => {
   it("returns [] for empty content", () => {
     const results = parseChunkResults("", ["Title Page"]);
     expect(results).toEqual([]);
+  });
+});
+
+describe("normalizeStatus", () => {
+  it('normalizes Pass variants to "✅ Pass"', () => {
+    expect(normalizeStatus("Pass")).toBe("✅ Pass");
+    expect(normalizeStatus("pass")).toBe("✅ Pass");
+    expect(normalizeStatus("PASS")).toBe("✅ Pass");
+    expect(normalizeStatus("✅ Pass")).toBe("✅ Pass");
+    expect(normalizeStatus("✅Pass")).toBe("✅ Pass");
+  });
+
+  it('normalizes Warning variants to "⚠️ Warning"', () => {
+    expect(normalizeStatus("Warning")).toBe("⚠️ Warning");
+    expect(normalizeStatus("warning")).toBe("⚠️ Warning");
+    expect(normalizeStatus("⚠️ Warning")).toBe("⚠️ Warning");
+  });
+
+  it('normalizes Fail variants to "❌ Fail"', () => {
+    expect(normalizeStatus("Fail")).toBe("❌ Fail");
+    expect(normalizeStatus("fail")).toBe("❌ Fail");
+    expect(normalizeStatus("❌ Fail")).toBe("❌ Fail");
+  });
+
+  it('normalizes N/A variants to "⚪ N/A"', () => {
+    expect(normalizeStatus("N/A")).toBe("⚪ N/A");
+    expect(normalizeStatus("n/a")).toBe("⚪ N/A");
+    expect(normalizeStatus("⚪ N/A")).toBe("⚪ N/A");
+  });
+
+  it('normalizes Error variants to "❌ Error"', () => {
+    expect(normalizeStatus("Error")).toBe("❌ Error");
+    expect(normalizeStatus("error")).toBe("❌ Error");
+    expect(normalizeStatus("❌ Error")).toBe("❌ Error");
+  });
+
+  it('maps unknown strings to "❌ Error"', () => {
+    expect(normalizeStatus("something random")).toBe("❌ Error");
+    expect(normalizeStatus("")).toBe("❌ Error");
   });
 });

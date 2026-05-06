@@ -1,5 +1,15 @@
-import type { EvaluationResult } from "../types";
+import type { EvaluationResult, Status } from "../types";
 import { VALID_CATEGORIES } from "../data/valid-categories";
+
+export function normalizeStatus(raw: string): Status {
+  const s = raw.toLowerCase().replace(/[^\w/]/g, " ").trim();
+  if (s.includes("pass")) return "✅ Pass";
+  if (s.includes("warning")) return "⚠️ Warning";
+  if (s.includes("n/a") || s === "n a") return "⚪ N/A";
+  if (s.includes("error")) return "❌ Error";
+  if (s.includes("fail")) return "❌ Fail";
+  return "❌ Error";
+}
 
 function mapCategory(raw: string, expectedCategories: string[]): string | null {
   const trimmed = raw.trim();
@@ -82,7 +92,7 @@ export function parseChunkResults(
     const evidence = String(record.evidence ?? "No evidence")
       .trim()
       .replace(/\s+/g, " ");
-    const status = String(record.status ?? "❌ Fail").trim() as EvaluationResult["status"];
+    const status = normalizeStatus(String(record.status ?? "❌ Fail").trim());
     const comments = String(record.comments ?? "").trim();
 
     results.push({ category: mapped, score, criteria_met, evidence, status, comments });
