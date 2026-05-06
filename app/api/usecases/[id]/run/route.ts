@@ -33,7 +33,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       prior: {},
       llm: makeLlmRouter(),
       abortSignal: req.signal,
-      log: (msg, data) => logger.warn({ runId, ...(data as Record<string, unknown>) }, msg),
+      log: (msg, data) => logger.warn({ runId, data }, msg),
     };
     yield { type: "run-started", runId } satisfies StepEvent;
     yield { type: "progress", stage: "init", pct: 0, message: `Starting ${useCase.label}` } satisfies StepEvent;
