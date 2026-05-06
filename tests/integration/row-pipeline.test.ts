@@ -139,15 +139,18 @@ describe("ROW appraisal pipeline integration (SSE end-to-end)", () => {
     expect(events.some((e) => e.type === "progress" && (e as any).stage === "extract")).toBe(true);
     expect(events.some((e) => e.type === "stage-done" && (e as any).stage === "extract")).toBe(true);
 
-    // evaluate: 5 progress + 5 partial events
+    // evaluate: 5 chunk progress + 1 vision-fallback progress + 5 partial events
     const evaluateProgress = events.filter(
       (e) => e.type === "progress" && (e as any).stage === "evaluate",
     );
     const evaluatePartial = events.filter(
       (e) => e.type === "partial" && (e as any).stage === "evaluate",
     );
-    expect(evaluateProgress.length).toBe(5);
+    expect(evaluateProgress.length).toBe(6);
     expect(evaluatePartial.length).toBe(5);
+    expect(
+      evaluateProgress.some((e) => (e as any).message?.includes("vision")),
+    ).toBe(true);
     expect(events.some((e) => e.type === "stage-done" && (e as any).stage === "evaluate")).toBe(true);
 
     // consolidate stage
