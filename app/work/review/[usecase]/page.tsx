@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePipelineStore } from "@/store/use-pipeline";
-import { getUseCase } from "@/lib/usecases/registry";
+import { getUseCaseMetadata } from "@/lib/usecases/metadata";
 import { InputsForm as CmgcInputsForm } from "@/components/work/cmgc/inputs-form";
 import { ScoreTable } from "@/components/work/cmgc/score-table";
 import { RecommendationCard } from "@/components/work/cmgc/recommendation-card";
@@ -29,7 +29,7 @@ export default function UseCasePage({ params }: { params: Promise<RouteParams> }
   const current = usePipelineStore((s) => s.current);
   const reset = usePipelineStore((s) => s.reset);
 
-  const uc = getUseCase(usecase);
+  const uc = getUseCaseMetadata(usecase);
   if (!uc) {
     return (
       <div className="p-6">

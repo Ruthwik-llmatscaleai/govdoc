@@ -34,7 +34,7 @@ export async function POST(
 
   try {
     const bytes = await exporter.build(result);
-    return new NextResponse(bytes, {
+    return new NextResponse(new Blob([new Uint8Array(bytes)]), {
       status: 200,
       headers: {
         "Content-Type": exporter.contentType,
