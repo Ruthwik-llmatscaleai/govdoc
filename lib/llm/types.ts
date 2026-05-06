@@ -1,7 +1,11 @@
 export type LlmProvider = "openai" | "anthropic" | "groq";
 
 export type LlmTextPart = { type: "text"; text: string };
-export type LlmImagePart = { type: "image_url"; image_url: { url: string; detail?: "low" | "high" | "auto" } };
+// OpenAI Chat Completions wire format. Anthropic/Groq use different shapes — only forward image parts to the openai provider.
+export type LlmImagePart = {
+  type: "image_url";
+  image_url: { url: string; detail?: "low" | "high" | "auto" };
+};
 export type LlmContent = string | Array<LlmTextPart | LlmImagePart>;
 
 export type LlmCall = {
