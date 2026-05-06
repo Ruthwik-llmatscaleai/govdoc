@@ -17,7 +17,6 @@ function makeResult(category: string, overrides?: Partial<EvaluationResult>): Ev
   };
 }
 
-const MISSING_CATEGORIES = VALID_CATEGORIES.slice(-4); // last 4 will be missing
 const PRESENT_CATEGORIES = VALID_CATEGORIES.slice(0, -4);
 
 const rawResults: EvaluationResult[] = [
