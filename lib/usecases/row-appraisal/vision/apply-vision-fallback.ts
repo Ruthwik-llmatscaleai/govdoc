@@ -1,6 +1,7 @@
 import type { LlmRouter } from "@/lib/llm/types";
 import type { EvaluationResult, Status } from "@/lib/usecases/row-appraisal/types";
 import { VISION_FALLBACK_CATEGORIES } from "@/lib/usecases/row-appraisal/data/valid-categories";
+import { logger } from "@/lib/logger";
 import { getVisionPromptForCategory } from "./category-prompts";
 import { renderPdfPagesAsImages } from "./render-pdf";
 
@@ -21,6 +22,7 @@ export async function applyVisionFallback(
     const visionResult = await evaluateWithVision(pdfBytes, candidate.category, llm);
     if (!visionResult) continue;
     const idx = out.findIndex((r) => r.category === candidate.category);
+    // Replace even when score didn't improve — vision provides richer evidence (mirrors caltrans).
     if (idx >= 0) out[idx] = visionResult;
   }
   return out;
@@ -37,7 +39,8 @@ async function evaluateWithVision(
   let imageUrls: string[];
   try {
     imageUrls = await renderPdfPagesAsImages(pdfBytes, entry.pageRange, 150);
-  } catch {
+  } catch (err) {
+    logger.warn({ category, err }, "vision: PDF render failed, skipping");
     return null;
   }
   if (imageUrls.length === 0) return null;
@@ -59,7 +62,8 @@ async function evaluateWithVision(
       maxTokens: 1500,
       messages: [{ role: "user", content }],
     });
-  } catch {
+  } catch (err) {
+    logger.warn({ category, err }, "vision: LLM call failed, skipping");
     return null;
   }
 
