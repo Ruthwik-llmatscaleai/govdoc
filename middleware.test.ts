@@ -41,4 +41,9 @@ describe("middleware", () => {
     const res = await middleware(reqAt("/landing", "garbage"));
     expect(res.status).toBe(307);
   });
+
+  it("/api/health is public — no cookie, no redirect", async () => {
+    const res = await middleware(reqAt("/api/health"));
+    expect(res.status).not.toBe(307);
+  });
 });
