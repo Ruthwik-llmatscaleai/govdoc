@@ -80,8 +80,9 @@ describe("CMGC pipeline integration", () => {
 
     const events = await collectSseEvents(res);
 
-    // First event is init progress
-    expect(events[0]).toMatchObject({ type: "progress", stage: "init", pct: 0 });
+    // First event announces the runId; second is init progress
+    expect(events[0]).toMatchObject({ type: "run-started" });
+    expect(events[1]).toMatchObject({ type: "progress", stage: "init", pct: 0 });
 
     // Each pipeline stage emits exactly one stage-done event
     const stageDoneEvents = events.filter((e) => e.type === "stage-done");

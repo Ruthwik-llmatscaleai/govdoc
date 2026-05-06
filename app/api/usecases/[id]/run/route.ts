@@ -34,6 +34,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       abortSignal: req.signal,
       log: (msg, data) => console.warn(JSON.stringify({ runId, msg, data })),
     };
+    yield { type: "run-started", runId } satisfies StepEvent;
     yield { type: "progress", stage: "init", pct: 0, message: `Starting ${useCase.label}` } satisfies StepEvent;
 
     for (const step of useCase.pipeline) {

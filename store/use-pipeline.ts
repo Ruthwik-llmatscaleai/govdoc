@@ -43,6 +43,10 @@ export const usePipelineStore = create<Store>((set, get) => ({
       if (!state.current) return state;
       const run = { ...state.current, stages: { ...state.current.stages } };
       switch (ev.type) {
+        case "run-started": {
+          run.runId = ev.runId;
+          break;
+        }
         case "progress": {
           const stage = { ...ensureStage(run, ev.stage), status: "running" as const, pct: ev.pct, message: ev.message };
           run.stages[ev.stage] = stage;
