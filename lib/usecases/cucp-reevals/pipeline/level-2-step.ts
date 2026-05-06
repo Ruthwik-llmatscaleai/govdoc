@@ -3,16 +3,10 @@ import type { LlmProvider } from "@/lib/llm/types";
 import type { Level1Data, Level2Data } from "@/lib/usecases/cucp-reevals/types";
 import { buildLevel2SystemPrompt, buildLevel2UserMessage } from "@/lib/usecases/cucp-reevals/prompts/level-2-classify";
 
-const DEFAULT_MODELS: Record<LlmProvider, string> = {
-  openai: "gpt-4o",
-  anthropic: "claude-sonnet-4-6",
-  groq: "llama-3.3-70b-versatile",
-};
-
 export const level2Step: PipelineStep<FormData> = {
   id: "level2",
   label: "Classify facts (Level 2)",
-  async *run(formData, ctx) {
+  async *run(_formData, ctx) {
     yield { type: "progress", stage: "level2", pct: 0, message: "Starting Level 2 classification" } satisfies StepEvent;
 
     const l1 = (ctx.prior.level1 ?? {}) as Level1Data;
@@ -22,8 +16,8 @@ export const level2Step: PipelineStep<FormData> = {
       `Firm: ${l1.firm_name ?? "NOT PROVIDED"}`,
     ].join("\n");
 
-    const provider = ((formData.get("model") as LlmProvider | null) ?? "openai") as LlmProvider;
-    const model = DEFAULT_MODELS[provider] ?? DEFAULT_MODELS.openai;
+    const provider: LlmProvider = "openai";
+    const model = "gpt-4o";
 
     const messages = [
       { role: "system" as const, content: buildLevel2SystemPrompt() },

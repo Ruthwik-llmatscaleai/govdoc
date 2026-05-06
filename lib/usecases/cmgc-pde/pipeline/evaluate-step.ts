@@ -4,12 +4,6 @@ import type { CmgcEvaluation } from "../types";
 import { buildSystemPrompt, buildUserMessage } from "../prompt/system-prompt";
 import { DELIVERY_METHOD_KB_TEXT } from "../delivery-method-kb";
 
-const DEFAULT_MODELS: Record<LlmProvider, string> = {
-  openai: "gpt-4o",
-  anthropic: "claude-sonnet-4-6",
-  groq: "llama-3.3-70b-versatile",
-};
-
 export const evaluateStep: PipelineStep<FormData> = {
   id: "evaluate",
   label: "Evaluate against rubric",
@@ -20,8 +14,8 @@ export const evaluateStep: PipelineStep<FormData> = {
       yield { type: "error", stage: "evaluate", message: "No narrative available from extract step" };
       return;
     }
-    const provider = (formData.get("provider") as LlmProvider | null) ?? "openai";
-    const model = (formData.get("model") as string | null) ?? DEFAULT_MODELS[provider];
+    const provider: LlmProvider = "openai";
+    const model = "gpt-4o";
     const districtRaw = formData.get("districtRatings") as string | null;
     let districtRatings: Record<string, "A"|"B"|"C"> | undefined;
     if (districtRaw) {

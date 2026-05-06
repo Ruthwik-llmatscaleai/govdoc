@@ -12,11 +12,11 @@ beforeEach(() => {
 });
 
 describe("LoginForm", () => {
-  it("submits username and password", async () => {
+  it("submits email and password as username/password to the API", async () => {
     (global.fetch as any).mockResolvedValue({ ok: true });
     const user = userEvent.setup();
     render(<LoginForm />);
-    await user.type(screen.getByLabelText(/username/i), "joe");
+    await user.type(screen.getByLabelText(/email/i), "joe");
     await user.type(screen.getByLabelText(/password/i), "secret");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
     expect(global.fetch).toHaveBeenCalledWith("/api/auth/login", expect.objectContaining({
@@ -29,7 +29,7 @@ describe("LoginForm", () => {
     (global.fetch as any).mockResolvedValue({ ok: false, status: 401 });
     const user = userEvent.setup();
     render(<LoginForm />);
-    await user.type(screen.getByLabelText(/username/i), "joe");
+    await user.type(screen.getByLabelText(/email/i), "joe");
     await user.type(screen.getByLabelText(/password/i), "wrong");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
     expect(await screen.findByText(/invalid credentials/i)).toBeInTheDocument();

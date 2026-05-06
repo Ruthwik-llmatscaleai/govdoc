@@ -4,24 +4,18 @@ import type { Level1Data, Level2Data, Level3Data, AnalystOverride } from "@/lib/
 import { buildLevel3SystemPrompt, buildLevel3UserMessage } from "@/lib/usecases/cucp-reevals/prompts/level-3-threshold";
 import { waitForHumanResponse } from "@/lib/runs/needs-input-rendezvous";
 
-const DEFAULT_MODELS: Record<LlmProvider, string> = {
-  openai: "gpt-4o",
-  anthropic: "claude-sonnet-4-6",
-  groq: "llama-3.3-70b-versatile",
-};
-
 export const level3Step: PipelineStep<FormData> = {
   id: "level3",
   label: "Apply 7-criteria evaluation + human review",
-  async *run(formData, ctx) {
+  async *run(_formData, ctx) {
     yield { type: "progress", stage: "level3", pct: 0, message: "Starting Level 3 threshold evaluation" } satisfies StepEvent;
 
     const l1 = (ctx.prior.level1 ?? {}) as Level1Data;
     const l2 = (ctx.prior.level2 ?? {}) as Level2Data;
     const pnwResult = l1.cross_reference_result || "None";
 
-    const provider = ((formData.get("model") as LlmProvider | null) ?? "openai") as LlmProvider;
-    const model = DEFAULT_MODELS[provider] ?? DEFAULT_MODELS.openai;
+    const provider: LlmProvider = "openai";
+    const model = "gpt-4o";
 
     const messages = [
       { role: "system" as const, content: buildLevel3SystemPrompt() },

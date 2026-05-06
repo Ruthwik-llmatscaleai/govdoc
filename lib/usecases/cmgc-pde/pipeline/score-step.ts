@@ -1,5 +1,4 @@
 import type { PipelineStep, StepEvent } from "@/lib/usecases/types";
-import type { LlmProvider } from "@/lib/llm/types";
 import type { CmgcRating } from "../types";
 import { computeDeliveryRecommendation } from "../scoring/compute-recommendation";
 import { scoreAllMethods } from "../scoring/score-all-methods";
@@ -7,7 +6,7 @@ import { scoreAllMethods } from "../scoring/score-all-methods";
 export const scoreStep: PipelineStep<FormData> = {
   id: "score",
   label: "Compute scores and recommendation",
-  async *run(formData, ctx) {
+  async *run(_formData, ctx) {
     const prior = (ctx.prior.evaluate ?? {}) as { ratings?: CmgcRating[] };
     const ratings = prior.ratings;
     if (!ratings || !Array.isArray(ratings) || ratings.length === 0) {
@@ -22,8 +21,7 @@ export const scoreStep: PipelineStep<FormData> = {
 
     yield { type: "progress", stage: "score", pct: 50, message: "Computing recommendation" };
 
-    const provider = (formData.get("provider") as LlmProvider | null) ?? "openai";
-    if (provider === "openai" && multiMethod.method_scores.length > 0) {
+    if (multiMethod.method_scores.length > 0) {
       const top = multiMethod.method_scores[0]!;
       // Prefer sections marked Strong fit / Poor fit per legacy 815-832; fall back to all sections
       const evidenceSnippets: string[] = [];

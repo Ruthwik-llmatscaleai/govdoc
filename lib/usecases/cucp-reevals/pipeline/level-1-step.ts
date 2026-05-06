@@ -3,24 +3,18 @@ import type { LlmProvider } from "@/lib/llm/types";
 import type { Level1Data } from "@/lib/usecases/cucp-reevals/types";
 import { buildLevel1SystemPrompt, buildLevel1UserMessage } from "@/lib/usecases/cucp-reevals/prompts/level-1-extract";
 
-const DEFAULT_MODELS: Record<LlmProvider, string> = {
-  openai: "gpt-4o",
-  anthropic: "claude-sonnet-4-6",
-  groq: "llama-3.3-70b-versatile",
-};
-
 export const level1Step: PipelineStep<FormData> = {
   id: "level1",
   label: "Extract facts (Level 1)",
-  async *run(formData, ctx) {
+  async *run(_formData, ctx) {
     yield { type: "progress", stage: "level1", pct: 0, message: "Starting Level 1 fact extraction" } satisfies StepEvent;
 
     const prior = (ctx.prior.extract ?? {}) as { narrativeText?: string; firmRevenues?: Record<string, unknown> };
     const narrativeText = prior.narrativeText ?? "";
     const firmRevenues = prior.firmRevenues ?? {};
 
-    const provider = ((formData.get("model") as LlmProvider | null) ?? "openai") as LlmProvider;
-    const model = DEFAULT_MODELS[provider] ?? DEFAULT_MODELS.openai;
+    const provider: LlmProvider = "openai";
+    const model = "gpt-4o";
 
     const messages = [
       { role: "system" as const, content: buildLevel1SystemPrompt(firmRevenues as any) },

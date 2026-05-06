@@ -34,7 +34,9 @@ export async function runOneChunk(args: {
       maxTokens: 8000,
     });
     results = parseChunkResults(r.text, categoryNames);
-  } catch {
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[row-appraisal] chunk LLM call failed:", msg);
     return categoryNames.map((cat) => errorResult(cat, "API call failed"));
   }
 

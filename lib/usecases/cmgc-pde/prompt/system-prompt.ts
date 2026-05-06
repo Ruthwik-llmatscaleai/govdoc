@@ -127,7 +127,7 @@ ${kbText}`;
       .join(", ");
     existingRatingsBlock = `DISTRICT PRE-FILLED RATINGS:
 The district has pre-filled these ratings: ${ratingsStr}
-Evaluate independently based on the evidence. After your independent evaluation, if your rating differs from the district's, note the disagreement in your effect_on_method.`;
+Evaluate independently based on the evidence. After your independent evaluation, if your rating differs from the district's, note the disagreement inside missing_info_reasoning.`;
   }
 
   const parts = [

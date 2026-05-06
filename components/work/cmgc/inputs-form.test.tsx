@@ -8,12 +8,11 @@ beforeEach(() => {
 });
 
 describe("InputsForm", () => {
-  it("renders all four CMGC inputs", () => {
+  it("renders the three CMGC inputs", () => {
     render(<InputsForm />);
     expect(screen.getByLabelText(/fact sheet/i)).toBeDefined();
     expect(screen.getByLabelText(/project name/i)).toBeDefined();
     expect(screen.getByLabelText(/district pre-filled/i)).toBeDefined();
-    expect(screen.getByLabelText(/AI provider/i)).toBeDefined();
     expect(screen.getByRole("button", { name: /run evaluation/i })).toBeDefined();
   });
 
@@ -36,9 +35,4 @@ describe("InputsForm", () => {
     expect(fd).toBeInstanceOf(FormData);
   });
 
-  it("provider select defaults to openai", () => {
-    render(<InputsForm />);
-    const select = screen.getByLabelText(/AI provider/i) as HTMLSelectElement;
-    expect(select.value).toBe("openai");
-  });
 });

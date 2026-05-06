@@ -8,11 +8,10 @@ beforeEach(() => {
 });
 
 describe("CUCP InputsForm", () => {
-  it("renders narrative, revenues, and provider inputs", () => {
+  it("renders narrative and revenues inputs", () => {
     render(<InputsForm />);
     expect(screen.getByLabelText(/personal narrative/i)).toBeDefined();
     expect(screen.getByLabelText(/firm revenues/i)).toBeDefined();
-    expect(screen.getByLabelText(/AI provider/i)).toBeDefined();
     expect(screen.getByRole("button", { name: /run re-evaluation/i })).toBeDefined();
   });
 
@@ -35,9 +34,4 @@ describe("CUCP InputsForm", () => {
     expect(args[1]).toBeInstanceOf(FormData);
   });
 
-  it("provider select defaults to openai", () => {
-    render(<InputsForm />);
-    const select = screen.getByLabelText(/AI provider/i) as HTMLSelectElement;
-    expect(select.value).toBe("openai");
-  });
 });

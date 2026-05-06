@@ -8,10 +8,9 @@ beforeEach(() => {
 });
 
 describe("ROW InputsForm", () => {
-  it("renders pdf input, provider select, and submit button", () => {
+  it("renders pdf input and submit button", () => {
     render(<InputsForm />);
     expect(screen.getByLabelText(/appraisal pdf/i)).toBeDefined();
-    expect(screen.getByLabelText(/AI provider/i)).toBeDefined();
     expect(screen.getByRole("button", { name: /run evaluation/i })).toBeDefined();
   });
 
@@ -39,9 +38,4 @@ describe("ROW InputsForm", () => {
     expect(args[1]).toBeInstanceOf(FormData);
   });
 
-  it("provider select defaults to openai", () => {
-    render(<InputsForm />);
-    const select = screen.getByLabelText(/AI provider/i) as HTMLSelectElement;
-    expect(select.value).toBe("openai");
-  });
 });

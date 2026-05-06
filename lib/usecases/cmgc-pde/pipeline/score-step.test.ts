@@ -26,7 +26,6 @@ async function collect<T>(iter: AsyncIterable<T>): Promise<T[]> {
 describe("scoreStep", () => {
   it("emits stage-done with recommendation + multi_method", async () => {
     const fd = new FormData();
-    fd.append("provider", "openai");
     const call = vi.fn(async () => ({ text: "two-sentence explanation here." }));
     const { ctx } = makeCtx(call, fd);
     const events = await collect(scoreStep.run(fd, ctx)) as StepEvent[];
@@ -39,9 +38,8 @@ describe("scoreStep", () => {
     expect(data.multi_method.method_scores).toHaveLength(6);
   });
 
-  it("openai provider gets key_factors_reasoning from LLM", async () => {
+  it("populates key_factors_reasoning from the hardcoded gpt-4o-mini call", async () => {
     const fd = new FormData();
-    fd.append("provider", "openai");
     const call = vi.fn(async () => ({ text: "two-sentence explanation here." }));
     const { ctx } = makeCtx(call, fd);
     const events = await collect(scoreStep.run(fd, ctx)) as StepEvent[];
@@ -51,20 +49,11 @@ describe("scoreStep", () => {
     };
     const top = data.multi_method.method_scores[0]!;
     expect(top.key_factors_reasoning).toBe("two-sentence explanation here.");
-  });
-
-  it("anthropic provider skips the key-factors LLM call", async () => {
-    const fd = new FormData();
-    fd.append("provider", "anthropic");
-    const call = vi.fn(async () => ({ text: "should not be called" }));
-    const { ctx } = makeCtx(call, fd);
-    await collect(scoreStep.run(fd, ctx));
-    expect(call).not.toHaveBeenCalled();
+    expect(call).toHaveBeenCalledWith(expect.objectContaining({ provider: "openai", model: "gpt-4o-mini" }));
   });
 
   it("LLM failure on key-factors → reasoning becomes '' (graceful)", async () => {
     const fd = new FormData();
-    fd.append("provider", "openai");
     const call = vi.fn(async () => { throw new Error("rate limit"); });
     const { ctx } = makeCtx(call, fd);
     const events = await collect(scoreStep.run(fd, ctx)) as StepEvent[];

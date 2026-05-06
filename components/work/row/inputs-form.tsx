@@ -1,6 +1,12 @@
 "use client";
 import { type FormEvent } from "react";
+import { Play } from "lucide-react";
 import { usePipelineStore } from "@/store/use-pipeline";
+import {
+  Field,
+  FilePicker,
+  PrimaryButton,
+} from "@/components/work/form-fields";
 
 const SUPPORTED_FILENAMES = [
   "Appraisal_EA2F590_Parcel_36668.pdf",
@@ -15,27 +21,35 @@ export function InputsForm() {
     const fd = new FormData(e.currentTarget);
     await usePipelineStore.getState().start("row-appraisal", fd);
   }
+
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="pdf" className="block text-sm font-medium">Appraisal PDF *</label>
-        <input type="file" id="pdf" name="pdf" accept=".pdf" required />
-        <p className="text-xs text-muted-foreground mt-1">
-          Phase 1 ships with bundled OCR for these filenames. Other filenames will fall back to a default.
-        </p>
-        <ul className="text-xs text-muted-foreground mt-1 list-disc pl-5">
-          {SUPPORTED_FILENAMES.map((f) => <li key={f}>{f}</li>)}
-        </ul>
+    <form onSubmit={onSubmit} className="space-y-6">
+      <Field
+        htmlFor="pdf"
+        label="Appraisal PDF"
+        required
+        hint={
+          <div>
+            <p>
+              Phase 1 ships with bundled OCR for the four sample filenames below.
+              Other filenames will fall back to a default text layer.
+            </p>
+            <ul className="mt-2 list-disc space-y-0.5 pl-5 text-[11px] font-mono text-muted-foreground/85">
+              {SUPPORTED_FILENAMES.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+          </div>
+        }
+      >
+        <FilePicker id="pdf" name="pdf" accept=".pdf" required />
+      </Field>
+
+      <div className="flex justify-end pt-1">
+        <PrimaryButton>
+          <Play className="size-4" /> Run evaluation
+        </PrimaryButton>
       </div>
-      <div>
-        <label htmlFor="model" className="block text-sm font-medium">AI provider</label>
-        <select id="model" name="model" defaultValue="openai">
-          <option value="openai">OpenAI</option>
-          <option value="anthropic">Anthropic</option>
-          <option value="groq">Groq</option>
-        </select>
-      </div>
-      <button type="submit">Run evaluation</button>
     </form>
   );
 }

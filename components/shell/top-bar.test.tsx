@@ -8,4 +8,9 @@ describe("TopBar", () => {
     expect(screen.getByText("GovDoc")).toBeInTheDocument();
     expect(screen.getByText(/joe/i)).toBeInTheDocument();
   });
+
+  it("includes a State of California subtitle", () => {
+    render(<TopBar user="joe" />);
+    expect(screen.getByText(/state of california/i)).toBeInTheDocument();
+  });
 });

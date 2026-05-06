@@ -38,11 +38,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     yield { type: "run-started", runId } satisfies StepEvent;
     yield { type: "progress", stage: "init", pct: 0, message: `Starting ${useCase.label}` } satisfies StepEvent;
 
+    let stepFailed = false;
     for (const step of useCase.pipeline) {
       try {
         for await (const ev of step.run(formData, ctx)) {
           yield ev;
           if (ev.type === "stage-done") ctx.prior[step.id] = ev.data;
+          if (ev.type === "error") stepFailed = true;
         }
       } catch (e) {
         const internal = e instanceof Error ? e.message : String(e);
@@ -50,8 +52,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         yield { type: "error", stage: step.id, message: "Step failed — check server logs" };
         return;
       }
+      if (stepFailed) return;
       if (req.signal.aborted) return;
     }
+    const stageKeys = Object.keys(ctx.prior);
+    const stageShape = Object.fromEntries(
+      stageKeys.map((k) => [
+        k,
+        ctx.prior[k] && typeof ctx.prior[k] === "object"
+          ? Object.keys(ctx.prior[k] as Record<string, unknown>)
+          : typeof ctx.prior[k],
+      ]),
+    );
+    logger.info({ runId, useCaseId: id, stageKeys, stageShape }, "pipeline done");
     yield { type: "done", result: ctx.prior };
   });
 }
