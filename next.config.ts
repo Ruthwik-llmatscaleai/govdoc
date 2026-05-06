@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
+  serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
 };
 
 export default nextConfig;
