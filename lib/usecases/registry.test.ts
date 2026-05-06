@@ -44,4 +44,41 @@ describe("use case registry", () => {
     const inputIds = USE_CASES.cmgcPde.inputs.map((i) => i.id);
     expect(inputIds).toEqual(["factSheet", "projectName", "districtRatings", "model"]);
   });
+
+  it("registers cucpReevals", () => {
+    expect(USE_CASES.cucpReevals).toBeDefined();
+    expect(USE_CASES.cucpReevals.id).toBe("cucp-reevals");
+  });
+
+  it("getUseCase('cucp-reevals') returns the cucpReevals use case", () => {
+    const uc = getUseCase("cucp-reevals");
+    expect(uc).toBeDefined();
+    expect(uc?.id).toBe("cucp-reevals");
+    expect(uc?.tile).toBe("review");
+  });
+
+  it("USE_CASES_BY_TILE.review contains cucpReevals", () => {
+    expect(USE_CASES_BY_TILE.review).toContain(USE_CASES.cucpReevals);
+  });
+
+  it("cucpReevals has a 5-step pipeline", () => {
+    expect(USE_CASES.cucpReevals.pipeline).toHaveLength(5);
+    expect(USE_CASES.cucpReevals.pipeline.map((s) => s.id)).toEqual([
+      "extract",
+      "level1",
+      "level2",
+      "level3",
+      "report",
+    ]);
+  });
+
+  it("cucpReevals has 3 exporters (xlsx, docx, json)", () => {
+    const ids = USE_CASES.cucpReevals.exporters.map((e) => e.id);
+    expect(ids).toEqual(["xlsx", "docx", "json"]);
+  });
+
+  it("cucpReevals has 3 inputs", () => {
+    const inputIds = USE_CASES.cucpReevals.inputs.map((i) => i.id);
+    expect(inputIds).toEqual(["narrative", "revenues", "model"]);
+  });
 });
