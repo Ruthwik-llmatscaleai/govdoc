@@ -159,4 +159,43 @@ describe("normalizeStatus", () => {
     expect(normalizeStatus("something random")).toBe("❌ Error");
     expect(normalizeStatus("")).toBe("❌ Error");
   });
+
+  it('maps "Failed with error" to "❌ Fail" (fail check before error check)', () => {
+    expect(normalizeStatus("Failed with error")).toBe("❌ Fail");
+  });
+});
+
+describe("parseChunkResults – invalid score handling", () => {
+  it("stores invalid score string as 0 and forces status to ❌ Error", () => {
+    const item = [
+      {
+        category: "Title Page",
+        score: "invalid",
+        status: "Pass",
+        criteria_met: "x",
+        evidence: "y",
+        comments: "z",
+      },
+    ];
+    const results = parseChunkResults(JSON.stringify(item), ["Title Page"]);
+    expect(results).toHaveLength(1);
+    expect(results[0].score).toBe(0);
+    expect(results[0].status).toBe("❌ Error");
+  });
+
+  it('maps category "Habu Reconciliation" (different casing) to "HABU Reconciliation"', () => {
+    const item = [
+      {
+        category: "Habu Reconciliation",
+        score: 3,
+        status: "Pass",
+        criteria_met: "x",
+        evidence: "y",
+        comments: "",
+      },
+    ];
+    const results = parseChunkResults(JSON.stringify(item), ["HABU Reconciliation"]);
+    expect(results).toHaveLength(1);
+    expect(results[0].category).toBe("HABU Reconciliation");
+  });
 });

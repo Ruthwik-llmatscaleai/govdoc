@@ -6,8 +6,8 @@ export function normalizeStatus(raw: string): Status {
   if (s.includes("pass")) return "✅ Pass";
   if (s.includes("warning")) return "⚠️ Warning";
   if (s.includes("n/a") || s === "n a") return "⚪ N/A";
-  if (s.includes("error")) return "❌ Error";
   if (s.includes("fail")) return "❌ Fail";
+  if (s.includes("error")) return "❌ Error";
   return "❌ Error";
 }
 
@@ -43,16 +43,17 @@ function mapCategory(raw: string, expectedCategories: string[]): string | null {
   return null;
 }
 
-function parseScore(scoreRaw: unknown): number {
+function parseScore(scoreRaw: unknown): { score: number; valid: boolean } {
+  if (typeof scoreRaw === "number" && Number.isInteger(scoreRaw) && scoreRaw >= 1 && scoreRaw <= 5) {
+    return { score: scoreRaw, valid: true };
+  }
   if (typeof scoreRaw === "string") {
-    if (scoreRaw.toUpperCase().includes("N/A") || scoreRaw.trim() === "-1") return -1;
-    const m = scoreRaw.match(/(\d)/);
-    return m ? parseInt(m[1], 10) : 3;
+    const trimmed = scoreRaw.trim();
+    if (/^N\/A$/i.test(trimmed)) return { score: -1, valid: true };
+    const m = trimmed.match(/^(-?\d+)$/);
+    if (m && +m[1] >= 1 && +m[1] <= 5) return { score: +m[1], valid: true };
   }
-  if (typeof scoreRaw === "number") {
-    return scoreRaw >= 0 ? Math.trunc(scoreRaw) : -1;
-  }
-  return 3;
+  return { score: 0, valid: false };
 }
 
 export function parseChunkResults(
@@ -87,12 +88,14 @@ export function parseChunkResults(
     const mapped = mapCategory(rawCategory, expectedCategories);
     if (!mapped) continue;
 
-    const score = parseScore(record.score);
+    const { score, valid } = parseScore(record.score);
     const criteria_met = String(record.criteria_met ?? "Not specified").trim();
     const evidence = String(record.evidence ?? "No evidence")
       .trim()
       .replace(/\s+/g, " ");
-    const status = normalizeStatus(String(record.status ?? "❌ Fail").trim());
+    const status = !valid
+      ? "❌ Error"
+      : normalizeStatus(String(record.status ?? "❌ Fail").trim());
     const comments = String(record.comments ?? "").trim();
 
     results.push({ category: mapped, score, criteria_met, evidence, status, comments });
