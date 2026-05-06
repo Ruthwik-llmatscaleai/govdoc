@@ -4,6 +4,7 @@ import { getUseCase } from "@/lib/usecases/registry";
 import { sseStream } from "@/lib/sse/stream";
 import { makeLlmRouter } from "@/lib/llm/router";
 import type { StepContext, StepEvent } from "@/lib/usecases/types";
+import { logger } from "@/lib/logger";
 
 function getCookie(req: Request, name: string): string | undefined {
   const cookie = req.headers.get("cookie") ?? "";
@@ -32,7 +33,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       prior: {},
       llm: makeLlmRouter(),
       abortSignal: req.signal,
-      log: (msg, data) => console.warn(JSON.stringify({ runId, msg, data })),
+      log: (msg, data) => logger.warn({ runId, ...(data as Record<string, unknown>) }, msg),
     };
     yield { type: "run-started", runId } satisfies StepEvent;
     yield { type: "progress", stage: "init", pct: 0, message: `Starting ${useCase.label}` } satisfies StepEvent;
@@ -45,7 +46,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         }
       } catch (e) {
         const internal = e instanceof Error ? e.message : String(e);
-        ctx.log("step error", { stage: step.id, error: internal });
+        logger.error({ runId, stage: step.id, error: internal }, "step failed");
         yield { type: "error", stage: step.id, message: "Step failed — check server logs" };
         return;
       }

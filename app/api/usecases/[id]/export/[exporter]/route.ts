@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/mock-session";
 import { getUseCase } from "@/lib/usecases/registry";
+import { logger } from "@/lib/logger";
 
 function getCookie(req: Request, name: string): string | undefined {
   const cookie = req.headers.get("cookie") ?? "";
@@ -41,7 +42,7 @@ export async function POST(
       },
     });
   } catch (e) {
-    console.warn("export failed", { id, exporterId, error: e instanceof Error ? e.message : String(e) });
+    logger.error({ id, exporterId, error: e instanceof Error ? e.message : String(e) }, "export failed");
     return new NextResponse("Export failed", { status: 500 });
   }
 }
