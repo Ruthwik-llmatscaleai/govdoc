@@ -28,4 +28,32 @@ describe("callOpenAi", () => {
     expect(r.text).toBe("hello");
     expect(r.usage).toEqual({ promptTokens: 5, completionTokens: 1 });
   });
+
+  it("passes multimodal content arrays through to the OpenAI client", async () => {
+    process.env.OPENAI_API_KEY = "sk-test";
+    let capturedBody: any;
+    server.use(
+      http.post("https://api.openai.com/v1/chat/completions", async ({ request }) => {
+        capturedBody = await request.json();
+        return HttpResponse.json({ choices: [{ message: { content: "ok" } }] });
+      }),
+    );
+    await callOpenAi({
+      provider: "openai",
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Look at this:" },
+            { type: "image_url", image_url: { url: "data:image/png;base64,AAAA", detail: "high" } },
+          ],
+        },
+      ],
+    });
+    expect(capturedBody.messages[0].content).toEqual([
+      { type: "text", text: "Look at this:" },
+      { type: "image_url", image_url: { url: "data:image/png;base64,AAAA", detail: "high" } },
+    ]);
+  });
 });
