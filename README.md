@@ -1,6 +1,6 @@
 # GovDoc
 
-State of California document intelligence platform — Next.js rewrite of the Caltrans Streamlit evaluators under a unified GovDoc shell.
+State of California document intelligence platform — Next.js under a unified GovDoc shell.
 
 ## Status
 
