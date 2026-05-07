@@ -1,18 +1,14 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, FileCheck2, Building2, MapPin } from "lucide-react";
 import { USE_CASES_BY_TILE } from "@/lib/usecases/registry";
+import type { UseCaseId } from "@/lib/usecases/types";
 import { WorkBreadcrumbs, WorkPageHeader } from "@/components/work/page-shell";
+import { TONE_CLASSES, USE_CASE_FAMILY, USE_CASE_TONE } from "@/components/work/use-case-tone";
 
-const ICONS: Record<string, typeof Building2> = {
+const ICONS: Record<UseCaseId, typeof Building2> = {
   "cmgc-pde": Building2,
   "cucp-reevals": FileCheck2,
   "row-appraisal": MapPin,
-};
-
-const FAMILY: Record<string, string> = {
-  "cmgc-pde": "Procurement & Contract",
-  "cucp-reevals": "Certification & Eligibility",
-  "row-appraisal": "Real Property & Appraisal",
 };
 
 export default function ReviewPicker() {
@@ -40,7 +36,8 @@ export default function ReviewPicker() {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {cases.map((uc) => {
-            const Icon = ICONS[uc.id] ?? CheckCircle2;
+            const Icon = ICONS[uc.id as UseCaseId] ?? CheckCircle2;
+            const t = TONE_CLASSES[USE_CASE_TONE[uc.id as UseCaseId]];
             return (
               <Link
                 key={uc.id}
@@ -48,11 +45,11 @@ export default function ReviewPicker() {
                 className="group flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_10px_30px_-10px_oklch(0.42_0.13_254/0.18)]"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex size-12 items-center justify-center rounded-full bg-[oklch(0.94_0.05_150)] ring-1 ring-[oklch(0.48_0.14_150)]/20">
-                    <Icon className="size-5 text-[oklch(0.42_0.13_150)]" />
+                  <div className={`flex size-12 items-center justify-center rounded-full ring-1 ${t.iconBg} ${t.ring}`}>
+                    <Icon className={`size-5 ${t.iconFg}`} />
                   </div>
                   <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {FAMILY[uc.id] ?? "Review"}
+                    {USE_CASE_FAMILY[uc.id as UseCaseId] ?? "Review"}
                   </span>
                 </div>
                 <div className="space-y-1.5">
