@@ -207,7 +207,53 @@ function IdleLayout({
   );
 }
 
+function ViewPerspectiveToggle({
+  value,
+  onChange,
+}: {
+  value: "district" | "hifl";
+  onChange: (v: "district" | "hifl") => void;
+}) {
+  const opts: { id: "district" | "hifl"; label: string; sub: string }[] = [
+    { id: "district", label: "District Team", sub: "Read-only summary" },
+    { id: "hifl",     label: "HIFL",          sub: "Human-in-the-Feedback Loop overrides" },
+  ];
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        View perspective
+      </span>
+      <div className="inline-flex rounded-full border border-border bg-muted/30 p-1">
+        {opts.map((o) => {
+          const active = value === o.id;
+          return (
+            <button
+              key={o.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(o.id)}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      <span className="text-xs text-muted-foreground">
+        {value === "district" ? opts[0]!.sub : opts[1]!.sub}
+      </span>
+    </div>
+  );
+}
+
 function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
+  const [pdeView, setPdeView] = useState<"district" | "hifl">("district");
+
   if (!current || (current.status === "idle" && Object.keys(current.stages).length === 0)) {
     return <IdleLayout steps={steps} inputs={<CmgcInputsForm />} />;
   }
@@ -230,10 +276,11 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
           result={result}
           reset={reset}
         />
+        <ViewPerspectiveToggle value={pdeView} onChange={setPdeView} />
         <RecommendationCard recommendation={result.recommendation} />
         <ValidationCard validation={result.validation} />
         <MethodRanking multiMethod={result.multi_method} />
-        <ScoreTable ratings={result.evaluation.ratings} />
+        <ScoreTable ratings={result.evaluation.ratings} viewMode={pdeView} />
       </div>
     );
   }
