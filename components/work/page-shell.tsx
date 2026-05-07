@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { ChevronRight } from "lucide-react";
+import { TONE_CLASSES, type UseCaseTone } from "./use-case-tone";
 
 type Crumb = { label: string; href?: string };
 
@@ -37,15 +38,21 @@ type HeaderProps = {
   title: string;
   blurb?: string;
   actions?: React.ReactNode;
+  tone?: UseCaseTone;
 };
 
-export function WorkPageHeader({ icon: Icon, eyebrow, title, blurb, actions }: HeaderProps) {
+export function WorkPageHeader({ icon: Icon, eyebrow, title, blurb, actions, tone }: HeaderProps) {
+  const t = tone ? TONE_CLASSES[tone] : null;
+  const iconClasses = t
+    ? `flex size-11 shrink-0 items-center justify-center rounded-xl ring-1 ${t.iconBg} ${t.ring}`
+    : "flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/[0.08] ring-1 ring-primary/15";
+  const iconFg = t ? t.iconFg : "text-primary";
   return (
     <div className="flex items-start justify-between gap-4 pb-2">
       <div className="flex items-start gap-4">
         {Icon && (
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/[0.08] ring-1 ring-primary/15">
-            <Icon className="size-5 text-primary" />
+          <div className={iconClasses}>
+            <Icon className={`size-5 ${iconFg}`} />
           </div>
         )}
         <div className="space-y-1">

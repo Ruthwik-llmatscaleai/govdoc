@@ -44,6 +44,8 @@ import { ScoreSummary as RowScoreSummary } from "@/components/work/row/score-sum
 import type { CmgcRunResult } from "@/lib/usecases/cmgc-pde/types";
 import type { Level1Data, Level2Data, Level3Data } from "@/lib/usecases/cucp-reevals/types";
 import type { RowRunResult } from "@/lib/usecases/row-appraisal/types";
+import { USE_CASE_TONE } from "@/components/work/use-case-tone";
+import type { UseCaseId } from "@/lib/usecases/types";
 
 type RouteParams = { usecase: string };
 
@@ -112,6 +114,7 @@ export default function UseCasePage({ params }: { params: Promise<RouteParams> }
   const eyebrow = USECASE_EYEBROW[usecase];
   const steps = HOW_IT_WORKS[usecase] ?? [];
 
+  const tone = USE_CASE_TONE[usecase as UseCaseId];
   const headerBlock = (
     <>
       <WorkBreadcrumbs
@@ -126,6 +129,7 @@ export default function UseCasePage({ params }: { params: Promise<RouteParams> }
         eyebrow={eyebrow}
         title={uc.label}
         blurb={uc.blurb}
+        tone={tone}
       />
     </>
   );
