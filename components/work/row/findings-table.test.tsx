@@ -34,4 +34,14 @@ describe("FindingsTable", () => {
     const { container } = render(<FindingsTable results={[r("Bogus", 3)]} />);
     expect(container.querySelectorAll("tbody tr").length).toBe(0);
   });
+
+  it("colors the Met cell green for Pass and red for Fail", () => {
+    const results = [
+      { category: "Title Page", score: 5, status: "✅ Pass", criteria_met: "", evidence: "", comments: "" },
+    ];
+    // @ts-expect-error structural input
+    const { container } = render(<FindingsTable results={results} />);
+    const passCell = container.querySelector("[data-rule-status='Pass']");
+    expect(passCell?.className).toContain("#d4edda");
+  });
 });

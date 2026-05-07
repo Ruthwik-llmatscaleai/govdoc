@@ -1,6 +1,7 @@
 "use client";
 import type { EvaluationResult } from "@/lib/usecases/row-appraisal/types";
 import rubricSchema from "@/lib/usecases/row-appraisal/assets/rubric_schema.json";
+import { STATUS_TONE } from "./status-tone";
 
 type RuleStatus = "Pass" | "Fail" | "N/A";
 
@@ -12,12 +13,6 @@ type Finding = {
   status: RuleStatus;
   evidence: string;
   comments: string;
-};
-
-const STATUS_CLASS: Record<RuleStatus, string> = {
-  Pass: "bg-green-100 text-green-800",
-  Fail: "bg-red-100 text-red-800",
-  "N/A": "bg-gray-100 text-gray-700",
 };
 
 function buildFindings(results: EvaluationResult[]): Finding[] {
@@ -101,7 +96,10 @@ export function FindingsTable({ results }: { results: EvaluationResult[] }) {
               <td className="p-2 max-w-md">{f.rule}</td>
               <td className="p-2 text-center font-mono">{f.ruleScore}</td>
               <td className="p-2">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${STATUS_CLASS[f.status]}`}>
+                <span
+                  data-rule-status={f.status}
+                  className={`px-2 py-1 rounded text-xs font-medium ${STATUS_TONE[f.status].cell}`}
+                >
                   {f.status}
                 </span>
               </td>
