@@ -59,4 +59,12 @@ describe("ScoreTable", () => {
     const a1Row = screen.getByText("A1").closest("tr")!;
     expect(a1Row.querySelector("span.font-medium")?.textContent).toBe("C");
   });
+
+  it("district mode shows overridden effective rating as plain text", () => {
+    useOverridesStore.getState().push({ category: "A1", oldValue: "B", newValue: "C" });
+    render(<ScoreTable ratings={mockRatings()} viewMode="district" />);
+    const a1Row = screen.getByText("A1").closest("tr")!;
+    expect(a1Row.querySelector("span.font-medium")?.textContent).toBe("C");
+    expect(screen.queryByRole("combobox")).toBeNull();
+  });
 });

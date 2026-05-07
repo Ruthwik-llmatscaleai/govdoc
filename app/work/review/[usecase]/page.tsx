@@ -227,6 +227,17 @@ function ViewPerspectiveToggle({
         role="radiogroup"
         aria-label="View perspective"
         className="inline-flex rounded-full border border-border bg-muted/30 p-1"
+        onKeyDown={(e) => {
+          const dir =
+            e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 :
+            e.key === "ArrowLeft"  || e.key === "ArrowUp"   ? -1 :
+            0;
+          if (!dir) return;
+          e.preventDefault();
+          const idx = opts.findIndex((o) => o.id === value);
+          const next = opts[(idx + dir + opts.length) % opts.length];
+          if (next) onChange(next.id);
+        }}
       >
         {opts.map((o) => {
           const active = value === o.id;
@@ -236,6 +247,7 @@ function ViewPerspectiveToggle({
               type="button"
               role="radio"
               aria-checked={active}
+              tabIndex={active ? 0 : -1}
               onClick={() => onChange(o.id)}
               className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                 active
@@ -280,10 +292,10 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
           result={result}
           reset={reset}
         />
-        <ViewPerspectiveToggle value={pdeView} onChange={setPdeView} />
         <RecommendationCard recommendation={result.recommendation} />
         <ValidationCard validation={result.validation} />
         <MethodRanking multiMethod={result.multi_method} />
+        <ViewPerspectiveToggle value={pdeView} onChange={setPdeView} />
         <ScoreTable ratings={result.evaluation.ratings} viewMode={pdeView} />
       </div>
     );
