@@ -34,8 +34,8 @@ describe("ResultsTable", () => {
     }];
     render(<ResultsTable results={results} />);
     const cell = screen.getByText("N/A");
-    expect(cell.className).toContain("bg-gray-100");
-    expect(cell.className).toContain("text-gray-700");
+    expect(cell.className).toContain("bg-[#e2e3e5]");
+    expect(cell.className).toContain("text-[#383d41]");
   });
 
   it("score 5 has green class", () => {
@@ -49,8 +49,8 @@ describe("ResultsTable", () => {
     }];
     render(<ResultsTable results={results} />);
     const cell = screen.getByText("5");
-    expect(cell.className).toContain("bg-green-100");
-    expect(cell.className).toContain("text-green-800");
+    expect(cell.className).toContain("bg-[#d4edda]");
+    expect(cell.className).toContain("text-[#155724]");
   });
 
   it("score 1 has red class", () => {
@@ -64,8 +64,8 @@ describe("ResultsTable", () => {
     }];
     render(<ResultsTable results={results} />);
     const cell = screen.getByText("1");
-    expect(cell.className).toContain("bg-red-100");
-    expect(cell.className).toContain("text-red-800");
+    expect(cell.className).toContain("bg-[#f8d7da]");
+    expect(cell.className).toContain("text-[#721c24]");
   });
 
   it("score 3 has yellow class", () => {
@@ -79,7 +79,15 @@ describe("ResultsTable", () => {
     }];
     render(<ResultsTable results={results} />);
     const cell = screen.getByText("3");
-    expect(cell.className).toContain("bg-yellow-100");
-    expect(cell.className).toContain("text-yellow-800");
+    expect(cell.className).toContain("bg-[#fff3cd]");
+    expect(cell.className).toContain("text-[#856404]");
+  });
+
+  it("applies caltrans Fail color to score cell when score is 1", () => {
+    const results = [{ category: "Title Page", score: 1, status: "❌ Fail", criteria_met: "", evidence: "", comments: "" }];
+    // @ts-expect-error structural input fine for test
+    const { container } = render(<ResultsTable results={results} />);
+    const cell = container.querySelector("[data-row-status='Fail']");
+    expect(cell?.className).toContain("#f8d7da");
   });
 });
