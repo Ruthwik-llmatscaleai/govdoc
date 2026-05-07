@@ -35,12 +35,8 @@ import { CriteriaTable } from "@/components/work/cucp/criteria-table";
 import { FactsList } from "@/components/work/cucp/facts-list";
 import { ClassificationsList } from "@/components/work/cucp/classifications-list";
 import { ReportView } from "@/components/work/cucp/report-view";
-import { ActionItems as RowActionItems } from "@/components/work/row/action-items";
-import { ExecSummary as RowExecSummary } from "@/components/work/row/exec-summary";
-import { FindingsTable as RowFindingsTable } from "@/components/work/row/findings-table";
 import { InputsForm as RowInputsForm } from "@/components/work/row/inputs-form";
-import { ResultsTable as RowResultsTable } from "@/components/work/row/results-table";
-import { ScoreSummary as RowScoreSummary } from "@/components/work/row/score-summary";
+import { RowResultTabs } from "@/components/work/row/result-tabs";
 import type { CmgcRunResult } from "@/lib/usecases/cmgc-pde/types";
 import type { Level1Data, Level2Data, Level3Data } from "@/lib/usecases/cucp-reevals/types";
 import type { RowRunResult } from "@/lib/usecases/row-appraisal/types";
@@ -342,19 +338,7 @@ function RowView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
           result={rowResult}
           reset={reset}
         />
-        <RowScoreSummary results={rowResult.evaluation_results} />
-        <WorkCard title="Action items" description="Categories below score 5, prioritised HIGH / MEDIUM / LOW.">
-          <RowActionItems results={rowResult.evaluation_results} />
-        </WorkCard>
-        <WorkCard title="Executive summary" description="Per-category status roll-up.">
-          <RowExecSummary results={rowResult.evaluation_results} />
-        </WorkCard>
-        <WorkCard title="Detailed results" description="Full rubric evaluation per category.">
-          <RowResultsTable results={rowResult.evaluation_results} />
-        </WorkCard>
-        <WorkCard title="Detailed findings" description="Each rubric rule scored 1 (met) or 0 (not met).">
-          <RowFindingsTable results={rowResult.evaluation_results} />
-        </WorkCard>
+        <RowResultTabs results={rowResult.evaluation_results} />
       </div>
     );
   }
