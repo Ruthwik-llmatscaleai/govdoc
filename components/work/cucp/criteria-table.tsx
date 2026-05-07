@@ -162,6 +162,7 @@ export function CriteriaTable({ criteria, runId, onSubmitted }: Props) {
       <div className="flex flex-wrap items-center justify-end gap-2">
         <SecondaryButton
           type="button"
+          disabled={submitting}
           onClick={() => postOverrides([])}
         >
           <Check className="size-4" /> Approve all (no changes)

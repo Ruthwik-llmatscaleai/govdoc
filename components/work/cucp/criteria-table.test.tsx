@@ -101,4 +101,16 @@ describe("CriteriaTable", () => {
     expect(screen.getByRole("button", { name: /submitting/i })).toBeDisabled();
     resolveFetch({ ok: true });
   });
+
+  it("disables Approve all while a submit is in flight", async () => {
+    let resolveFetch!: (v: any) => void;
+    vi.stubGlobal("fetch", () => new Promise((r) => { resolveFetch = r; }));
+    const criteria = [
+      { s_no: 1, category: "X", qualification: "y", pass_fail: "Pass", request_info: "No", reasoning: "..." },
+    ] as any;
+    render(<CriteriaTable criteria={criteria} runId="run-1" />);
+    await userEvent.click(screen.getByRole("button", { name: /submit overrides/i }));
+    expect(screen.getByRole("button", { name: /approve all/i })).toBeDisabled();
+    resolveFetch({ ok: true });
+  });
 });
