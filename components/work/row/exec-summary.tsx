@@ -1,21 +1,6 @@
 "use client";
 import type { EvaluationResult } from "@/lib/usecases/row-appraisal/types";
-
-type Status = "Pass" | "Warning" | "Fail" | "N/A";
-
-const STATUS_CLASS: Record<Status, string> = {
-  Pass: "bg-green-100 text-green-800",
-  Warning: "bg-yellow-100 text-yellow-800",
-  Fail: "bg-red-100 text-red-800",
-  "N/A": "bg-gray-100 text-gray-700",
-};
-
-function statusOf(score: number): Status {
-  if (score === -1) return "N/A";
-  if (score >= 4) return "Pass";
-  if (score === 3) return "Warning";
-  return "Fail";
-}
+import { STATUS_TONE, statusFromScore } from "./status-tone";
 
 export function ExecSummary({ results }: { results: EvaluationResult[] }) {
   return (
@@ -31,15 +16,14 @@ export function ExecSummary({ results }: { results: EvaluationResult[] }) {
         </thead>
         <tbody>
           {results.map((r) => {
-            const status = statusOf(r.score);
+            const status = statusFromScore(r.score);
+            const tone = STATUS_TONE[status];
             return (
-              <tr key={r.category} className="border-b align-top">
+              <tr key={r.category} className={`border-b align-top ${tone.rowBorder}`}>
                 <td className="p-2 font-medium">{r.category}</td>
                 <td className="p-2">{r.score === -1 ? "N/A" : r.score}</td>
-                <td className="p-2">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${STATUS_CLASS[status]}`}>
-                    {status}
-                  </span>
+                <td className={`p-2 font-medium ${tone.cell}`} data-status={status}>
+                  {status}
                 </td>
                 <td className="p-2 max-w-md">{r.comments}</td>
               </tr>
