@@ -7,6 +7,9 @@ import type { Rating } from "@/lib/usecases/cmgc-pde/rubric";
 
 type Props = { ratings: CmgcRating[] };
 
+const SELECT_CLASS =
+  "h-9 rounded-lg border border-input bg-muted/30 px-2 text-sm transition-colors focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15";
+
 export function ScoreTable({ ratings }: Props) {
   const history = useOverridesStore((s) => s.history);
   const push = useOverridesStore((s) => s.push);
@@ -57,6 +60,7 @@ export function ScoreTable({ ratings }: Props) {
                   <td className="p-2">{r.selected_rating}</td>
                   <td className="p-2">
                     <select
+                      className={SELECT_CLASS}
                       aria-label={`Override rating for ${r.question_id}`}
                       value={effective}
                       onChange={(e) => onChange(r.question_id, effective, e.target.value as Rating)}
