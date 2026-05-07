@@ -6,14 +6,17 @@ import type { EvaluationResult } from "@/lib/usecases/row-appraisal/types";
 
 const CYCLING_SCORES = [-1, 5, 1, 3];
 
-const MOCK_RESULTS: EvaluationResult[] = VALID_CATEGORIES.map((category, i) => ({
-  category,
-  score: CYCLING_SCORES[i % CYCLING_SCORES.length],
-  criteria_met: "test criteria",
-  evidence: "test evidence",
-  status: CYCLING_SCORES[i % CYCLING_SCORES.length] === -1 ? "⚪ N/A" : CYCLING_SCORES[i % CYCLING_SCORES.length] >= 4 ? "✅ Pass" : CYCLING_SCORES[i % CYCLING_SCORES.length] === 3 ? "⚠️ Warning" : "❌ Fail",
-  comments: "test comment",
-}));
+const MOCK_RESULTS: EvaluationResult[] = VALID_CATEGORIES.map((category, i) => {
+  const score = CYCLING_SCORES[i % CYCLING_SCORES.length]!;
+  return {
+    category,
+    score,
+    criteria_met: "test criteria",
+    evidence: "test evidence",
+    status: score === -1 ? "⚪ N/A" : score >= 4 ? "✅ Pass" : score === 3 ? "⚠️ Warning" : "❌ Fail",
+    comments: "test comment",
+  };
+});
 
 describe("ResultsTable", () => {
   it("renders all 34 category names", () => {

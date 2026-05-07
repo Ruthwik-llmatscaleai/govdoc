@@ -98,7 +98,6 @@ describe("applyVisionFallback", () => {
       temperature: 0,
       maxTokens: 1500,
     }));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const args = (call.mock.calls as any)[0][0] as import("@/lib/llm/types").LlmCall;
     const content = args.messages[0]!.content;
     expect(Array.isArray(content)).toBe(true);

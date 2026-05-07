@@ -29,8 +29,8 @@ describe("fillMissingCategories", () => {
       expect(entry.evidence).toBe("Category not evaluated by LLM");
       expect(entry.comments).toBe("Missing from chunked evaluation");
     }
-    expect(added[0].category).toBe(allCats[32]);
-    expect(added[1].category).toBe(allCats[33]);
+    expect(added[0]!.category).toBe(allCats[32]);
+    expect(added[1]!.category).toBe(allCats[33]);
   });
 
   it("returns input unchanged when all categories are present", () => {

@@ -65,13 +65,13 @@ describe("row-appraisal consolidateStep", () => {
     expect(results).toHaveLength(34);
 
     // First 3 categories must match VALID_CATEGORIES order
-    expect(results[0].category).toBe("Title Page");
-    expect(results[1].category).toBe("Certificate of Appraiser");
-    expect(results[2].category).toBe("Senior Review Certificate");
+    expect(results[0]!.category).toBe("Title Page");
+    expect(results[1]!.category).toBe("Certificate of Appraiser");
+    expect(results[2]!.category).toBe("Senior Review Certificate");
 
     // All results should be in VALID_CATEGORIES order
     for (let i = 0; i < results.length; i++) {
-      expect(results[i].category).toBe(VALID_CATEGORIES[i]);
+      expect(results[i]!.category).toBe(VALID_CATEGORIES[i]);
     }
   });
 

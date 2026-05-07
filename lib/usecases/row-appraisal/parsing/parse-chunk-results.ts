@@ -51,7 +51,7 @@ function parseScore(scoreRaw: unknown): { score: number; valid: boolean } {
     const trimmed = scoreRaw.trim();
     if (/^N\/A$/i.test(trimmed)) return { score: -1, valid: true };
     const m = trimmed.match(/^(-?\d+)$/);
-    if (m && +m[1] >= 1 && +m[1] <= 5) return { score: +m[1], valid: true };
+    if (m && +m[1]! >= 1 && +m[1]! <= 5) return { score: +m[1]!, valid: true };
   }
   return { score: 0, valid: false };
 }

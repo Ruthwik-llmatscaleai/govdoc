@@ -1,4 +1,4 @@
-import type { PipelineStep, StepEvent } from "@/lib/usecases/types";
+import type { PipelineStep } from "@/lib/usecases/types";
 import type { CmgcRating, ValidationResult } from "../types";
 import { runValidationAnalysis } from "../scoring/validation";
 

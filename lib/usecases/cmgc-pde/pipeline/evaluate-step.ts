@@ -1,4 +1,4 @@
-import type { PipelineStep, StepEvent } from "@/lib/usecases/types";
+import type { PipelineStep } from "@/lib/usecases/types";
 import type { LlmProvider } from "@/lib/llm/types";
 import type { CmgcEvaluation } from "../types";
 import { buildSystemPrompt, buildUserMessage } from "../prompt/system-prompt";

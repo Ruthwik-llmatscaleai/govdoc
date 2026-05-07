@@ -51,7 +51,7 @@ describe("level3Step", () => {
   it("treats missing overrides as empty array", async () => {
     const runId = "test-run-2";
     const ctx = makeCtx(runId);
-    const done = (async () => { for await (const _ of level3Step.run(new FormData(), ctx)) {} })();
+    const done = (async () => { for await (const _ev of level3Step.run(new FormData(), ctx)) { void _ev; } })();
     await new Promise((r) => setTimeout(r, 50));
     resolveHumanResponse(runId, {});
     await done;

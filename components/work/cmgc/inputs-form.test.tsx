@@ -30,7 +30,7 @@ describe("InputsForm", () => {
 
     await new Promise((r) => setTimeout(r, 0));
     expect(startSpy).toHaveBeenCalledOnce();
-    const [useCaseId, fd] = startSpy.mock.calls[0]!;
+    const [useCaseId, fd] = startSpy.mock.calls[0]! as unknown as [string, FormData];
     expect(useCaseId).toBe("cmgc-pde");
     expect(fd).toBeInstanceOf(FormData);
   });

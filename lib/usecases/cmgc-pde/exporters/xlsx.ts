@@ -30,8 +30,8 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
 
   let rowIdx = 11;
   for (const [sec, avg] of Object.entries(result.recommendation.section_scores)) {
-    const weight = SECTION_WEIGHTS[sec] ?? 0;
-    const weighted = result.recommendation.weighted_scores[sec] ?? 0;
+    const weight = SECTION_WEIGHTS[sec as keyof typeof SECTION_WEIGHTS] ?? 0;
+    const weighted = result.recommendation.weighted_scores[sec as keyof typeof result.recommendation.weighted_scores] ?? 0;
     dashboard.getRow(rowIdx).values = [sec, (avg as number).toFixed(3), weight, (weighted as number).toFixed(4)];
     rowIdx++;
   }
@@ -59,8 +59,8 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   scoring.getRow(2).font = { bold: true };
   let scoreRow = 3;
   for (const [sec, avg] of Object.entries(result.recommendation.section_scores)) {
-    const weight = SECTION_WEIGHTS[sec] ?? 0;
-    const weighted = result.recommendation.weighted_scores[sec] ?? 0;
+    const weight = SECTION_WEIGHTS[sec as keyof typeof SECTION_WEIGHTS] ?? 0;
+    const weighted = result.recommendation.weighted_scores[sec as keyof typeof result.recommendation.weighted_scores] ?? 0;
     scoring.getRow(scoreRow).values = [sec, (avg as number).toFixed(3), weight, (weighted as number).toFixed(4)];
     scoreRow++;
   }

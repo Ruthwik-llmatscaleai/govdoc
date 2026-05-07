@@ -1,4 +1,4 @@
-import type { PipelineStep, StepEvent } from "@/lib/usecases/types";
+import type { PipelineStep } from "@/lib/usecases/types";
 import type { CmgcRating } from "../types";
 import { computeDeliveryRecommendation } from "../scoring/compute-recommendation";
 import { scoreAllMethods } from "../scoring/score-all-methods";

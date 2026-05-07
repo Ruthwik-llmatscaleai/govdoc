@@ -7,7 +7,7 @@ describe("buildEvaluationXlsx", () => {
   it("produces a workbook with 5 named sheets in order", async () => {
     const buf = await buildEvaluationXlsx(mockRunResult(), "Test Project");
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
+    await wb.xlsx.load(buf as any);
     expect(wb.worksheets.map((w) => w.name)).toEqual(
       ["Dashboard", "Rubric", "Scoring", "Multi-Method", "Validation"],
     );
@@ -16,7 +16,7 @@ describe("buildEvaluationXlsx", () => {
   it("Dashboard contains the recommended method label", async () => {
     const buf = await buildEvaluationXlsx(mockRunResult(), "Test Project");
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
+    await wb.xlsx.load(buf as any);
     const dashboard = wb.getWorksheet("Dashboard")!;
     let found = false;
     dashboard.eachRow((row) => {
@@ -30,7 +30,7 @@ describe("buildEvaluationXlsx", () => {
   it("Rubric sheet has 26 rows (header + 25 questions)", async () => {
     const buf = await buildEvaluationXlsx(mockRunResult(), "Test Project");
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
+    await wb.xlsx.load(buf as any);
     const rubric = wb.getWorksheet("Rubric")!;
     let count = 0;
     rubric.eachRow((row) => { if (row.getCell(1).value) count++; });
@@ -40,7 +40,7 @@ describe("buildEvaluationXlsx", () => {
   it("Multi-Method sheet has 7 rows (header + 6 methods)", async () => {
     const buf = await buildEvaluationXlsx(mockRunResult(), "Test Project");
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
+    await wb.xlsx.load(buf as any);
     const mm = wb.getWorksheet("Multi-Method")!;
     let count = 0;
     mm.eachRow((row) => { if (row.getCell(1).value !== null && row.getCell(1).value !== undefined) count++; });
@@ -50,7 +50,7 @@ describe("buildEvaluationXlsx", () => {
   it("Validation sheet shows skip message when validation is null", async () => {
     const buf = await buildEvaluationXlsx(mockRunResult(), "Test Project");
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
+    await wb.xlsx.load(buf as any);
     const val = wb.getWorksheet("Validation")!;
     expect(String(val.getCell("A1").value)).toContain("Validation skipped");
   });
@@ -58,7 +58,7 @@ describe("buildEvaluationXlsx", () => {
   it("Dashboard section weights match the canonical rubric", async () => {
     const buf = await buildEvaluationXlsx(mockRunResult(), "Test");
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
+    await wb.xlsx.load(buf as any);
     const dashboard = wb.getWorksheet("Dashboard")!;
     // Section rows are written as [sec, avg, weight, weighted] where sec is "A", "B", etc.
     let foundWeights: string[] = [];
@@ -90,7 +90,7 @@ describe("xlsxExporter", () => {
     result.evaluation.project_name = "I-880 Widening";
     const out = await xlsxExporter.build(result);
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(Buffer.from(out));
+    await wb.xlsx.load(Buffer.from(out) as any);
     const dashboard = wb.getWorksheet("Dashboard")!;
     expect(String(dashboard.getCell("A1").value)).toContain("I-880 Widening");
   });

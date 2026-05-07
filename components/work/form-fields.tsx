@@ -126,7 +126,7 @@ export function FilePicker({ id, name, accept, multiple, required, onChange }: F
           {files.length === 0
             ? `Choose ${multiple ? "files" : "a file"}…`
             : files.length === 1
-              ? files[0].name
+              ? files[0]!.name
               : `${files.length} files selected`}
         </span>
         {accept && (
@@ -185,17 +185,20 @@ export function PrimaryButton({
 export function SecondaryButton({
   children,
   type = "button",
+  disabled,
   onClick,
 }: {
   children: ReactNode;
   type?: "submit" | "button";
+  disabled?: boolean;
   onClick?: () => void;
 }) {
   return (
     <button
       type={type}
+      disabled={disabled}
       onClick={onClick}
-      className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+      className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
     >
       {children}
     </button>

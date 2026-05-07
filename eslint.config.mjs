@@ -2,7 +2,8 @@ import next from "eslint-config-next/core-web-vitals";
 import prettier from "eslint-config-prettier";
 import tseslint from "typescript-eslint";
 
-export default [
+const config = [
+  { ignores: [".next/**", ".worktrees/**", "node_modules/**", "dist/**"] },
   ...next,
   prettier,
   {
@@ -15,3 +16,5 @@ export default [
     },
   },
 ];
+
+export default config;

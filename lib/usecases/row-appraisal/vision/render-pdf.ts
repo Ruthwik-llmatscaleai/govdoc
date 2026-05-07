@@ -1,6 +1,5 @@
 import { createCanvas } from "@napi-rs/canvas";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error – no type declarations for the worker bundle
 import * as pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.mjs";
 
@@ -32,7 +31,6 @@ export async function renderPdfPagesAsImages(
       const ctx = canvas.getContext("2d");
       // pdfjs v5 types expect HTMLCanvasElement; @napi-rs/canvas is compatible at runtime.
       // canvasContext-only call: pdfjs derives canvas from ctx.canvas internally.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await page.render({ canvasContext: ctx, viewport } as any).promise;
       const pngBuffer = canvas.toBuffer("image/png");
       urls.push(`data:image/png;base64,${pngBuffer.toString("base64")}`);

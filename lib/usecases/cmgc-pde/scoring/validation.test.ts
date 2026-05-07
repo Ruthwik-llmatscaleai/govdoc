@@ -46,7 +46,6 @@ describe("runValidationAnalysis", () => {
     const ai = mockRatings();
     const lowConfRating = ai.find((r) => r.question_id === "A1")!;
     lowConfRating.confidence = 0.3;  // low
-    const user: Record<string, "A"|"B"|"C"> = { A1: "C" };  // diff=|2-3|=1... wait, B=2, C=3, diff=1
     // Need diff=2: AI=A(1), user=C(3) OR AI=C(3), user=A(1)
     const ai2 = mockRatings({ A2: "A" });  // AI rates A2 as A (raw 1), confidence default 0.85
     ai2.find((r) => r.question_id === "A2")!.confidence = 0.3;  // make it low

@@ -33,7 +33,7 @@ beforeEach(() => {
       // Extract category names from lines like "- Category Name"
       const categories: string[] = [];
       for (const match of userContent.matchAll(/^- (.+)$/gm)) {
-        categories.push(match[1].trim());
+        categories.push(match[1]!.trim());
       }
 
       // Build one EvaluationResult per category

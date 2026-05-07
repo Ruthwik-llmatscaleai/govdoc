@@ -26,33 +26,33 @@ describe("buildEvaluationXlsx (ROW)", () => {
   it("produces exactly 1 sheet named 'ROW Evaluation' with 35 rows (header + 34 data)", async () => {
     const buf = await buildEvaluationXlsx(makeResult());
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
+    await wb.xlsx.load(buf as any);
     expect(wb.worksheets).toHaveLength(1);
-    expect(wb.worksheets[0].name).toBe("ROW Evaluation");
-    expect(wb.worksheets[0].rowCount).toBe(35);
+    expect(wb.worksheets[0]!.name).toBe("ROW Evaluation");
+    expect(wb.worksheets[0]!.rowCount).toBe(35);
   });
 
   it("B2 is a number when score is not -1", async () => {
     const buf = await buildEvaluationXlsx(makeResult());
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
-    const cell = wb.worksheets[0].getRow(2).getCell(2).value;
+    await wb.xlsx.load(buf as any);
+    const cell = wb.worksheets[0]!.getRow(2).getCell(2).value;
     expect(typeof cell === "number" || cell === "N/A").toBe(true);
   });
 
   it("header row is bold", async () => {
     const buf = await buildEvaluationXlsx(makeResult());
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
-    expect(wb.worksheets[0].getRow(1).font?.bold).toBe(true);
+    await wb.xlsx.load(buf as any);
+    expect(wb.worksheets[0]!.getRow(1).font?.bold).toBe(true);
   });
 
   it("score -1 renders as 'N/A'", async () => {
     const result = makeResult([{ category: "Special", score: -1, criteria_met: "x", evidence: "e", status: "⚪ N/A", comments: "c" }]);
     const buf = await buildEvaluationXlsx(result);
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf);
-    const cell = wb.worksheets[0].getRow(2).getCell(2).value;
+    await wb.xlsx.load(buf as any);
+    const cell = wb.worksheets[0]!.getRow(2).getCell(2).value;
     expect(cell).toBe("N/A");
   });
 

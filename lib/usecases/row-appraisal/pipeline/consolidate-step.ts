@@ -43,7 +43,7 @@ export const consolidateStep: PipelineStep<unknown> = {
     const consistent = enforceConsistency(filled);
 
     // Sort by VALID_CATEGORIES order
-    const categoryIndex = new Map(VALID_CATEGORIES.map((cat, i) => [cat, i]));
+    const categoryIndex = new Map<string, number>(VALID_CATEGORIES.map((cat, i) => [cat, i]));
     const sorted = [...consistent].sort(
       (a, b) =>
         (categoryIndex.get(a.category) ?? 9999) -

@@ -25,16 +25,16 @@ describe("parseChunkResults", () => {
     const json = JSON.stringify(SAMPLE_ITEMS);
     const results = parseChunkResults(json, ["Title Page", "Reconciliation"]);
     expect(results).toHaveLength(2);
-    expect(results[0].category).toBe("Title Page");
-    expect(results[0].score).toBe(4);
-    expect(results[1].category).toBe("Reconciliation");
+    expect(results[0]!.category).toBe("Title Page");
+    expect(results[0]!.score).toBe(4);
+    expect(results[1]!.category).toBe("Reconciliation");
   });
 
   it("strips ```json ... ``` fences before parsing", () => {
     const json = `\`\`\`json\n${JSON.stringify(SAMPLE_ITEMS)}\n\`\`\``;
     const results = parseChunkResults(json, ["Title Page", "Reconciliation"]);
     expect(results).toHaveLength(2);
-    expect(results[0].category).toBe("Title Page");
+    expect(results[0]!.category).toBe("Title Page");
   });
 
   it('maps "Reconciliation" to "Reconciliation", NOT "HABU Reconciliation" (longest-substring tiebreak)', () => {
@@ -52,7 +52,7 @@ describe("parseChunkResults", () => {
     ];
     const results = parseChunkResults(JSON.stringify(item), ["Reconciliation"]);
     expect(results).toHaveLength(1);
-    expect(results[0].category).toBe("Reconciliation");
+    expect(results[0]!.category).toBe("Reconciliation");
   });
 
   it('stores score "N/A" as -1', () => {
@@ -68,7 +68,7 @@ describe("parseChunkResults", () => {
     ];
     const results = parseChunkResults(JSON.stringify(item), ["Title Page"]);
     expect(results).toHaveLength(1);
-    expect(results[0].score).toBe(-1);
+    expect(results[0]!.score).toBe(-1);
   });
 
   it("stores numeric score 5 as 5", () => {
@@ -84,7 +84,7 @@ describe("parseChunkResults", () => {
     ];
     const results = parseChunkResults(JSON.stringify(item), ["Title Page"]);
     expect(results).toHaveLength(1);
-    expect(results[0].score).toBe(5);
+    expect(results[0]!.score).toBe(5);
   });
 
   it("silently drops items with unknown categories", () => {
@@ -108,7 +108,7 @@ describe("parseChunkResults", () => {
     ];
     const results = parseChunkResults(JSON.stringify(items), ["Title Page"]);
     expect(results).toHaveLength(1);
-    expect(results[0].category).toBe("Title Page");
+    expect(results[0]!.category).toBe("Title Page");
   });
 
   it("returns [] for malformed JSON", () => {
@@ -179,8 +179,8 @@ describe("parseChunkResults – invalid score handling", () => {
     ];
     const results = parseChunkResults(JSON.stringify(item), ["Title Page"]);
     expect(results).toHaveLength(1);
-    expect(results[0].score).toBe(0);
-    expect(results[0].status).toBe("❌ Error");
+    expect(results[0]!.score).toBe(0);
+    expect(results[0]!.status).toBe("❌ Error");
   });
 
   it('maps category "Habu Reconciliation" (different casing) to "HABU Reconciliation"', () => {
@@ -196,6 +196,6 @@ describe("parseChunkResults – invalid score handling", () => {
     ];
     const results = parseChunkResults(JSON.stringify(item), ["HABU Reconciliation"]);
     expect(results).toHaveLength(1);
-    expect(results[0].category).toBe("HABU Reconciliation");
+    expect(results[0]!.category).toBe("HABU Reconciliation");
   });
 });

@@ -1,9 +1,6 @@
 import { describe, it, expectTypeOf } from "vitest";
 import type {
   CmgcRating,
-  CmgcEvaluation,
-  OverrideStatus,
-  KeyDriver,
   RecommendationResult,
   MethodScore,
   MultiMethodResult,
