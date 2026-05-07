@@ -51,12 +51,12 @@ describe("ScoreTable", () => {
   });
 
   it("district mode hides toolbar and renders effective rating as plain text", () => {
-    render(<ScoreTable ratings={mockRatings({ A1: "B" })} viewMode="district" />);
+    render(<ScoreTable ratings={mockRatings({ A1: "C" })} viewMode="district" />);
     expect(screen.queryByRole("button", { name: /undo/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /clear all overrides/i })).toBeNull();
     expect(screen.queryByRole("combobox")).toBeNull();
-    // A1 AI rating is "B" — effective should appear as plain text
+    // A1 AI rating is "C" — effective should appear as plain text
     const a1Row = screen.getByText("A1").closest("tr")!;
-    expect(a1Row.querySelector("span.font-medium")?.textContent).toBe("B");
+    expect(a1Row.querySelector("span.font-medium")?.textContent).toBe("C");
   });
 });

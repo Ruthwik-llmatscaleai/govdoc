@@ -223,7 +223,11 @@ function ViewPerspectiveToggle({
       <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         View perspective
       </span>
-      <div className="inline-flex rounded-full border border-border bg-muted/30 p-1">
+      <div
+        role="radiogroup"
+        aria-label="View perspective"
+        className="inline-flex rounded-full border border-border bg-muted/30 p-1"
+      >
         {opts.map((o) => {
           const active = value === o.id;
           return (
@@ -233,7 +237,7 @@ function ViewPerspectiveToggle({
               role="radio"
               aria-checked={active}
               onClick={() => onChange(o.id)}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                 active
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground"
@@ -245,7 +249,7 @@ function ViewPerspectiveToggle({
         })}
       </div>
       <span className="text-xs text-muted-foreground">
-        {value === "district" ? opts[0]!.sub : opts[1]!.sub}
+        {opts.find((o) => o.id === value)?.sub}
       </span>
     </div>
   );
