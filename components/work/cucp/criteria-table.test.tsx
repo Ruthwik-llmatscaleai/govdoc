@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { CriteriaTable } from "./criteria-table";
 import type { Criterion } from "@/lib/usecases/cucp-reevals/types";
@@ -66,5 +67,38 @@ describe("CriteriaTable", () => {
     render(<CriteriaTable criteria={seven()} runId="r-bad" />);
     fireEvent.click(screen.getByRole("button", { name: /submit overrides/i }));
     await waitFor(() => expect(screen.getByText(/submit failed \(404\)/i)).toBeDefined());
+  });
+
+  it("renders an Approve all button that submits with empty overrides", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const criteria = [
+      { s_no: 1, category: "X", qualification: "y", pass_fail: "Pass", request_info: "No", reasoning: "..." },
+    ] as any;
+    const onSubmitted = vi.fn();
+    render(<CriteriaTable criteria={criteria} runId="run-123" onSubmitted={onSubmitted} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /approve all/i }));
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "/api/usecases/cucp-reevals/run/run-123/respond",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ overrides: [] }),
+      }),
+    );
+    expect(onSubmitted).toHaveBeenCalled();
+  });
+
+  it("disables submit while a request is in flight", async () => {
+    let resolveFetch!: (v: any) => void;
+    vi.stubGlobal("fetch", () => new Promise((r) => { resolveFetch = r; }));
+    const criteria = [
+      { s_no: 1, category: "X", qualification: "y", pass_fail: "Pass", request_info: "No", reasoning: "..." },
+    ] as any;
+    render(<CriteriaTable criteria={criteria} runId="run-1" />);
+    await userEvent.click(screen.getByRole("button", { name: /submit overrides/i }));
+    expect(screen.getByRole("button", { name: /submitting/i })).toBeDisabled();
+    resolveFetch({ ok: true });
   });
 });
