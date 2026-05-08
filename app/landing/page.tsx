@@ -1,6 +1,16 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { Search, FileText, CheckCircle2, Inbox } from "lucide-react";
+import {
+  Search,
+  FilePen,
+  CheckCircle2,
+  ScanText,
+  Tag,
+  AlertTriangle,
+  ClipboardList,
+  ShieldCheck,
+  BookOpenCheck,
+} from "lucide-react";
 import { verifySession } from "@/lib/auth/mock-session";
 import { TopBar } from "@/components/shell/top-bar";
 import { Tile } from "@/components/landing/tile";
@@ -31,38 +41,82 @@ export default async function LandingPage() {
           </p>
         </header>
 
-        <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <h2 className="mt-2 mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          What GovDoc does
+        </h2>
+
+        <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
           <Tile
             icon={Search}
             tone="blue"
             title="Search & Ask"
             blurb="Find information across all documents."
             href="/work/search"
-            enabled={false}
+            enabled
           />
           <Tile
-            icon={FileText}
+            icon={FilePen}
             tone="indigo"
-            title="Draft a Document"
+            title="Draft & Generate"
             blurb="Generate documents from templates and prior records."
             href="/work/draft"
-            enabled={false}
+            enabled
           />
           <Tile
             icon={CheckCircle2}
             tone="green"
-            title="Review Documents"
+            title="Validate & Comply"
             blurb="Validate, redline, and approve work."
             href="/work/review"
             enabled
           />
           <Tile
-            icon={Inbox}
+            icon={ScanText}
+            tone="blue"
+            title="OCR & Extract"
+            blurb="Pull text and structure from scanned PDFs."
+            href="/work/ocr"
+            enabled
+          />
+          <Tile
+            icon={Tag}
+            tone="indigo"
+            title="Classify & Tag"
+            blurb="Auto-label documents by type and topic."
+            href="/work/classify"
+            enabled
+          />
+          <Tile
+            icon={AlertTriangle}
             tone="rose"
-            title="My Inbox"
-            blurb="3 items needing your approval."
-            href="/work/inbox"
-            enabled={false}
+            title="Detect Risk"
+            blurb="Surface compliance and policy red flags."
+            href="/work/detect-risk"
+            enabled
+          />
+          <Tile
+            icon={ClipboardList}
+            tone="indigo"
+            title="Fill Forms"
+            blurb="Auto-fill recurring forms from source data."
+            href="/work/fill-forms"
+            enabled
+          />
+          <Tile
+            icon={ShieldCheck}
+            tone="blue"
+            title="Audit & Trace"
+            blurb="Trace every change with full provenance."
+            href="/work/audit"
+            enabled
+          />
+          <Tile
+            icon={BookOpenCheck}
+            tone="green"
+            title="Policy & Standards"
+            blurb="Reference current standards and procedures."
+            href="/work/policy"
+            enabled
           />
         </section>
 
@@ -78,7 +132,7 @@ export default async function LandingPage() {
         </div>
 
         <p className="mt-6 text-center text-xs text-muted-foreground/70">
-          Pick what to do. Four entry points. No menus to learn.
+          Pick what to do. Nine ways to get started. No menus to learn.
         </p>
       </main>
     </div>
