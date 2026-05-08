@@ -42,10 +42,24 @@ export function composeCmgcResult(raw: unknown): ComposeOutput {
         raw,
       };
     }
-    if (!("selected_rating" in rObj)) {
+    if (typeof rObj["selected_rating"] !== "string") {
       return {
         kind: "debug",
-        error: `evaluate.ratings[${i}]: missing selected_rating`,
+        error: `evaluate.ratings[${i}]: missing or non-string selected_rating`,
+        raw,
+      };
+    }
+    if (typeof rObj["confidence"] !== "number") {
+      return {
+        kind: "debug",
+        error: `evaluate.ratings[${i}]: missing or non-number confidence`,
+        raw,
+      };
+    }
+    if (typeof rObj["missing_info"] !== "boolean") {
+      return {
+        kind: "debug",
+        error: `evaluate.ratings[${i}]: missing or non-boolean missing_info`,
         raw,
       };
     }
@@ -59,7 +73,7 @@ export function composeCmgcResult(raw: unknown): ComposeOutput {
       raw,
     };
   }
-  if (!score["multi_method"]) {
+  if (score["multi_method"] === undefined || score["multi_method"] === null) {
     return {
       kind: "debug",
       error: "score.multi_method is missing",

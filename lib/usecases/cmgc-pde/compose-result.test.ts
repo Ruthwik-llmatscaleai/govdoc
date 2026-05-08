@@ -101,4 +101,56 @@ describe("composeCmgcResult", () => {
     if (out.kind !== "debug") return;
     expect(out.error).toMatch(/multi_method/);
   });
+
+  it("returns debug when selected_rating is not a string", () => {
+    const out = composeCmgcResult({
+      evaluate: {
+        ratings: [
+          {
+            question_id: "A1",
+            question_text: "Q",
+            selected_rating: 2, // wrong: number instead of string
+            confidence: 0.7,
+            source_reasoning: "",
+            missing_info_reasoning: "",
+            missing_info: false,
+          },
+        ],
+      },
+      score: { recommendation: "x", multi_method: [] },
+    });
+    expect(out.kind).toBe("debug");
+    if (out.kind !== "debug") return;
+    expect(out.error).toMatch(/selected_rating/);
+  });
+
+  it("returns debug when confidence is not a number", () => {
+    const out = composeCmgcResult({
+      evaluate: {
+        ratings: [
+          {
+            question_id: "A1",
+            question_text: "Q",
+            selected_rating: "B",
+            confidence: "high", // wrong: string
+            source_reasoning: "",
+            missing_info_reasoning: "",
+            missing_info: false,
+          },
+        ],
+      },
+      score: { recommendation: "x", multi_method: [] },
+    });
+    expect(out.kind).toBe("debug");
+    if (out.kind !== "debug") return;
+    expect(out.error).toMatch(/confidence/);
+  });
+
+  it("accepts an empty ratings array as valid", () => {
+    const out = composeCmgcResult({
+      evaluate: { ratings: [] },
+      score: { recommendation: "x", multi_method: [] },
+    });
+    expect(out.kind).toBe("ok");
+  });
 });
