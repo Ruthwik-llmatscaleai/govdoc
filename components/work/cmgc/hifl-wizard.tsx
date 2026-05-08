@@ -163,9 +163,11 @@ export function HiflWizard({
             <p className="text-sm text-muted-foreground">No questions match this filter.</p>
           )}
 
-          {/* Selected question override card */}
+          {/* Selected question override card.
+              key forces remount when the question changes so internal form state resets cleanly. */}
           {selectedQuestion && (
             <OverrideCard
+              key={selectedQuestion.question_id}
               question={{
                 ...selectedQuestion,
                 existing: existingOverrideMap[selectedQuestion.question_id],

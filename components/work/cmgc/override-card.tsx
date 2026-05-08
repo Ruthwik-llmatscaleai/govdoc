@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Rating } from "@/lib/usecases/cmgc-pde/rubric";
 
@@ -24,20 +24,13 @@ export function OverrideCard({
   question: OverrideCardQuestion;
   onSave: (entry: { question_id: string; oldValue: Rating; newValue: Rating; reason: string }) => void;
 }): React.JSX.Element {
+  // Parents (HiflWizard) MUST pass `key={question.question_id}` so the component remounts
+  // when the question changes — otherwise internal form state would leak between questions.
   const [newRating, setNewRating] = useState<Rating>(
     question.existing?.newRating ?? question.ai_rating,
   );
   const [reason, setReason] = useState(question.existing?.reason ?? "");
   const [showEvidence, setShowEvidence] = useState(false);
-
-  // Reset internal state if the parent reuses this component instance for a different question.
-  const prevId = useRef(question.question_id);
-  if (prevId.current !== question.question_id) {
-    prevId.current = question.question_id;
-    setNewRating(question.existing?.newRating ?? question.ai_rating);
-    setReason(question.existing?.reason ?? "");
-    setShowEvidence(false);
-  }
 
   const trimmedReason = reason.trim();
   const saveDisabled = newRating === question.ai_rating || trimmedReason.length < 15;
