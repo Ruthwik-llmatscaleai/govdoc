@@ -12,8 +12,17 @@ export const extractStep: PipelineStep<FormData> = {
       yield { type: "error", stage: "extract", message: "No narrative file uploaded" } satisfies StepEvent;
       return;
     }
-    const narrativeBuffer = Buffer.from(await (narrative as File).arrayBuffer());
+    const narrativeFile = narrative as File;
+    const narrativeBuffer = Buffer.from(await narrativeFile.arrayBuffer());
+    _ctx.log("cucp.extract narrative buffer received", {
+      byteLength: narrativeBuffer.byteLength,
+      fileName: narrativeFile.name,
+      fileSize: narrativeFile.size,
+      fileType: narrativeFile.type,
+      firstBytes: narrativeBuffer.subarray(0, 8).toString("hex"),
+    });
     const narrativeText = await extractTextFromPdf(narrativeBuffer);
+    _ctx.log("cucp.extract pdf parsed", { textLength: narrativeText.length });
 
     yield { type: "progress", stage: "extract", pct: 50, message: "Parsing narrative" } satisfies StepEvent;
 
