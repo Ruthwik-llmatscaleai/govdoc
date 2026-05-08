@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 export type StepBarStep = { id: string; label: string };
 
 export function StepBar({
@@ -30,15 +32,13 @@ export function StepBar({
               <button
                 type="button"
                 disabled={!enabled}
-                onClick={() => enabled && onJump(s.id)}
-                className={[
+                onClick={() => onJump(s.id)}
+                className={cn(
                   "rounded-full px-3 py-1 text-sm font-medium transition",
-                  isCurrent
-                    ? "bg-slate-900 text-white"
-                    : isApproved
-                      ? "bg-slate-200 text-slate-900 hover:bg-slate-300"
-                      : "bg-slate-100 text-slate-400 cursor-not-allowed",
-                ].join(" ")}
+                  isCurrent && "bg-slate-900 text-white",
+                  !isCurrent && isApproved && "bg-slate-200 text-slate-900 hover:bg-slate-300",
+                  !isCurrent && !isApproved && "bg-slate-100 text-slate-400",
+                )}
               >
                 <span className="mr-1">{isApproved && !isCurrent ? "✓" : i + 1}</span>
                 {s.label}

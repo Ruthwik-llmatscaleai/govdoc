@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { StepBar } from "./step-bar";
 
 describe("StepBar", () => {
@@ -31,5 +31,19 @@ describe("StepBar", () => {
     render(<StepBar steps={steps} currentId="b" approvedIds={["a"]} onJump={() => {}} />);
     const reviewBtn = screen.getByRole("button", { name: /Review/ });
     expect(reviewBtn).toBeEnabled();
+  });
+
+  it("calls onJump with the step id when an enabled button is clicked", () => {
+    const onJump = vi.fn();
+    render(<StepBar steps={steps} currentId="b" approvedIds={["a"]} onJump={onJump} />);
+    fireEvent.click(screen.getByRole("button", { name: /Review/ }));
+    expect(onJump).toHaveBeenCalledWith("a");
+  });
+
+  it("does not call onJump when a disabled button is clicked", () => {
+    const onJump = vi.fn();
+    render(<StepBar steps={steps} currentId="a" approvedIds={[]} onJump={onJump} />);
+    fireEvent.click(screen.getByRole("button", { name: /Export/ }));
+    expect(onJump).not.toHaveBeenCalled();
   });
 });
