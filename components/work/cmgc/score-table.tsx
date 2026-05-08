@@ -22,7 +22,7 @@ export function ScoreTable({ ratings, viewMode = "hifl" }: Props) {
   const isDistrict = viewMode === "district";
 
   // Latest override per question_id wins
-  const overrideMap: Record<string, Rating> = {};
+  const overrideMap: Record<string, Rating | undefined> = {};
   for (const entry of history) {
     overrideMap[entry.category] = entry.newValue as Rating;
   }
@@ -59,12 +59,12 @@ export function ScoreTable({ ratings, viewMode = "hifl" }: Props) {
           </thead>
           <tbody>
             {ratings.map((r) => {
-              const effective = overrideMap[r.question_id] ?? r.selected_rating;
+              const effective: string = (overrideMap[r.question_id] ?? r.selected_rating ?? "—") as string;
               return (
                 <tr key={r.question_id} className="border-t align-top">
-                  <td className="p-2 font-mono">{r.question_id}</td>
-                  <td className="p-2">{r.question_text}</td>
-                  <td className="p-2">{r.selected_rating}</td>
+                  <td className="p-2 font-mono">{r.question_id ?? "—"}</td>
+                  <td className="p-2">{r.question_text ?? "—"}</td>
+                  <td className="p-2">{r.selected_rating ?? "—"}</td>
                   <td className="p-2">
                     {isDistrict ? (
                       <span className="font-medium">{effective}</span>
@@ -72,8 +72,8 @@ export function ScoreTable({ ratings, viewMode = "hifl" }: Props) {
                       <select
                         className={SELECT_CLASS}
                         aria-label={`Override rating for ${r.question_id}`}
-                        value={effective}
-                        onChange={(e) => onChange(r.question_id, effective, e.target.value as Rating)}
+                        value={effective === "—" ? "A" : effective}
+                        onChange={(e) => onChange(r.question_id, effective === "—" ? "A" : effective as Rating, e.target.value as Rating)}
                       >
                         <option value="A">A</option>
                         <option value="B">B</option>
@@ -81,8 +81,8 @@ export function ScoreTable({ ratings, viewMode = "hifl" }: Props) {
                       </select>
                     )}
                   </td>
-                  <td className="p-2">{r.confidence.toFixed(2)}</td>
-                  <td className="p-2 text-xs">{r.source_reasoning.slice(0, 200)}</td>
+                  <td className="p-2">{r.confidence != null ? r.confidence.toFixed(2) : "—"}</td>
+                  <td className="p-2 text-xs">{(r.source_reasoning ?? "—").slice(0, 200)}</td>
                 </tr>
               );
             })}

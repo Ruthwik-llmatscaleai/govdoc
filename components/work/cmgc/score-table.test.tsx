@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { ScoreTable } from "./score-table";
 import { useOverridesStore } from "@/store/use-overrides";
 import { mockRatings } from "@/lib/usecases/cmgc-pde/scoring/fixtures";
+import type { CmgcRating } from "@/lib/usecases/cmgc-pde/types";
 
 beforeEach(() => {
   useOverridesStore.getState().clear();
@@ -66,5 +67,56 @@ describe("ScoreTable", () => {
     const a1Row = screen.getByText("A1").closest("tr")!;
     expect(a1Row.querySelector("span.font-medium")?.textContent).toBe("C");
     expect(screen.queryByRole("combobox")).toBeNull();
+  });
+});
+
+function makeRating(overrides: Partial<CmgcRating> = {}): CmgcRating {
+  return {
+    question_id: "A1",
+    question_text: "Project size?",
+    source_reasoning: "Plans show 60% complete.",
+    missing_info_reasoning: "",
+    selected_rating: "B",
+    confidence: 0.7,
+    missing_info: false,
+    ...overrides,
+  };
+}
+
+describe("ScoreTable defensive rendering", () => {
+  beforeEach(() => {
+    useOverridesStore.getState().clear();
+  });
+
+  it("renders all fields normally for a well-formed rating", () => {
+    render(<ScoreTable ratings={[makeRating()]} viewMode="district" />);
+    expect(screen.getByText("A1")).toBeTruthy();
+    expect(screen.getByText("Project size?")).toBeTruthy();
+    expect(screen.getByText("0.70")).toBeTruthy();
+  });
+
+  it("renders an em-dash for undefined selected_rating in district view", () => {
+    const broken = makeRating({ selected_rating: undefined as unknown as CmgcRating["selected_rating"] });
+    render(<ScoreTable ratings={[broken]} viewMode="district" />);
+    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(2); // AI Rating cell AND Effective cell
+  });
+
+  it("renders an em-dash for undefined confidence", () => {
+    const broken = makeRating({ confidence: undefined as unknown as number });
+    render(<ScoreTable ratings={[broken]} viewMode="district" />);
+    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("renders an em-dash for undefined source_reasoning", () => {
+    const broken = makeRating({ source_reasoning: undefined as unknown as string });
+    render(<ScoreTable ratings={[broken]} viewMode="district" />);
+    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("does not crash when question_id is undefined", () => {
+    const broken = makeRating({ question_id: undefined as unknown as string });
+    expect(() =>
+      render(<ScoreTable ratings={[broken]} viewMode="district" />)
+    ).not.toThrow();
   });
 });
