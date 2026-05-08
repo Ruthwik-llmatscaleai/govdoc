@@ -37,7 +37,7 @@ import { ClassificationsList } from "@/components/work/cucp/classifications-list
 import { ReportView } from "@/components/work/cucp/report-view";
 import { InputsForm as RowInputsForm } from "@/components/work/row/inputs-form";
 import { RowResultTabs } from "@/components/work/row/result-tabs";
-import type { CmgcRunResult } from "@/lib/usecases/cmgc-pde/types";
+import { composeCmgcResult } from "@/lib/usecases/cmgc-pde/compose-result";
 import type { Level1Data, Level2Data, Level3Data } from "@/lib/usecases/cucp-reevals/types";
 import type { RowRunResult } from "@/lib/usecases/row-appraisal/types";
 import { USE_CASE_TONE } from "@/components/work/use-case-tone";
@@ -280,9 +280,11 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
     return <ErrorPanel current={current} reset={reset} />;
   }
   if (current.status === "done" && current.result) {
-    const result = composeCmgcResult(current.result);
-    if (!result)
-      return <DebugRawResult raw={current.result} reset={reset} expected={["evaluate.ratings", "score.recommendation", "score.multi_method"]} />;
+    const out = composeCmgcResult(current.result);
+    if (out.kind === "debug") {
+      return <DebugRawResult raw={out.raw} reset={reset} expected={[]} error={out.error} />;
+    }
+    const result = out.value;
     return (
       <div className="space-y-6">
         <DoneActionsBar
@@ -540,10 +542,12 @@ function DebugRawResult({
   raw,
   reset,
   expected,
+  error,
 }: {
   raw: unknown;
   reset: () => void;
   expected: string[];
+  error?: string;
 }) {
   const json = JSON.stringify(raw, null, 2);
   const truncated = json.length > 8000 ? json.slice(0, 8000) + "\n…(truncated)" : json;
@@ -552,12 +556,21 @@ function DebugRawResult({
   return (
     <WorkCard title="Pipeline returned an unexpected shape">
       <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          The pipeline finished but the result is missing expected fields. Expected:{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">{expected.join(", ")}</code>.
-          Got top-level keys:{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">{topLevelKeys}</code>.
-        </p>
+        {error ? (
+          <p className="text-sm text-muted-foreground">
+            The pipeline finished but the result has an unexpected shape:{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-[11px]">{error}</code>.
+            Got top-level keys:{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-[11px]">{topLevelKeys}</code>.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            The pipeline finished but the result is missing expected fields. Expected:{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-[11px]">{expected.join(", ")}</code>.
+            Got top-level keys:{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-[11px]">{topLevelKeys}</code>.
+          </p>
+        )}
         <pre className="max-h-96 overflow-auto rounded-lg border border-border bg-muted/30 p-3 text-[11px] leading-snug">
 {truncated}
         </pre>
@@ -571,29 +584,6 @@ function DebugRawResult({
   );
 }
 
-function composeCmgcResult(raw: unknown): CmgcRunResult | null {
-  if (!raw || typeof raw !== "object") return null;
-  const r = raw as Record<string, unknown>;
-  const evaluate = r.evaluate as { ratings?: unknown } | undefined;
-  const score = r.score as { recommendation?: unknown; multi_method?: unknown } | undefined;
-  const validate = r.validate as unknown;
-  const extract = r.extract as { projectName?: string } | undefined;
-  if (!evaluate?.ratings || !score?.recommendation || !score?.multi_method) return null;
-  return {
-    evaluation: {
-      project_name: extract?.projectName ?? "Untitled Project",
-      project_ea: "",
-      district: "",
-      evaluation_date: new Date().toISOString().slice(0, 10),
-      ratings: evaluate.ratings as never,
-      missing_questions: [],
-      summary: "",
-    },
-    recommendation: score.recommendation as never,
-    multi_method: score.multi_method as never,
-    validation: (validate as never) ?? null,
-  };
-}
 
 async function downloadExport(useCaseId: string, exporterId: string, label: string, result: unknown) {
   const res = await fetch(`/api/usecases/${useCaseId}/export/${exporterId}`, {
