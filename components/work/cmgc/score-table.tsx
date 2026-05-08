@@ -59,7 +59,8 @@ export function ScoreTable({ ratings, viewMode = "hifl" }: Props) {
           </thead>
           <tbody>
             {ratings.map((r) => {
-              const effective: string = (overrideMap[r.question_id] ?? r.selected_rating ?? "—") as string;
+              const effectiveRating: Rating | undefined = overrideMap[r.question_id] ?? r.selected_rating;
+              const effectiveDisplay: string = effectiveRating ?? "—";
               return (
                 <tr key={r.question_id} className="border-t align-top">
                   <td className="p-2 font-mono">{r.question_id ?? "—"}</td>
@@ -67,14 +68,22 @@ export function ScoreTable({ ratings, viewMode = "hifl" }: Props) {
                   <td className="p-2">{r.selected_rating ?? "—"}</td>
                   <td className="p-2">
                     {isDistrict ? (
-                      <span className="font-medium">{effective}</span>
+                      <span className="font-medium">{effectiveDisplay}</span>
                     ) : (
                       <select
                         className={SELECT_CLASS}
                         aria-label={`Override rating for ${r.question_id}`}
-                        value={effective === "—" ? "A" : effective}
-                        onChange={(e) => onChange(r.question_id, effective === "—" ? "A" : effective as Rating, e.target.value as Rating)}
+                        value={effectiveRating ?? ""}
+                        onChange={(e) => {
+                          if (effectiveRating === undefined) return;
+                          onChange(r.question_id, effectiveRating, e.target.value as Rating);
+                        }}
                       >
+                        {effectiveRating === undefined ? (
+                          <option value="" disabled>
+                            Select rating…
+                          </option>
+                        ) : null}
                         <option value="A">A</option>
                         <option value="B">B</option>
                         <option value="C">C</option>
