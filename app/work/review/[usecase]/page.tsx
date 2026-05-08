@@ -29,7 +29,10 @@ import { InputsForm as CmgcInputsForm } from "@/components/work/cmgc/inputs-form
 import { ScoreTable } from "@/components/work/cmgc/score-table";
 import { RecommendationCard } from "@/components/work/cmgc/recommendation-card";
 import { MethodRanking } from "@/components/work/cmgc/method-ranking";
-import { ValidationCard } from "@/components/work/cmgc/validation-card";
+import { HiflWizard, type HiflOverrideEntry } from "@/components/work/cmgc/hifl-wizard";
+import type { OverrideCardQuestion } from "@/components/work/cmgc/override-card";
+import { RUBRIC_QUESTIONS } from "@/lib/usecases/cmgc-pde/rubric";
+import { useOverridesStore } from "@/store/use-overrides";
 import { InputsForm as CucpInputsForm } from "@/components/work/cucp/inputs-form";
 import { CriteriaTable } from "@/components/work/cucp/criteria-table";
 import { FactsList } from "@/components/work/cucp/facts-list";
@@ -267,8 +270,28 @@ function ViewPerspectiveToggle({
   );
 }
 
+const RUBRIC_BY_ID = new Map(RUBRIC_QUESTIONS.map((q) => [q.id, q]));
+
+function toOverrideCardQuestion(r: { question_id: string; question_text: string; selected_rating: string; confidence: number; source_reasoning: string }): OverrideCardQuestion {
+  const rubric = RUBRIC_BY_ID.get(r.question_id);
+  return {
+    question_id: r.question_id,
+    question_text: r.question_text || rubric?.question || "",
+    ai_rating: (r.selected_rating as "A" | "B" | "C") ?? "A",
+    confidence: r.confidence ?? null,
+    source_reasoning: r.source_reasoning ?? "",
+    options: {
+      A: rubric?.option_a ?? "",
+      B: rubric?.option_b ?? "",
+      C: rubric?.option_c ?? "",
+    },
+  };
+}
+
 function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
   const [pdeView, setPdeView] = useState<"district" | "hifl">("district");
+  const overrideHistory = useOverridesStore((s) => s.history);
+  const pushOverride = useOverridesStore((s) => s.push);
 
   if (!current || (current.status === "idle" && Object.keys(current.stages).length === 0)) {
     return <IdleLayout steps={steps} inputs={<CmgcInputsForm />} />;
@@ -285,6 +308,25 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
       return <DebugRawResult raw={out.raw} reset={reset} expected={[]} error={out.error} />;
     }
     const result = out.value;
+
+    // Latest override per question_id wins
+    const overrideMap = new Map<string, HiflOverrideEntry>();
+    for (const e of overrideHistory) {
+      overrideMap.set(e.category, {
+        question_id: e.category,
+        oldValue: e.oldValue as "A" | "B" | "C",
+        newValue: e.newValue as "A" | "B" | "C",
+        reason: e.reason,
+      });
+    }
+    const wizardOverrides = Array.from(overrideMap.values());
+
+    const recommendationShifted = result.validation?.deviation_impact?.recommendation_changed ?? false;
+    const aiRecommendationLabel = result.recommendation.recommended_method ?? "—";
+    const recommendationLabel = recommendationShifted
+      ? (result.validation?.deviation_impact?.user_method ?? aiRecommendationLabel)
+      : aiRecommendationLabel;
+
     return (
       <div className="space-y-6">
         <DoneActionsBar
@@ -295,10 +337,40 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
           reset={reset}
         />
         <RecommendationCard recommendation={result.recommendation} />
-        <ValidationCard validation={result.validation} />
         <MethodRanking multiMethod={result.multi_method} />
         <ViewPerspectiveToggle value={pdeView} onChange={setPdeView} />
-        <ScoreTable ratings={result.evaluation.ratings} viewMode={pdeView} />
+        {pdeView === "district" ? (
+          <ScoreTable ratings={result.evaluation.ratings} viewMode={pdeView} />
+        ) : (
+          <HiflWizard
+            questions={result.evaluation.ratings.map(toOverrideCardQuestion)}
+            validation={result.validation}
+            recommendationLabel={recommendationLabel}
+            aiRecommendationLabel={aiRecommendationLabel}
+            recommendationShifted={recommendationShifted}
+            overrides={wizardOverrides}
+            onSaveOverride={(entry) =>
+              pushOverride({
+                category: entry.question_id,
+                oldValue: entry.oldValue,
+                newValue: entry.newValue,
+                reason: entry.reason,
+              })
+            }
+            onRemoveOverride={(qid) => {
+              const remaining = overrideHistory.filter((e) => e.category !== qid);
+              useOverridesStore.getState().clear();
+              for (const e of remaining) {
+                pushOverride({
+                  category: e.category,
+                  oldValue: e.oldValue,
+                  newValue: e.newValue,
+                  reason: e.reason,
+                });
+              }
+            }}
+          />
+        )}
       </div>
     );
   }
