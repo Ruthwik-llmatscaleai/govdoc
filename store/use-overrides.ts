@@ -5,7 +5,7 @@ export type OverrideEntry = {
   oldValue: unknown;
   newValue: unknown;
   ts: number;
-  reason?: string;
+  reason: string;
 };
 
 type Store = {

@@ -29,7 +29,9 @@ export function ScoreTable({ ratings, viewMode = "hifl" }: Props) {
 
   function onChange(qid: string, oldValue: Rating, newValue: Rating) {
     if (newValue === oldValue) return;
-    push({ category: qid, oldValue, newValue });
+    // TODO(Task 5): OverrideCard collects the real reason; this inline-select path is dead
+    // once the HIFL wizard replaces the inline select.
+    push({ category: qid, oldValue, newValue, reason: "" });
   }
 
   return (

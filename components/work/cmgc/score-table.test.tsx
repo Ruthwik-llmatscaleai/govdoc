@@ -62,7 +62,7 @@ describe("ScoreTable", () => {
   });
 
   it("district mode shows overridden effective rating as plain text", () => {
-    useOverridesStore.getState().push({ category: "A1", oldValue: "B", newValue: "C" });
+    useOverridesStore.getState().push({ category: "A1", oldValue: "B", newValue: "C", reason: "test" });
     render(<ScoreTable ratings={mockRatings()} viewMode="district" />);
     const a1Row = screen.getByText("A1").closest("tr")!;
     expect(a1Row.querySelector("span.font-medium")?.textContent).toBe("C");

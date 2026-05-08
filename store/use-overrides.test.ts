@@ -6,7 +6,7 @@ beforeEach(() => useOverridesStore.getState().clear());
 describe("useOverridesStore", () => {
   it("undo/redo round-trips an entry", () => {
     const s = useOverridesStore.getState();
-    s.push({ category: "c1", oldValue: "A", newValue: "B" });
+    s.push({ category: "c1", oldValue: "A", newValue: "B", reason: "test" });
     expect(useOverridesStore.getState().history).toHaveLength(1);
     const undone = useOverridesStore.getState().undo();
     expect(undone?.category).toBe("c1");
