@@ -34,10 +34,10 @@ import type { OverrideCardQuestion } from "@/components/work/cmgc/override-card"
 import { RUBRIC_QUESTIONS } from "@/lib/usecases/cmgc-pde/rubric";
 import { useOverridesStore } from "@/store/use-overrides";
 import { InputsForm as CucpInputsForm } from "@/components/work/cucp/inputs-form";
-import { CriteriaTable } from "@/components/work/cucp/criteria-table";
-import { FactsList } from "@/components/work/cucp/facts-list";
-import { ClassificationsList } from "@/components/work/cucp/classifications-list";
+import { CucpStepper, type CucpStepperSubmitPayload } from "@/components/work/cucp/cucp-stepper";
 import { ReportView } from "@/components/work/cucp/report-view";
+import type { L2Row } from "@/components/work/cucp/l2-classifications-table";
+import type { AnalystOverride } from "@/lib/usecases/cucp-reevals/types";
 import { InputsForm as RowInputsForm } from "@/components/work/row/inputs-form";
 import { RowResultTabs } from "@/components/work/row/result-tabs";
 import { composeCmgcResult } from "@/lib/usecases/cmgc-pde/compose-result";
@@ -388,36 +388,62 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
     const level1 = (current.stages.level1?.data ?? {}) as Level1Data;
     const level2 = (current.stages.level2?.data ?? {}) as Level2Data;
     const level3 = (current.stages.level3?.data ?? { criteria: [] }) as Level3Data;
+
+    const facts = level1.extracted_facts ?? [];
+    const classifications: L2Row[] = (level2.classifications ?? []).map((c) => ({
+      fact_id: c.fact_id,
+      category: c.classification,
+      summary: c.summary,
+      ai_reasoning: c.reasoning,
+    }));
+    const criteria = level3.criteria ?? [];
+    const runId = current.runId;
+
+    async function handleStepperSubmit(payload: CucpStepperSubmitPayload) {
+      // Convert L3 overrides to AnalystOverride[]: each L3OverridePayload yields a
+      // pass_fail entry; if request_info=Yes was chosen, also a request_info entry.
+      // L2 overrides are captured for analyst memory but the current pipeline does
+      // not re-evaluate from them (see CLAUDE.md follow-up #6).
+      const analystOverrides: AnalystOverride[] = [];
+      for (const o of payload.l3) {
+        analystOverrides.push({
+          s_no: Number(o.s_no),
+          field: "pass_fail",
+          value: o.verdict,
+          reasoning: o.reason,
+        });
+        if (o.request_info === "Yes") {
+          analystOverrides.push({
+            s_no: Number(o.s_no),
+            field: "request_info",
+            value: "Yes",
+            reasoning: o.reason,
+          });
+        }
+      }
+      const res = await fetch(`/api/usecases/cucp-reevals/run/${runId}/respond`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          overrides: analystOverrides,
+          l2_overrides: payload.l2,
+        }),
+      });
+      if (res.ok) setOverridesSubmitted(true);
+    }
+
     return (
       <div className="space-y-6">
         <WorkCard
           title="Reviewer override"
-          description="GovDoc has completed the three review passes. Confirm or correct the criteria below before generating the final report."
+          description="GovDoc has completed the three review passes. Walk through Facts → Legal Categories → Criteria and apply any corrections before generating the final report."
         >
-          <div className="space-y-6">
-            <section>
-              <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Extracted facts
-              </h3>
-              <FactsList facts={level1.extracted_facts ?? []} />
-            </section>
-            <section>
-              <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Classifications
-              </h3>
-              <ClassificationsList classifications={level2.classifications ?? []} />
-            </section>
-            <section>
-              <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                7-criteria review
-              </h3>
-              <CriteriaTable
-                criteria={level3.criteria ?? []}
-                runId={current.runId}
-                onSubmitted={() => setOverridesSubmitted(true)}
-              />
-            </section>
-          </div>
+          <CucpStepper
+            facts={facts}
+            classifications={classifications}
+            criteria={criteria}
+            onSubmit={handleStepperSubmit}
+          />
         </WorkCard>
         <div className="flex justify-end">
           <SecondaryButton onClick={reset}>Cancel</SecondaryButton>
