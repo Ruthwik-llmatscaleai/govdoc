@@ -3,11 +3,16 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
 import { http, HttpResponse } from "msw";
 import { mswServer } from "@/tests/mocks/server";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { POST as runPOST } from "@/app/api/usecases/[id]/run/route";
-import { POST as respondPOST } from "@/app/api/usecases/[id]/run/[runId]/respond/route";
+import { POST as approveLevelPOST } from "@/app/api/usecases/cucp-reevals/run/[runId]/level/[n]/approve/route";
+import { POST as finalizePOST } from "@/app/api/usecases/cucp-reevals/run/[runId]/finalize/route";
 import { signSession } from "@/lib/auth/mock-session";
 import type { StepEvent } from "@/lib/usecases/types";
-import { __clearRendezvous } from "@/lib/runs/needs-input-rendezvous";
+import { __clearLevelRendezvous } from "@/lib/runs/level-rendezvous";
+import { __setStoreRootForTests } from "@/lib/usecases/cucp-reevals/memory/store";
 
 vi.mock("@/lib/extract/pdf", () => ({
   extractTextFromPdf: async () => "Synthetic CUCP narrative text. Owner faced contracting discrimination in 2024.",
@@ -65,8 +70,12 @@ beforeAll(() => {
   process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? "sk-test-dummy";
 });
 
+let storeRoot: string;
+
 beforeEach(() => {
-  __clearRendezvous();
+  __clearLevelRendezvous();
+  storeRoot = mkdtempSync(join(tmpdir(), "cucp-pipeline-"));
+  __setStoreRootForTests(storeRoot);
   let callIndex = 0;
   const responses = [LEVEL_1_RESPONSE, LEVEL_2_RESPONSE, LEVEL_3_RESPONSE];
   mswServer.use(
@@ -91,7 +100,9 @@ beforeEach(() => {
 
 afterEach(() => {
   mswServer.resetHandlers();
-  __clearRendezvous();
+  __clearLevelRendezvous();
+  __setStoreRootForTests(null);
+  rmSync(storeRoot, { recursive: true, force: true });
 });
 
 async function authedRequest(formData: FormData): Promise<Request> {
@@ -143,12 +154,13 @@ async function readEventsUntilDone(
   }
 }
 
-describe("CUCP pipeline integration (SSE + needs-input round-trip)", () => {
-  it("streams through level3, pauses at needs-input, resumes after /respond, completes with report", async () => {
+describe("CUCP pipeline integration (SSE + per-level rendezvous round-trip)", () => {
+  it("pauses at L2 needs-input, resumes via /level/2/approve, pauses at L3, resumes via /finalize, completes with report", async () => {
     const fd = new FormData();
     const fakePdfBuffer = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34]);
     fd.append("narrative", new File([fakePdfBuffer], "narrative.pdf", { type: "application/pdf" }));
     fd.append("model", "openai");
+    fd.append("projectId", "test-project");
 
     const req = await authedRequest(fd);
     const res = await runPOST(req, { params: Promise.resolve({ id: "cucp-reevals" }) });
@@ -160,8 +172,8 @@ describe("CUCP pipeline integration (SSE + needs-input round-trip)", () => {
     const events: StepEvent[] = [];
     const bufRef = { buf: "" };
 
+    // L2 gate
     await readEventsUntilNeedsInput(reader, events, bufRef);
-
     const runStarted = events.find((e) => e.type === "run-started");
     expect(runStarted).toBeDefined();
     const runId = (runStarted as { type: "run-started"; runId: string }).runId;
@@ -170,28 +182,39 @@ describe("CUCP pipeline integration (SSE + needs-input round-trip)", () => {
 
     expect(events.some((e) => e.type === "stage-done" && e.stage === "level1")).toBe(true);
     expect(events.some((e) => e.type === "stage-done" && e.stage === "level2")).toBe(true);
+    expect(events.at(-1)).toMatchObject({ type: "needs-input", stage: "level2" });
+
+    const continueAfterL2 = readEventsUntilNeedsInput(reader, events, bufRef);
+    const approveL2Req = new Request(
+      `http://localhost/api/usecases/cucp-reevals/run/${runId}/level/2/approve`,
+      {
+        method: "POST",
+        headers: { cookie: `govdoc_session=${await signSession({ user: "test" })}` },
+      },
+    );
+    const approveL2Res = await approveLevelPOST(approveL2Req, {
+      params: Promise.resolve({ runId, n: "2" }),
+    });
+    expect(approveL2Res.status).toBe(200);
+    await continueAfterL2;
+
+    // L3 gate
     expect(events.some((e) => e.type === "stage-done" && e.stage === "level3")).toBe(true);
     expect(events.at(-1)).toMatchObject({ type: "needs-input", stage: "level3" });
 
-    const continueReading = readEventsUntilDone(reader, events, bufRef);
-
-    const respondReq = new Request(
-      `http://localhost/api/usecases/cucp-reevals/run/${runId}/respond`,
+    const continueAfterL3 = readEventsUntilDone(reader, events, bufRef);
+    const finalizeReq = new Request(
+      `http://localhost/api/usecases/cucp-reevals/run/${runId}/finalize`,
       {
         method: "POST",
-        headers: {
-          cookie: `govdoc_session=${await signSession({ user: "test" })}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({ overrides: [] }),
+        headers: { cookie: `govdoc_session=${await signSession({ user: "test" })}` },
       },
     );
-    const respondRes = await respondPOST(respondReq, {
-      params: Promise.resolve({ id: "cucp-reevals", runId }),
+    const finalizeRes = await finalizePOST(finalizeReq, {
+      params: Promise.resolve({ runId }),
     });
-    expect(respondRes.status).toBe(200);
-
-    await continueReading;
+    expect(finalizeRes.status).toBe(200);
+    await continueAfterL3;
 
     const last = events.at(-1);
     expect(last).toMatchObject({ type: "done" });
