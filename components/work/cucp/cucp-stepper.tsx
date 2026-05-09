@@ -10,8 +10,9 @@ import {
 } from "./l2-classifications-table";
 import { L3CriteriaTable } from "./l3-criteria-table";
 import { L3OverrideForm, type L3OverridePayload } from "./l3-override-form";
+import { L1OverrideForm } from "./l1-override-form";
 import { RequestInfoBanner } from "./request-info-banner";
-import type { ExtractedFact, Criterion } from "@/lib/usecases/cucp-reevals/types";
+import type { ExtractedFact, Criterion, L1Override } from "@/lib/usecases/cucp-reevals/types";
 
 type StepId = "l1" | "l2" | "l3" | "done";
 
@@ -121,10 +122,27 @@ export function CucpStepper({
     [criteria],
   );
 
-  function approveL1() {
-    // L1 has no rendezvous waiter (single-pass) — no network call needed.
-    setL1Approved(true);
-    setStep("l2");
+  async function postOverrideL1(o: L1Override) {
+    const res = await postJson(`/api/usecases/cucp-reevals/run/${runId}/level/1/override`, { override: o });
+    if (res) setStagedCounts((c) => ({ ...c, l1: c.l1 + 1 }));
+  }
+
+  async function postUndoL1() {
+    const res = await postJson(`/api/usecases/cucp-reevals/run/${runId}/level/1/undo`);
+    if (res) setStagedCounts((c) => ({ ...c, l1: Math.max(0, c.l1 - 1) }));
+  }
+
+  async function postClearL1() {
+    const res = await postJson(`/api/usecases/cucp-reevals/run/${runId}/level/1/clear`);
+    if (res) setStagedCounts((c) => ({ ...c, l1: 0 }));
+  }
+
+  async function postApproveL1() {
+    const res = await postJson(`/api/usecases/cucp-reevals/run/${runId}/level/1/approve`);
+    if (res) {
+      setL1Approved(true);
+      setStep("l2");
+    }
   }
 
   async function postOverrideL2(p: L2OverridePayload) {
@@ -193,11 +211,21 @@ export function CucpStepper({
       {step === "l1" && (
         <div className="space-y-3">
           <L1FactsTable facts={facts} />
+          <L1OverrideForm
+            facts={facts}
+            onSubmitOverride={postOverrideL1}
+            onUndo={postUndoL1}
+            onClear={postClearL1}
+            stagedCount={stagedCounts.l1}
+            persistentCount={persistentCounts.l1}
+            disabled={isReRunning}
+          />
           <div className="flex justify-end">
             <button
               type="button"
               className={PRIMARY_BTN_CLASS}
-              onClick={approveL1}
+              onClick={postApproveL1}
+              disabled={isReRunning}
             >
               Approve & Continue →
             </button>
