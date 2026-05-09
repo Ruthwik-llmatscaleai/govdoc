@@ -5,9 +5,23 @@ export type Precedent = {
   target: string;
   correction: string;
   human_reasoning: string;
+  fact_id?: string;   // L2 only — links to the fact that was reclassified
+  s_no?: number;      // L3 only — links to the criterion row
 };
 
 export type Level = 1 | 2 | 3;
+
+export type PrecedentsByLevel = {
+  level_1_precedents: Precedent[];
+  level_2_precedents: Precedent[];
+  level_3_precedents: Precedent[];
+};
+
+export const EMPTY_PRECEDENTS: PrecedentsByLevel = {
+  level_1_precedents: [],
+  level_2_precedents: [],
+  level_3_precedents: [],
+};
 
 type Db = {
   level_1_precedents: Precedent[];
