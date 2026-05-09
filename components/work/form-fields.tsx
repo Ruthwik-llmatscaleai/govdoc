@@ -40,11 +40,13 @@ export function TextField({
   name,
   placeholder,
   defaultValue,
+  required,
 }: {
   id: string;
   name: string;
   placeholder?: string;
   defaultValue?: string;
+  required?: boolean;
 }) {
   return (
     <input
@@ -53,6 +55,7 @@ export function TextField({
       type="text"
       placeholder={placeholder}
       defaultValue={defaultValue}
+      required={required}
       className="h-10 w-full rounded-lg border border-input bg-muted/30 px-3 text-sm transition-colors placeholder:text-muted-foreground/60 focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
     />
   );
