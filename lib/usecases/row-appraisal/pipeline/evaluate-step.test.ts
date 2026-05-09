@@ -43,6 +43,7 @@ function makeCtx(callResponses: string[], pdfB64?: string): StepContext {
         ...(pdfB64 ? { pdf_bytes_b64: pdfB64 } : {}),
       },
     },
+    staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
     llm: {
       call: vi.fn(async () => {
         const text = callResponses[idx++] ?? "[]";

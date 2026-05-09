@@ -13,6 +13,7 @@ function makeCtx(callImpl: any): StepContext {
   return {
     userId: "u", projectId: "_test", runId: "r",
     prior: { extract: { narrativeText: "body", firmRevenues: {} } },
+    staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
     llm: { call: vi.fn(callImpl) } as any,
     abortSignal: new AbortController().signal, log: vi.fn(),
   };

@@ -31,6 +31,7 @@ function makeCtx(overrides: unknown[] = []): StepContext {
       level3: sampleL3,
       overrides,
     },
+    staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
     llm: { call: vi.fn() } as any,
     abortSignal: new AbortController().signal, log: vi.fn(),
   };

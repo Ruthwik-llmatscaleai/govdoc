@@ -17,6 +17,7 @@ const FIXTURE_EVAL = {
 function makeCtx(call: LlmRouter["call"]): StepContext {
   return {
     userId: "test", projectId: "_test", runId: "r1", prior: { extract: { narrative: "test narrative" } },
+    staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
     llm: { call },
     abortSignal: new AbortController().signal,
     log: () => {},
@@ -79,6 +80,7 @@ describe("evaluateStep", () => {
     const fd = new FormData();
     const ctx: StepContext = {
       userId: "test", projectId: "_test", runId: "r1", prior: {},
+      staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
       llm: { call: vi.fn() },
       abortSignal: new AbortController().signal,
       log: () => {},

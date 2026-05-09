@@ -10,6 +10,7 @@ function makeCtx(call: LlmRouter["call"], formData: FormData): { ctx: StepContex
     ctx: {
       userId: "test", projectId: "_test", runId: "r1",
       prior: { evaluate: { ratings: mockRatings({ A1: "C", A2: "C", A3: "C" }) } },
+      staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
       llm: { call },
       abortSignal: new AbortController().signal,
       log: () => {},
@@ -68,6 +69,7 @@ describe("scoreStep", () => {
     const fd = new FormData();
     const ctx: StepContext = {
       userId: "test", projectId: "_test", runId: "r1", prior: {},
+      staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
       llm: { call: vi.fn() },
       abortSignal: new AbortController().signal,
       log: () => {},

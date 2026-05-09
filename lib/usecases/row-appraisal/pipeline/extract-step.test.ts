@@ -7,6 +7,7 @@ const fakeCtx: StepContext = {
   projectId: "_test",
   runId: "r",
   prior: {},
+  staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
   llm: { call: vi.fn() },
   abortSignal: new AbortController().signal,
   log: vi.fn(),

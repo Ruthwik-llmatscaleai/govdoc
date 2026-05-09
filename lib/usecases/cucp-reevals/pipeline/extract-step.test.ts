@@ -10,7 +10,9 @@ vi.mock("@/lib/usecases/cucp-reevals/extract/revenue-xlsx", () => ({
 }));
 
 const fakeCtx = {
-  userId: "u", projectId: "_test", runId: "r", prior: {}, llm: { call: vi.fn() } as unknown as StepContext["llm"],
+  userId: "u", projectId: "_test", runId: "r", prior: {},
+  staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
+  llm: { call: vi.fn() } as unknown as StepContext["llm"],
   abortSignal: new AbortController().signal, log: vi.fn(),
 } satisfies StepContext;
 

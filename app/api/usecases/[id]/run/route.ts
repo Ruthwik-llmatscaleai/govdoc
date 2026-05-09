@@ -5,6 +5,7 @@ import { sseStream } from "@/lib/sse/stream";
 import { makeLlmRouter } from "@/lib/llm/router";
 import type { StepContext, StepEvent } from "@/lib/usecases/types";
 import { logger } from "@/lib/logger";
+import { EMPTY_PRECEDENTS } from "@/lib/usecases/cucp-reevals/memory/precedents";
 
 function getCookie(req: Request, name: string): string | undefined {
   const cookie = req.headers.get("cookie") ?? "";
@@ -38,6 +39,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       projectId: effectiveProjectId,
       runId,
       prior: {},
+      staged: {
+        level_1_precedents: [...EMPTY_PRECEDENTS.level_1_precedents],
+        level_2_precedents: [...EMPTY_PRECEDENTS.level_2_precedents],
+        level_3_precedents: [...EMPTY_PRECEDENTS.level_3_precedents],
+      },
       llm: makeLlmRouter(),
       abortSignal: req.signal,
       log: (msg, data) => logger.warn({ runId, projectId: effectiveProjectId, data }, msg),

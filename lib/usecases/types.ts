@@ -1,4 +1,5 @@
 import type { LlmRouter } from "@/lib/llm/types";
+import type { PrecedentsByLevel } from "@/lib/usecases/cucp-reevals/memory/precedents";
 
 export type InputSpec =
   | { kind: "file"; id: string; label: string; accept: string[]; multiple?: boolean; required?: boolean }
@@ -27,6 +28,7 @@ export type StepContext = {
   projectId: string;
   runId: string;
   prior: Record<string, unknown>;
+  staged: PrecedentsByLevel;
   llm: LlmRouter;
   abortSignal: AbortSignal;
   log: (msg: string, data?: unknown) => void;

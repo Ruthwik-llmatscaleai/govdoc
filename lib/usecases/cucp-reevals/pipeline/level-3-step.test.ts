@@ -18,6 +18,7 @@ function makeCtx(runId: string): StepContext {
       level1: { firm_name: "F", cross_reference_result: "100000", narrative_pnw: "NOT PROVIDED", extracted_facts: [] },
       level2: { classifications: [] },
     },
+    staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
     llm: { call: vi.fn(async () => ({ text: JSON.stringify(sampleL3) })) } as any,
     abortSignal: new AbortController().signal, log: vi.fn(),
   };

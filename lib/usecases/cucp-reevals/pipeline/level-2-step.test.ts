@@ -17,6 +17,7 @@ function makeCtx(callImpl: any): StepContext {
         extracted_facts: [{ id: "fact_1", when: "2025", where: "CA", who: "Owner", what: "lost contract", why: "discrimination", magnitude: "$50k", demographic_flag: true, source_quote: "..." }],
       },
     },
+    staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
     llm: { call: vi.fn(callImpl) } as any,
     abortSignal: new AbortController().signal, log: vi.fn(),
   };

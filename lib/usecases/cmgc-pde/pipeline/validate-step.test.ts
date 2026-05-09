@@ -7,6 +7,7 @@ function makeCtx(): StepContext {
   return {
     userId: "test", projectId: "_test", runId: "r1",
     prior: { evaluate: { ratings: mockRatings() } },
+    staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
     llm: { call: vi.fn() },
     abortSignal: new AbortController().signal,
     log: () => {},
