@@ -21,6 +21,14 @@ export type CucpL3Criterion = {
   readonly s_no: number;
   readonly name: string;
   readonly rule?: string;
+  // Display title used by the Preview Rubric view (matches the PDF section
+  // heading for that criterion). Falls back to `name` when omitted. The L3
+  // prompt continues to use `name` verbatim — drift-guard test enforces this.
+  readonly title?: string;
+  // PASS / FAIL definitions from the §26.67 SED rubric PDF. Optional so saved
+  // rubrics from before these fields were added still validate.
+  readonly pass?: string;
+  readonly fail?: string;
 };
 
 export const CUCP_L2_CATEGORIES: readonly CucpL2Category[] = [
@@ -51,16 +59,51 @@ export const CUCP_L2_CATEGORIES: readonly CucpL2Category[] = [
 ] as const;
 
 export const CUCP_L3_CRITERIA: readonly CucpL3Criterion[] = [
-  { s_no: 1, name: "Meets Requirements of SED (No Race or Sex Presumptions)" },
+  {
+    s_no: 1,
+    name: "Meets Requirements of SED (No Race or Sex Presumptions)",
+    title: "No Race & Sex Presumptions",
+    pass: "Narrative includes individualized examples of social and economic disadvantage without race or sex presumptions.",
+    fail: "Narrative includes individualized examples of social and economic disadvantage with race or sex presumptions.",
+  },
   {
     s_no: 2,
     name: "Meets Personal Net Worth (PNW < $2.047M)",
+    title: "Personal Net Worth (PNW)",
     rule:
       "Review the Excel Cross-Reference Revenue/PNW. HOWEVER, if the 'Narrative Declared PNW' provides a specific number, it OVERRIDES the Excel data.",
+    pass: "PNW meets threshold of less than $2.047 million.",
+    fail: "PNW does not meet threshold of less than $2.047 million.",
   },
-  { s_no: 3, name: "Meets Disadvantage in American Society" },
-  { s_no: 4, name: "Demonstration of Disadvantage (Past Experiences)" },
-  { s_no: 5, name: "Evidence of Specific Impediments" },
-  { s_no: 6, name: "Link Between Impediments and Harm" },
-  { s_no: 7, name: "Economic Disadvantage in Fact" },
+  {
+    s_no: 3,
+    name: "Meets Disadvantage in American Society",
+    title: "Disadvantage in American Society",
+    pass: "Narrative provides experience of social and economic disadvantage within American society.",
+    fail: "Narrative describes experiences and circumstances of social and economic disadvantage outside American society.",
+  },
+  {
+    s_no: 4,
+    name: "Demonstration of Disadvantage (Past Experiences)",
+    pass: "Provides clear, specific lived individualized examples of experiences of social and economic disadvantage within American society.",
+    fail: "Provides only general statements of social and economic disadvantage without any personal or specific examples.",
+  },
+  {
+    s_no: 5,
+    name: "Evidence of Specific Impediments",
+    pass: "Narrative describes multiple, fact-based examples of systemic barriers, denied opportunities, and/or economic hardship (education, employment, business, financing).",
+    fail: "Mentions barriers in broad/general terms without supporting detail or provides no examples of specific impediments.",
+  },
+  {
+    s_no: 6,
+    name: "Link Between Impediments and Harm",
+    pass: "Clearly explains how barriers caused direct economic harm; includes detail on type and magnitude (e.g., lost contracts, financial losses, comparative disadvantage).",
+    fail: "States economic harm occurred but does not explain connection to barriers or fails to describe explanation of harm.",
+  },
+  {
+    s_no: 7,
+    name: "Economic Disadvantage in Fact",
+    pass: "Demonstrates with narrative and financial data that they are economically disadvantaged compared to similarly situated non-disadvantaged individuals; evidence is detailed and factual.",
+    fail: "Mentions economic disadvantage but provides weak, inconsistent, or no evidence of such disadvantage.",
+  },
 ] as const;

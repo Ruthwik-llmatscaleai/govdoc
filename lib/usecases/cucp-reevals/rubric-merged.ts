@@ -13,10 +13,14 @@ function isValidL2(x: unknown): x is CucpL2Category {
 function isValidL3(x: unknown): x is CucpL3Criterion {
   if (!x || typeof x !== "object") return false;
   const o = x as Record<string, unknown>;
+  const optionalString = (v: unknown) => v === undefined || typeof v === "string";
   return (
     typeof o.s_no === "number" &&
     typeof o.name === "string" &&
-    (o.rule === undefined || typeof o.rule === "string")
+    optionalString(o.rule) &&
+    optionalString(o.title) &&
+    optionalString(o.pass) &&
+    optionalString(o.fail)
   );
 }
 
