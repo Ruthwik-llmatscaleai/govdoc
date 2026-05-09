@@ -16,13 +16,13 @@ function verdictToStatus(verdict: string): RowStatus {
   return "N/A";
 }
 
-// Stable lowercase token for tests / styling hooks (matches verdictToStatus buckets).
-function verdictTone(verdict: string): "pass" | "fail" | "warning" | "na" {
-  const s = verdictToStatus(verdict);
-  if (s === "Pass") return "pass";
-  if (s === "Fail") return "fail";
-  if (s === "Warning") return "warning";
-  return "na";
+// Confidence scale in our pipeline is 0..1. Caltrans uses 0..10 with thresholds
+// 8.0 / 5.0 (caltrans/app.py:1058-1064). Mirror proportionally: 0.80 / 0.50.
+function confidenceTone(c: number | null | undefined): RowStatus {
+  if (c == null || Number.isNaN(c)) return "N/A";
+  if (c >= 0.8) return "Pass";
+  if (c >= 0.5) return "Warning";
+  return "Fail";
 }
 
 export function L3CriteriaTable({
@@ -37,50 +37,65 @@ export function L3CriteriaTable({
       <table className="w-full text-sm border-collapse">
         <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
           <tr>
-            <th className="text-left p-2">#</th>
+            <th className="text-left p-2 whitespace-nowrap">Category</th>
             <th className="text-left p-2">Criterion</th>
-            <th className="text-left p-2">AI Verdict</th>
-            <th className="text-left p-2">Confidence</th>
-            <th className="text-left p-2">Reasoning</th>
+            <th className="text-left p-2">Evidence Summary</th>
+            <th className="text-left p-2">AI Reasoning</th>
+            <th className="text-left p-2 whitespace-nowrap">Pass/Fail</th>
+            <th className="text-left p-2 whitespace-nowrap">Need More Info?</th>
+            <th className="text-left p-2 whitespace-nowrap">Confidence</th>
           </tr>
         </thead>
         <tbody>
           {criteria.map((c) => {
             const ov = overrideMap?.[String(c.s_no)];
             const verdict = ov?.verdict ?? c.pass_fail ?? "—";
-            const requestInfo = ov?.request_info ?? c.request_info;
-            // request_info=Yes flips the final decision per caltrans cucp_reevals.py:207,
-            // so the row should read as Warning even when verdict text is Pass/Fail.
-            const status: RowStatus =
+            const requestInfo: "Yes" | "No" = ov?.request_info ?? c.request_info;
+
+            // request_info=Yes flips the row tone per caltrans cucp_reevals.py:207,
+            // even when the underlying verdict reads as Pass/Fail.
+            const verdictStatus: RowStatus =
               requestInfo === "Yes" ? "Warning" : verdictToStatus(verdict);
-            const tone = STATUS_TONE[status];
-            const dataVerdict =
-              requestInfo === "Yes" ? "warning" : verdictTone(verdict);
-            const reasoning = ov?.reason ?? c.reasoning ?? "—";
-            const category = c.category || "—";
-            const qualification = c.qualification || "—";
+            const verdictToneCells = STATUS_TONE[verdictStatus];
+
+            const infoStatus: RowStatus = requestInfo === "Yes" ? "Warning" : "N/A";
+            const infoToneCells = STATUS_TONE[infoStatus];
+
+            const confStatus = confidenceTone(c.confidence);
+            const confToneCells = STATUS_TONE[confStatus];
+
+            const evidence = c.evidence_summary?.trim() ? c.evidence_summary : "—";
+            const reasoning = (ov?.reason ?? c.reasoning)?.trim()
+              ? (ov?.reason ?? c.reasoning)
+              : "—";
 
             return (
-              <tr key={c.s_no} className={cn("border-t align-top", tone.rowBorder)}>
-                <td className="p-2 font-mono">{c.s_no}</td>
-                <td className="p-2 max-w-md">
-                  <div className="font-medium">{category}</div>
-                  <div className="text-xs text-muted-foreground">{qualification}</div>
+              <tr key={c.s_no} className={cn("border-t align-top", verdictToneCells.rowBorder)}>
+                <td className="p-2 font-medium whitespace-nowrap">
+                  {c.category || "—"}
+                </td>
+                <td className="p-2 max-w-xs">{c.qualification || "—"}</td>
+                <td className="p-2 text-xs max-w-md break-words">{evidence}</td>
+                <td className="p-2 text-xs italic text-muted-foreground max-w-lg break-words">
+                  {reasoning}
                 </td>
                 <td
-                  className={cn(
-                    "p-2 font-semibold whitespace-nowrap",
-                    tone.cell,
-                  )}
-                  data-verdict={dataVerdict}
+                  className={cn("p-2 font-semibold whitespace-nowrap", verdictToneCells.cell)}
+                  data-verdict={verdictStatus.toLowerCase()}
                 >
                   {verdict}
                 </td>
-                <td className="p-2 font-mono">
-                  {c.confidence != null ? c.confidence.toFixed(2) : "—"}
+                <td
+                  className={cn("p-2 font-semibold whitespace-nowrap", infoToneCells.cell)}
+                  data-request-info={requestInfo === "Yes" ? "yes" : "no"}
+                >
+                  {requestInfo}
                 </td>
-                <td className="p-2 text-xs text-muted-foreground max-w-lg break-words">
-                  {reasoning && reasoning.trim().length > 0 ? reasoning : "—"}
+                <td
+                  className={cn("p-2 font-mono whitespace-nowrap", confToneCells.cell)}
+                  data-confidence-tone={confStatus.toLowerCase()}
+                >
+                  {c.confidence != null ? c.confidence.toFixed(2) : "—"}
                 </td>
               </tr>
             );

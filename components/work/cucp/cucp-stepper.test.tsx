@@ -124,6 +124,6 @@ describe("CucpStepper", () => {
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i }));
     fireEvent.click(screen.getByRole("button", { name: /Submit & Finalize/i }));
     // L3 criteria table headers (from L3CriteriaTable) still render on Done.
-    expect(screen.getByRole("columnheader", { name: /AI Verdict/i })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: /^Pass\/Fail$/i })).toBeTruthy();
   });
 });

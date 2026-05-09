@@ -39,52 +39,95 @@ const infoCriterion: Criterion = {
   confidence: 0.55,
 };
 
+const lowConfCriterion: Criterion = {
+  ...failCriterion,
+  s_no: 4,
+  confidence: 0.32,
+};
+
 describe("L3CriteriaTable", () => {
-  it("renders 5 columns: # / Criterion / AI Verdict / Confidence / Reasoning", () => {
+  it("renders the 7 caltrans column headers verbatim", () => {
     render(<L3CriteriaTable criteria={[passCriterion]} />);
     const headers = screen.getAllByRole("columnheader").map((h) => h.textContent);
-    expect(headers).toEqual(["#", "Criterion", "AI Verdict", "Confidence", "Reasoning"]);
+    expect(headers).toEqual([
+      "Category",
+      "Criterion",
+      "Evidence Summary",
+      "AI Reasoning",
+      "Pass/Fail",
+      "Need More Info?",
+      "Confidence",
+    ]);
   });
 
-  it("renders one row per criterion with AI verdict from pass_fail", () => {
+  it("renders one row per criterion", () => {
     render(<L3CriteriaTable criteria={[passCriterion, failCriterion]} />);
     const rows = screen.getAllByRole("row");
-    // 1 header row + 2 data rows
-    expect(rows).toHaveLength(3);
-    expect(within(rows[1]!).getByText("Pass")).toBeTruthy();
-    expect(within(rows[2]!).getByText("Fail")).toBeTruthy();
+    expect(rows).toHaveLength(3); // header + 2
   });
 
-  it("formats confidence to 2 decimals", () => {
+  it("displays Category and Criterion (qualification) in separate columns", () => {
     render(<L3CriteriaTable criteria={[passCriterion]} />);
-    expect(screen.getByText("0.92")).toBeTruthy();
+    const dataRow = screen.getAllByRole("row")[1]!;
+    const cells = within(dataRow).getAllByRole("cell");
+    expect(cells[0]!.textContent).toBe("Owner Disadvantage");
+    expect(cells[1]!.textContent).toBe("Socially and economically disadvantaged");
   });
 
-  it("displays category and qualification together as the criterion cell", () => {
+  it("displays Evidence Summary and AI Reasoning in separate columns", () => {
     render(<L3CriteriaTable criteria={[passCriterion]} />);
-    expect(screen.getByText(/Owner Disadvantage/)).toBeTruthy();
-    expect(screen.getByText(/Socially and economically disadvantaged/)).toBeTruthy();
+    const cells = within(screen.getAllByRole("row")[1]!).getAllByRole("cell");
+    expect(cells[2]!.textContent).toBe(
+      "Owner is a member of a presumptively disadvantaged group.",
+    );
+    expect(cells[3]!.textContent).toBe(
+      "Affidavit on file confirms group membership.",
+    );
   });
 
-  it("colors Pass rows with caltrans pass palette", () => {
+  it("colors Pass cell with caltrans pass palette", () => {
     const { container } = render(<L3CriteriaTable criteria={[passCriterion]} />);
     const verdictCell = container.querySelector("td[data-verdict='pass']");
     expect(verdictCell).not.toBeNull();
     expect(verdictCell!.className).toMatch(/bg-\[#d4edda\]/);
   });
 
-  it("colors Fail rows with caltrans fail palette", () => {
+  it("colors Fail cell with caltrans fail palette", () => {
     const { container } = render(<L3CriteriaTable criteria={[failCriterion]} />);
     const verdictCell = container.querySelector("td[data-verdict='fail']");
     expect(verdictCell).not.toBeNull();
     expect(verdictCell!.className).toMatch(/bg-\[#f8d7da\]/);
   });
 
-  it("colors Request Info rows with caltrans warning palette", () => {
+  it("colors verdict cell with warning palette when request_info=Yes (overrides Pass/Fail)", () => {
     const { container } = render(<L3CriteriaTable criteria={[infoCriterion]} />);
     const verdictCell = container.querySelector("td[data-verdict='warning']");
     expect(verdictCell).not.toBeNull();
     expect(verdictCell!.className).toMatch(/bg-\[#fff3cd\]/);
+  });
+
+  it("renders 'Need More Info?' as Yes/No and tints Yes with warning palette", () => {
+    const { container } = render(
+      <L3CriteriaTable criteria={[passCriterion, infoCriterion]} />,
+    );
+    const noCell = container.querySelector("td[data-request-info='no']");
+    const yesCell = container.querySelector("td[data-request-info='yes']");
+    expect(noCell?.textContent).toBe("No");
+    expect(yesCell?.textContent).toBe("Yes");
+    expect(yesCell!.className).toMatch(/bg-\[#fff3cd\]/);
+  });
+
+  it("colors Confidence cell green at >=0.80, amber at >=0.50, red below", () => {
+    const { container } = render(
+      <L3CriteriaTable criteria={[passCriterion, infoCriterion, lowConfCriterion]} />,
+    );
+    const cells = container.querySelectorAll("td[data-confidence-tone]");
+    expect(cells[0]!.getAttribute("data-confidence-tone")).toBe("pass");
+    expect(cells[0]!.className).toMatch(/bg-\[#d4edda\]/);
+    expect(cells[1]!.getAttribute("data-confidence-tone")).toBe("warning");
+    expect(cells[1]!.className).toMatch(/bg-\[#fff3cd\]/);
+    expect(cells[2]!.getAttribute("data-confidence-tone")).toBe("fail");
+    expect(cells[2]!.className).toMatch(/bg-\[#f8d7da\]/);
   });
 
   it("when overrideMap provides a new verdict, displays the override verdict and reason", () => {
@@ -121,15 +164,19 @@ describe("L3CriteriaTable", () => {
     expect(verdictCell).not.toBeNull();
   });
 
-  it("falls back to em-dash when fields are missing", () => {
-    const sparse = {
+  it("falls back to em-dash for blank Category / Criterion / Evidence / Reasoning", () => {
+    const sparse: Criterion = {
       ...passCriterion,
       category: "",
       qualification: "",
+      evidence_summary: "",
       reasoning: "",
     };
     render(<L3CriteriaTable criteria={[sparse]} />);
-    // confidence and verdict are still set, so we look for the reasoning cell
-    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(1);
+    const cells = within(screen.getAllByRole("row")[1]!).getAllByRole("cell");
+    expect(cells[0]!.textContent).toBe("—");
+    expect(cells[1]!.textContent).toBe("—");
+    expect(cells[2]!.textContent).toBe("—");
+    expect(cells[3]!.textContent).toBe("—");
   });
 });
