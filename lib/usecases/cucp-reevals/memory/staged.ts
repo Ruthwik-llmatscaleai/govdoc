@@ -1,4 +1,4 @@
-import type { Classification, Criterion } from "@/lib/usecases/cucp-reevals/types";
+import type { Classification, Criterion, L1Override } from "@/lib/usecases/cucp-reevals/types";
 import type { Precedent } from "./precedents";
 
 export type L2OverridePayload = {
@@ -50,4 +50,22 @@ export function l3OverrideToPrecedent(
     human_reasoning: override.reason,
     s_no: sNo,
   };
+}
+
+export function l1OverrideToPrecedent(override: L1Override): Precedent {
+  if (override.kind === "fact-field") {
+    return {
+      target: `Fact ${override.fact_id}: ${override.field}`,
+      correction: override.corrected_value,
+      human_reasoning: override.reason,
+    };
+  }
+  if (override.kind === "specific-incident") {
+    return {
+      target: "Specific Incident Detail",
+      correction: override.description,
+      human_reasoning: override.reason,
+    };
+  }
+  throw new Error(`Unsupported override kind for precedent: ${override.kind}`);
 }

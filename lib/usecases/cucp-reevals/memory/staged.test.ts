@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { l2OverrideToPrecedent, l3OverrideToPrecedent } from "./staged";
+import { l1OverrideToPrecedent, l2OverrideToPrecedent, l3OverrideToPrecedent } from "./staged";
 import type { Classification, Criterion } from "@/lib/usecases/cucp-reevals/types";
 
 describe("l2OverrideToPrecedent", () => {
@@ -89,5 +89,51 @@ describe("l3OverrideToPrecedent", () => {
     );
     expect(p.target).toBe("Criterion 99");
     expect(p.s_no).toBe(99);
+  });
+});
+
+describe("l1OverrideToPrecedent", () => {
+  it("converts a fact-field override into a precedent with formatted target", () => {
+    const p = l1OverrideToPrecedent({
+      kind: "fact-field",
+      fact_id: "fact_3",
+      field: "When",
+      corrected_value: "2020",
+      reason: "narrative explicitly says 2020",
+    });
+    expect(p.target).toBe("Fact fact_3: When");
+    expect(p.correction).toBe("2020");
+    expect(p.human_reasoning).toBe("narrative explicitly says 2020");
+  });
+
+  it("converts a specific-incident override into a precedent with the description as correction", () => {
+    const p = l1OverrideToPrecedent({
+      kind: "specific-incident",
+      description: "Owner cited 2019 loan denial on page 4",
+      reason: "missed by AI on first pass",
+    });
+    expect(p.target).toBe("Specific Incident Detail");
+    expect(p.correction).toBe("Owner cited 2019 loan denial on page 4");
+    expect(p.human_reasoning).toBe("missed by AI on first pass");
+  });
+
+  it("throws for firm-name kind (handled as field-override, not precedent)", () => {
+    expect(() =>
+      l1OverrideToPrecedent({
+        kind: "firm-name",
+        corrected_value: "Acme, LLC.",
+        reason: "matches incorporation docs",
+      }),
+    ).toThrow(/firm-name/);
+  });
+
+  it("throws for narrative-pnw kind", () => {
+    expect(() =>
+      l1OverrideToPrecedent({
+        kind: "narrative-pnw",
+        corrected_value: "1.2M",
+        reason: "page 2 of narrative",
+      }),
+    ).toThrow(/narrative-pnw/);
   });
 });
