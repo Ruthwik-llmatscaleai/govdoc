@@ -3,9 +3,9 @@ import { Tabs } from "@base-ui/react/tabs";
 import { CmgcRubricEdit } from "./cmgc-rubric-edit";
 import { CucpRubricEdit } from "./cucp-rubric-edit";
 import { RowRubricEdit } from "./row-rubric-edit";
-import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-merged";
-import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-merged";
-import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-merged";
+import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
+import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-data";
+import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-data";
 
 const TAB_TRIGGER =
   "px-4 py-3 text-sm font-semibold tracking-tight text-muted-foreground transition-colors data-[selected=true]:text-foreground data-[selected=true]:border-b-2 data-[selected=true]:border-primary";

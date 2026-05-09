@@ -1,14 +1,8 @@
-import { RUBRIC_QUESTIONS, SECTION_WEIGHTS, type RubricQuestion } from "./rubric";
+import type { RubricQuestion } from "./rubric";
 import { loadSavedRubric } from "../rubric-store";
-
-export type CmgcRubricData = {
-  questions: readonly RubricQuestion[];
-  weights: Readonly<Record<"A" | "B" | "C" | "D" | "E" | "F", number>>;
-};
-
-export function defaultCmgcRubric(): CmgcRubricData {
-  return { questions: RUBRIC_QUESTIONS, weights: SECTION_WEIGHTS };
-}
+import { defaultCmgcRubric, type CmgcRubricData } from "./rubric-data";
+export type { CmgcRubricData } from "./rubric-data";
+export { defaultCmgcRubric } from "./rubric-data";
 
 function isValidQuestion(q: unknown): q is RubricQuestion {
   if (!q || typeof q !== "object") return false;

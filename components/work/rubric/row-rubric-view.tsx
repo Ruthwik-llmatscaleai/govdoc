@@ -1,5 +1,5 @@
-import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-merged";
-import { defaultRowRubric } from "@/lib/usecases/row-appraisal/rubric-merged";
+import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-data";
+import { defaultRowRubric } from "@/lib/usecases/row-appraisal/rubric-data";
 import { STATUS_TONE, statusFromScore } from "@/components/work/row/status-tone";
 
 const TIERS: ("1" | "2" | "3" | "4" | "5")[] = ["1", "2", "3", "4", "5"];

@@ -1,7 +1,7 @@
 "use client";
 import { Tabs } from "@base-ui/react/tabs";
-import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-merged";
-import { defaultCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-merged";
+import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-data";
+import { defaultCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-data";
 
 export function CucpRubricView({ data }: { data?: CucpRubricData }) {
   const { l2, l3 } = data ?? defaultCucpRubric();

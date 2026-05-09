@@ -1,19 +1,8 @@
-import {
-  CUCP_L2_CATEGORIES,
-  CUCP_L3_CRITERIA,
-  type CucpL2Category,
-  type CucpL3Criterion,
-} from "./rubric";
+import type { CucpL2Category, CucpL3Criterion } from "./rubric";
 import { loadSavedRubric } from "../rubric-store";
-
-export type CucpRubricData = {
-  l2: readonly CucpL2Category[];
-  l3: readonly CucpL3Criterion[];
-};
-
-export function defaultCucpRubric(): CucpRubricData {
-  return { l2: CUCP_L2_CATEGORIES, l3: CUCP_L3_CRITERIA };
-}
+import { defaultCucpRubric, type CucpRubricData } from "./rubric-data";
+export type { CucpRubricData } from "./rubric-data";
+export { defaultCucpRubric } from "./rubric-data";
 
 function isValidL2(x: unknown): x is CucpL2Category {
   if (!x || typeof x !== "object") return false;

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-merged";
-import { defaultCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-merged";
+import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
+import { defaultCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-data";
 import type { RubricQuestion } from "@/lib/usecases/cmgc-pde/rubric";
 
 const SECTION_KEYS = ["A", "B", "C", "D", "E", "F"] as const;
@@ -127,7 +127,14 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
         ))}
       </div>
 
-      <SaveBar saving={saving} msg={msg} onSave={onSave} onReset={onReset} />
+      <SaveBar
+        saving={saving}
+        msg={msg}
+        onSave={onSave}
+        onReset={onReset}
+        downloadHref="/api/usecases/cmgc-pde/rubric/download"
+        downloadLabel="Download .xlsx"
+      />
     </div>
   );
 }
@@ -137,16 +144,26 @@ function SaveBar({
   msg,
   onSave,
   onReset,
+  downloadHref,
+  downloadLabel,
 }: {
   saving: boolean;
   msg: string | null;
   onSave: () => void;
   onReset: () => void;
+  downloadHref: string;
+  downloadLabel: string;
 }) {
   return (
     <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/95 p-4 backdrop-blur shadow-md">
       <span className="text-xs text-muted-foreground">{msg ?? "Edits are kept on this server only and are ephemeral on Cloud Run."}</span>
       <div className="flex gap-2">
+        <a
+          href={downloadHref}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+        >
+          {downloadLabel}
+        </a>
         <button
           type="button"
           onClick={onReset}

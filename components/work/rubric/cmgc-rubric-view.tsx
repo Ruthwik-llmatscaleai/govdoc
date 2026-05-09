@@ -1,5 +1,5 @@
-import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-merged";
-import { defaultCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-merged";
+import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
+import { defaultCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-data";
 
 const SECTION_KEYS = ["A", "B", "C", "D", "E", "F"] as const;
 

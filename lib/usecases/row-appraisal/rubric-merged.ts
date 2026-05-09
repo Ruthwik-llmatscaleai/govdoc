@@ -1,14 +1,7 @@
-import rubricSchema from "./assets/rubric_schema.json";
 import { loadSavedRubric } from "../rubric-store";
-
-export type RowRubricData = Record<
-  string,
-  Record<"1" | "2" | "3" | "4" | "5", string>
->;
-
-export function defaultRowRubric(): RowRubricData {
-  return rubricSchema as RowRubricData;
-}
+import { defaultRowRubric, type RowRubricData } from "./rubric-data";
+export type { RowRubricData } from "./rubric-data";
+export { defaultRowRubric } from "./rubric-data";
 
 function isValidTiers(x: unknown): x is RowRubricData[string] {
   if (!x || typeof x !== "object") return false;
