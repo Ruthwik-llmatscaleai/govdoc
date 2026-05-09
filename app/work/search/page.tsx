@@ -19,10 +19,10 @@ const OPTIONS = [
   {
     title: "Edit Rubrics",
     blurb:
-      "Adjust rubric questions, options, and weights. Edits will auto-apply to subsequent reviews.",
+      "Adjust rubric questions, options, and weights. Saved edits show up immediately in Preview Rubrics.",
     href: "/work/search/edit",
     icon: Edit3,
-    enabled: false,
+    enabled: true,
     tone: {
       iconBg: "bg-[oklch(0.94_0.04_15)]",
       iconFg: "text-[oklch(0.55_0.18_15)]",

@@ -1,11 +1,10 @@
 "use client";
 import { Tabs } from "@base-ui/react/tabs";
-import {
-  CUCP_L2_CATEGORIES,
-  CUCP_L3_CRITERIA,
-} from "@/lib/usecases/cucp-reevals/rubric";
+import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-merged";
+import { defaultCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-merged";
 
-export function CucpRubricView() {
+export function CucpRubricView({ data }: { data?: CucpRubricData }) {
+  const { l2, l3 } = data ?? defaultCucpRubric();
   return (
     <Tabs.Root
       defaultValue="l2"
@@ -18,11 +17,9 @@ export function CucpRubricView() {
 
       <Tabs.Panel value="l2" className="p-5">
         <dl className="space-y-4">
-          {CUCP_L2_CATEGORIES.map((c) => (
+          {l2.map((c) => (
             <div key={c.name}>
-              <dt className="text-sm font-semibold text-foreground">
-                {c.name}
-              </dt>
+              <dt className="text-sm font-semibold text-foreground">{c.name}</dt>
               <dd className="mt-1 break-words text-sm leading-relaxed text-muted-foreground">
                 {c.description}
               </dd>
@@ -41,11 +38,8 @@ export function CucpRubricView() {
             </tr>
           </thead>
           <tbody>
-            {CUCP_L3_CRITERIA.map((c, i) => (
-              <tr
-                key={c.s_no}
-                className={i === 0 ? "" : "border-t border-border"}
-              >
+            {l3.map((c, i) => (
+              <tr key={c.s_no} className={i === 0 ? "" : "border-t border-border"}>
                 <td className="px-5 py-4 font-mono text-xs font-semibold text-muted-foreground align-top">
                   {c.s_no}
                 </td>

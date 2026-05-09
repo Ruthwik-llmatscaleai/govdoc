@@ -1,12 +1,11 @@
-import rubricSchema from "@/lib/usecases/row-appraisal/assets/rubric_schema.json";
+import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-merged";
+import { defaultRowRubric } from "@/lib/usecases/row-appraisal/rubric-merged";
 import { STATUS_TONE, statusFromScore } from "@/components/work/row/status-tone";
-
-type RowRubricSchema = Record<string, Record<"1" | "2" | "3" | "4" | "5", string>>;
 
 const TIERS: ("1" | "2" | "3" | "4" | "5")[] = ["1", "2", "3", "4", "5"];
 
-export function RowRubricView() {
-  const schema = rubricSchema as RowRubricSchema;
+export function RowRubricView({ data }: { data?: RowRubricData }) {
+  const schema = data ?? defaultRowRubric();
   const categories = Object.entries(schema);
 
   return (
@@ -16,15 +15,10 @@ export function RowRubricView() {
         without text indicate the tier is not used for that category.
       </p>
       {categories.map(([category, tiers]) => (
-        <details
-          key={category}
-          className="rounded-2xl border border-border bg-card"
-        >
+        <details key={category} className="rounded-2xl border border-border bg-card">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-semibold text-foreground">
             <span className="break-words">{category}</span>
-            <span className="text-xs font-normal text-muted-foreground">
-              ▾
-            </span>
+            <span className="text-xs font-normal text-muted-foreground">▾</span>
           </summary>
           <div className="border-t border-border p-4">
             <table className="w-full text-sm">

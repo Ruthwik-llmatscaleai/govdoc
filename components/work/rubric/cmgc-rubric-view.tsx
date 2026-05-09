@@ -1,10 +1,13 @@
-import { RUBRIC_QUESTIONS, SECTION_WEIGHTS } from "@/lib/usecases/cmgc-pde/rubric";
+import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-merged";
+import { defaultCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-merged";
 
 const SECTION_KEYS = ["A", "B", "C", "D", "E", "F"] as const;
 
-export function CmgcRubricView() {
-  const bySection = new Map<string, typeof RUBRIC_QUESTIONS[number][]>();
-  for (const q of RUBRIC_QUESTIONS) {
+export function CmgcRubricView({ data }: { data?: CmgcRubricData }) {
+  const { questions, weights } = data ?? defaultCmgcRubric();
+
+  const bySection = new Map<string, typeof questions[number][]>();
+  for (const q of questions) {
     const arr = bySection.get(q.section) ?? [];
     arr.push(q);
     bySection.set(q.section, arr);
@@ -22,13 +25,13 @@ export function CmgcRubricView() {
             key={k}
             className="rounded-full bg-muted px-2.5 py-1 font-medium text-foreground"
           >
-            {k} {Math.round(SECTION_WEIGHTS[k] * 100)}%
+            {k} {Math.round(weights[k] * 100)}%
           </span>
         ))}
       </div>
 
       <div className="space-y-3">
-        {sections.map(([section, questions], i) => (
+        {sections.map(([section, qs], i) => (
           <details
             key={section}
             open={i === 0}
@@ -37,14 +40,14 @@ export function CmgcRubricView() {
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 text-base font-semibold text-foreground">
               <span>{section}</span>
               <span className="text-xs font-medium text-muted-foreground">
-                {questions.length} question{questions.length === 1 ? "" : "s"}
+                {qs.length} question{qs.length === 1 ? "" : "s"}
                 <span className="ml-2 text-foreground/60 transition group-open:rotate-180 inline-block">
                   ▾
                 </span>
               </span>
             </summary>
             <div className="space-y-5 border-t border-border p-5">
-              {questions.map((q) => (
+              {qs.map((q) => (
                 <div key={q.id} className="space-y-2">
                   <div className="flex items-baseline gap-2">
                     <span className="font-mono text-xs font-semibold text-muted-foreground">

@@ -16,10 +16,10 @@ describe("SearchAskPage (Preview / Edit picker)", () => {
     expect(link).toHaveAttribute("href", "/work/search/preview");
   });
 
-  it("Edit is marked Coming soon and is not a link", () => {
+  it("Edit is enabled and links to /work/search/edit", () => {
     render(<SearchAskPage />);
-    expect(screen.getByText(/coming soon/i)).toBeInTheDocument();
-    const editLink = screen.queryAllByRole("link").find((a) => a.textContent?.includes("Edit Rubrics"));
-    expect(editLink).toBeUndefined();
+    const link = screen.getByText("Edit Rubrics").closest("a");
+    expect(link).not.toBeNull();
+    expect(link).toHaveAttribute("href", "/work/search/edit");
   });
 });
