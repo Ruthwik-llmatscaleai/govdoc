@@ -41,7 +41,7 @@ export function Tile({ title, blurb, href, enabled, icon: Icon, tone = "blue" }:
     <div
       className={`group relative flex h-full flex-col gap-4 rounded-2xl border border-border bg-card p-6 transition ${
         enabled
-          ? "cursor-pointer hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_10px_30px_-10px_oklch(0.42_0.13_254/0.18)]"
+          ? "cursor-pointer hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_10px_30px_-10px_oklch(0.62_0.14_38/0.18)]"
           : "opacity-70"
       }`}
     >

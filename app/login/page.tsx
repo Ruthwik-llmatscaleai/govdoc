@@ -1,18 +1,17 @@
-import { LayoutGrid, ShieldCheck, Sparkles, Layers, Lock, BadgeCheck } from "lucide-react";
 import { LoginForm } from "@/components/login/login-form";
-import { CaSeal } from "@/components/brand/ca-seal";
+import { AppLogo } from "@/components/brand/app-logo";
+import { CapabilityPill } from "@/components/login/capability-pill";
 
-const principles = [
-  { icon: LayoutGrid, text: "Three screens, many functions" },
-  { icon: Sparkles, text: "No training required" },
-  { icon: ShieldCheck, text: "Human always in control" },
-  { icon: Layers, text: "Same shell, every document type" },
+const capabilities = [
+  { label: "Document Compare", dotColor: "oklch(0.55 0.18 295)" },
+  { label: "Regulatory Watch", dotColor: "oklch(0.72 0.16 50)" },
+  { label: "Decision Support", dotColor: "oklch(0.62 0.20 350)" },
 ];
 
 export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-background">
-      {/* Left: GovDoc branding panel */}
+      {/* Left: branding panel */}
       <div className="relative hidden w-[55%] flex-col justify-between border-r border-border bg-[var(--color-govdoc-tint)] lg:flex">
         <div
           aria-hidden
@@ -25,55 +24,38 @@ export default function LoginPage() {
         />
 
         <div className="relative z-10 flex h-full flex-col justify-between p-14">
-          {/* Wordmark */}
           <div className="flex items-center gap-4">
-            <CaSeal size={56} />
-            <div>
-              <div className="text-2xl font-bold tracking-tight text-foreground">
-                GovDoc
-              </div>
-              <div className="mt-0.5 flex items-center gap-2">
-                <span className="h-px w-6 bg-primary/60" />
-                <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                  State of California
-                </span>
-              </div>
-            </div>
+            <AppLogo size={80} />
           </div>
 
-          {/* Hero */}
           <div className="max-w-lg">
-            <h2 className="text-[2.5rem] font-semibold leading-[1.15] text-foreground">
+            <h2
+              className="text-[2.5rem] font-semibold leading-[1.15] text-foreground"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
               Document intelligence
               <br />
-              for every State program.{" "}
-              <span className="text-primary">One shell.</span>
+              built for review at scale.{" "}
+              <span className="text-primary">Auditable AI.</span>
             </h2>
 
             <p className="mt-5 text-base leading-relaxed text-muted-foreground">
-              Read, understand, and act on any document the State produces or
-              receives — with citations on every answer and a human approving
-              every consequential action.
+              Read, understand, and act on any document — with citations on
+              every answer and a human approving every consequential action.
             </p>
 
-            <ul className="mt-10 space-y-4">
-              {principles.map(({ icon: Icon, text }) => (
-                <li key={text} className="flex items-center gap-4">
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/[0.07] ring-1 ring-primary/15">
-                    <Icon className="size-[18px] text-primary" />
-                  </div>
-                  <span className="text-sm text-foreground/75">{text}</span>
-                </li>
+            <div className="mt-10 flex flex-wrap gap-3">
+              {capabilities.map((c) => (
+                <CapabilityPill
+                  key={c.label}
+                  label={c.label}
+                  dotColor={c.dotColor}
+                />
               ))}
-            </ul>
+            </div>
           </div>
 
-          {/* Compliance badges */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Badge icon={Lock} label="FedRAMP-aligned cloud" />
-            <Badge icon={ShieldCheck} label="CDT-aligned" />
-            <Badge icon={BadgeCheck} label="CPRA-ready audit log" />
-          </div>
+          <div />
         </div>
       </div>
 
@@ -81,51 +63,33 @@ export default function LoginPage() {
       <div className="flex w-full flex-col lg:w-[45%]">
         <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 lg:px-14">
           {/* Mobile-only brand */}
-          <div className="mb-8 flex w-full max-w-[400px] items-center gap-3 lg:hidden">
-            <CaSeal size={44} />
-            <div>
-              <div className="text-xl font-bold tracking-tight">GovDoc</div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                State of California
-              </div>
-            </div>
+          <div className="mb-8 flex w-full max-w-[400px] justify-center lg:hidden">
+            <AppLogo size={64} />
           </div>
 
           <div className="w-full max-w-[400px]">
             <div className="mb-7">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              <h1
+                className="text-2xl font-semibold tracking-tight text-foreground"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
                 Sign in to continue
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Use your State of California credentials.
+                Use your administrator-issued credentials.
               </p>
             </div>
 
             <LoginForm />
 
             <p className="mt-10 text-center text-[11px] leading-relaxed text-muted-foreground/70">
-              © {new Date().getFullYear()} State of California — GovDoc
+              © {new Date().getFullYear()} LLM at Scale.AI
               <br />
-              Built by LLM at Scale.AI · Confidential and Proprietary
+              Confidential and Proprietary
             </p>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Badge({
-  icon: Icon,
-  label,
-}: {
-  icon: typeof Lock;
-  label: string;
-}) {
-  return (
-    <div className="flex items-center gap-2 rounded-full bg-background/80 px-3.5 py-1.5 ring-1 ring-border">
-      <Icon className="size-3.5 text-primary/80" />
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
     </div>
   );
 }

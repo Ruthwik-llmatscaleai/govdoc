@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronDown, LogOut, Search } from "lucide-react";
-import { CaSeal } from "@/components/brand/ca-seal";
+import { AppLogo } from "@/components/brand/app-logo";
 
 type Props = {
   user: string;
@@ -22,15 +22,7 @@ export function TopBar({ user, showSearch = true }: Props) {
           href={"/landing" as any}
           className="flex items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-md"
         >
-          <CaSeal size={36} />
-          <div className="leading-tight">
-            <div className="text-base font-semibold tracking-tight text-foreground">
-              GovDoc
-            </div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              State of California
-            </div>
-          </div>
+          <AppLogo size={36} />
         </Link>
 
         {showSearch && (

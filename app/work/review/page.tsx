@@ -42,7 +42,7 @@ export default function ReviewPicker() {
               <Link
                 key={uc.id}
                 href={`/work/review/${uc.id}` as any}
-                className="group flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_10px_30px_-10px_oklch(0.42_0.13_254/0.18)]"
+                className="group flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_10px_30px_-10px_oklch(0.62_0.14_38/0.18)]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className={`flex size-12 items-center justify-center rounded-full ring-1 ${t.iconBg} ${t.ring}`}>

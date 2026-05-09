@@ -3,14 +3,16 @@ import { render, screen } from "@testing-library/react";
 import { TopBar } from "./top-bar";
 
 describe("TopBar", () => {
-  it("renders GovDoc brand and user pill", () => {
+  it("renders the LLM at Scale.AI logo and user pill", () => {
     render(<TopBar user="joe" />);
-    expect(screen.getByText("GovDoc")).toBeInTheDocument();
+    expect(screen.getByLabelText(/llm at scale/i)).toBeInTheDocument();
     expect(screen.getByText(/joe/i)).toBeInTheDocument();
   });
 
-  it("includes a State of California subtitle", () => {
+  it("links the logo to /landing", () => {
     render(<TopBar user="joe" />);
-    expect(screen.getByText(/state of california/i)).toBeInTheDocument();
+    const link = screen.getByLabelText(/llm at scale/i).closest("a");
+    expect(link).not.toBeNull();
+    expect(link).toHaveAttribute("href", "/landing");
   });
 });
