@@ -1,3 +1,9 @@
+// The 7 criteria below are mirrored as structured data in `../rubric.ts`
+// (CUCP_L3_CRITERIA) for the Preview Rubric UI. The two must stay in sync
+// — the regression test at `../rubric.test.ts` asserts that every
+// "{s_no}. {name}" line and the criterion #2 rule still appear in this
+// prompt. Update both together.
+
 import type { Classification, ExtractedFact } from "@/lib/usecases/cucp-reevals/types";
 import type { Precedent } from "@/lib/usecases/cucp-reevals/memory/precedents";
 import { buildPrecedentsBlock } from "@/lib/usecases/cucp-reevals/memory/precedents";

@@ -39,9 +39,8 @@ export default function ReviewPicker() {
             const Icon = ICONS[uc.id as UseCaseId] ?? CheckCircle2;
             const t = TONE_CLASSES[USE_CASE_TONE[uc.id as UseCaseId]];
             return (
-              <Link
+              <div
                 key={uc.id}
-                href={`/work/review/${uc.id}` as any}
                 className="group flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_10px_30px_-10px_oklch(0.62_0.14_38/0.18)]"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -60,11 +59,23 @@ export default function ReviewPicker() {
                     {uc.blurb}
                   </p>
                 </div>
-                <div className="mt-auto flex items-center gap-1.5 text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                  Open evaluator
-                  <ArrowRight className="size-3.5" />
+                <div className="mt-auto flex flex-col gap-2">
+                  <Link
+                    href={`/work/review/${uc.id}` as any}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)]"
+                  >
+                    Open evaluator
+                    <ArrowRight className="size-3.5" />
+                  </Link>
+                  <Link
+                    href={`/work/review/${uc.id}/rubric` as any}
+                    className="inline-flex items-center justify-center gap-1 text-xs font-medium text-muted-foreground transition hover:text-primary"
+                  >
+                    Preview rubric
+                    <ArrowRight className="size-3" />
+                  </Link>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

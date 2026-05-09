@@ -1,3 +1,9 @@
+// The 5 legal categories below are mirrored as structured data in
+// `../rubric.ts` (CUCP_L2_CATEGORIES) for the Preview Rubric UI. The two
+// must stay in sync — the regression test at `../rubric.test.ts` asserts
+// that every category name + description from rubric.ts still appears in
+// this prompt. Update both together.
+
 import type { ExtractedFact } from "@/lib/usecases/cucp-reevals/types";
 import type { Precedent } from "@/lib/usecases/cucp-reevals/memory/precedents";
 import { buildPrecedentsBlock } from "@/lib/usecases/cucp-reevals/memory/precedents";
