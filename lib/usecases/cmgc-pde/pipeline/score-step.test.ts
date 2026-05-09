@@ -8,7 +8,7 @@ function makeCtx(call: LlmRouter["call"], formData: FormData): { ctx: StepContex
   return {
     formData,
     ctx: {
-      userId: "test", runId: "r1",
+      userId: "test", projectId: "_test", runId: "r1",
       prior: { evaluate: { ratings: mockRatings({ A1: "C", A2: "C", A3: "C" }) } },
       llm: { call },
       abortSignal: new AbortController().signal,
@@ -67,7 +67,7 @@ describe("scoreStep", () => {
   it("emits error when ratings missing", async () => {
     const fd = new FormData();
     const ctx: StepContext = {
-      userId: "test", runId: "r1", prior: {},
+      userId: "test", projectId: "_test", runId: "r1", prior: {},
       llm: { call: vi.fn() },
       abortSignal: new AbortController().signal,
       log: () => {},

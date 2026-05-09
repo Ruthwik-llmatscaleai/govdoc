@@ -11,7 +11,7 @@ const sampleL1 = {
 
 function makeCtx(callImpl: any): StepContext {
   return {
-    userId: "u", runId: "r",
+    userId: "u", projectId: "_test", runId: "r",
     prior: { extract: { narrativeText: "body", firmRevenues: {} } },
     llm: { call: vi.fn(callImpl) } as any,
     abortSignal: new AbortController().signal, log: vi.fn(),

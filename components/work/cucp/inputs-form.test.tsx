@@ -15,6 +15,14 @@ describe("CUCP InputsForm", () => {
     expect(screen.getByRole("button", { name: /run re-evaluation/i })).toBeDefined();
   });
 
+  it("renders a required Project ID text input", () => {
+    render(<InputsForm />);
+    const input = screen.getByLabelText(/Project ID/i) as HTMLInputElement;
+    expect(input).toBeTruthy();
+    expect(input.required).toBe(true);
+    expect(input.name).toBe("projectId");
+  });
+
   it("calls usePipelineStore.start with cucp-reevals on submit", async () => {
     const startSpy = vi.fn(async () => {});
     usePipelineStore.setState({ start: startSpy as never });

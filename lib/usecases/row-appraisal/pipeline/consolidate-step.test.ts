@@ -30,6 +30,7 @@ const rawResults: EvaluationResult[] = [
 function makeCtx(): StepContext {
   return {
     userId: "u",
+    projectId: "_test",
     runId: "r",
     prior: {
       extract: {

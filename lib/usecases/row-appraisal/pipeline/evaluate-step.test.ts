@@ -33,6 +33,7 @@ function makeCtx(callResponses: string[], pdfB64?: string): StepContext {
   let idx = 0;
   return {
     userId: "u",
+    projectId: "_test",
     runId: "r",
     prior: {
       extract: {

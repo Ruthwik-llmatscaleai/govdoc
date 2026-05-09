@@ -24,16 +24,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!useCase) return new NextResponse("Unknown use case", { status: 404 });
 
   const formData = await req.formData();
+  const projectIdRaw = formData.get("projectId");
+  const projectId = typeof projectIdRaw === "string" ? projectIdRaw.trim() : "";
+  if (id === "cucp-reevals" && !projectId) {
+    return new NextResponse("projectId is required", { status: 400 });
+  }
+  const effectiveProjectId = projectId || "_default";
   const runId = crypto.randomUUID();
 
   return sseStream(async function* () {
     const ctx: StepContext = {
       userId: session.user,
+      projectId: effectiveProjectId,
       runId,
       prior: {},
       llm: makeLlmRouter(),
       abortSignal: req.signal,
-      log: (msg, data) => logger.warn({ runId, data }, msg),
+      log: (msg, data) => logger.warn({ runId, projectId: effectiveProjectId, data }, msg),
     };
     yield { type: "run-started", runId } satisfies StepEvent;
     yield { type: "progress", stage: "init", pct: 0, message: `Starting ${useCase.label}` } satisfies StepEvent;

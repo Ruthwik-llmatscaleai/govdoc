@@ -8,7 +8,7 @@ const DOCX = path.resolve(__dirname, "../../../../tests/fixtures/cmgc/synthetic-
 
 function makeCtx(): StepContext {
   return {
-    userId: "test", runId: "r1", prior: {},
+    userId: "test", projectId: "_test", runId: "r1", prior: {},
     llm: { call: async () => ({ text: "" }) },
     abortSignal: new AbortController().signal,
     log: () => {},

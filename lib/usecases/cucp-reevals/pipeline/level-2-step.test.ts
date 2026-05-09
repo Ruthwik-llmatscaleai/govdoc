@@ -8,7 +8,7 @@ const sampleL2 = {
 
 function makeCtx(callImpl: any): StepContext {
   return {
-    userId: "u", runId: "r",
+    userId: "u", projectId: "_test", runId: "r",
     prior: {
       level1: {
         firm_name: "Acme",

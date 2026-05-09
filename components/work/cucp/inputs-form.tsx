@@ -18,6 +18,22 @@ export function InputsForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <Field
+        htmlFor="projectId"
+        label="Project ID"
+        required
+        hint="A stable identifier for this project (e.g. applicant ID, firm + contract number). All institutional memory corrections you commit will be scoped to this Project ID."
+      >
+        <input
+          id="projectId"
+          name="projectId"
+          type="text"
+          required
+          minLength={1}
+          className="h-9 w-full rounded-lg border border-input bg-muted/30 px-3 text-sm transition-colors focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
+        />
+      </Field>
+
+      <Field
         htmlFor="narrative"
         label="Personal Narrative Statement (PDF)"
         required

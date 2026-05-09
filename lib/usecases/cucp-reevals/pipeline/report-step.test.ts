@@ -24,7 +24,7 @@ const sampleL3 = {
 
 function makeCtx(overrides: unknown[] = []): StepContext {
   return {
-    userId: "u", runId: "r",
+    userId: "u", projectId: "_test", runId: "r",
     prior: {
       level1: sampleL1,
       level2: sampleL2,

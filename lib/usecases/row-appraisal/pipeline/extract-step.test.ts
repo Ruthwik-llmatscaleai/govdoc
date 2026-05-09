@@ -4,6 +4,7 @@ import type { StepContext } from "@/lib/usecases/types";
 
 const fakeCtx: StepContext = {
   userId: "u",
+  projectId: "_test",
   runId: "r",
   prior: {},
   llm: { call: vi.fn() },

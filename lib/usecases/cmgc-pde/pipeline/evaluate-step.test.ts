@@ -16,7 +16,7 @@ const FIXTURE_EVAL = {
 
 function makeCtx(call: LlmRouter["call"]): StepContext {
   return {
-    userId: "test", runId: "r1", prior: { extract: { narrative: "test narrative" } },
+    userId: "test", projectId: "_test", runId: "r1", prior: { extract: { narrative: "test narrative" } },
     llm: { call },
     abortSignal: new AbortController().signal,
     log: () => {},
@@ -78,7 +78,7 @@ describe("evaluateStep", () => {
   it("yields error when narrative is missing", async () => {
     const fd = new FormData();
     const ctx: StepContext = {
-      userId: "test", runId: "r1", prior: {},
+      userId: "test", projectId: "_test", runId: "r1", prior: {},
       llm: { call: vi.fn() },
       abortSignal: new AbortController().signal,
       log: () => {},

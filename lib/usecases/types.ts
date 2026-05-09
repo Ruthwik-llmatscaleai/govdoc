@@ -24,6 +24,7 @@ export type StepEvent =
 
 export type StepContext = {
   userId: string;
+  projectId: string;
   runId: string;
   prior: Record<string, unknown>;
   llm: LlmRouter;

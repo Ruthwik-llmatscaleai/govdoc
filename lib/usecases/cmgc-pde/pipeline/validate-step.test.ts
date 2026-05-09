@@ -5,7 +5,7 @@ import { mockRatings } from "../scoring/fixtures";
 
 function makeCtx(): StepContext {
   return {
-    userId: "test", runId: "r1",
+    userId: "test", projectId: "_test", runId: "r1",
     prior: { evaluate: { ratings: mockRatings() } },
     llm: { call: vi.fn() },
     abortSignal: new AbortController().signal,

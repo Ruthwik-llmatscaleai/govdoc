@@ -13,7 +13,7 @@ afterEach(() => __clearRendezvous());
 
 function makeCtx(runId: string): StepContext {
   return {
-    userId: "u", runId,
+    userId: "u", projectId: "_test", runId,
     prior: {
       level1: { firm_name: "F", cross_reference_result: "100000", narrative_pnw: "NOT PROVIDED", extracted_facts: [] },
       level2: { classifications: [] },
