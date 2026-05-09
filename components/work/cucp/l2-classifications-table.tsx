@@ -37,9 +37,11 @@ const TEXTAREA_CLASS =
 export function L2ClassificationsTable({
   rows,
   onSaveOverride,
+  disabled = false,
 }: {
   rows: readonly L2Row[];
   onSaveOverride: (p: L2OverridePayload) => void;
+  disabled?: boolean;
 }): React.JSX.Element {
   const first = rows[0]?.fact_id ?? "";
   const [factId, setFactId] = useState(first);
@@ -142,7 +144,7 @@ export function L2ClassificationsTable({
         <div className="flex justify-end">
           <button
             type="button"
-            disabled={!reasonOk}
+            disabled={!reasonOk || disabled}
             onClick={submit}
             className={cn(
               "rounded-md px-4 py-2 text-sm font-medium transition-colors",

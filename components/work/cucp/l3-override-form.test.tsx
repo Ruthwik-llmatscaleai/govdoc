@@ -98,4 +98,12 @@ describe("L3OverrideForm", () => {
       "#3 — Truthful narrative",
     ]);
   });
+
+  it("disables Save when the disabled prop is true even with a valid reason", () => {
+    render(<L3OverrideForm criteria={criteria} onSave={() => {}} disabled={true} />);
+    fireEvent.change(screen.getByLabelText(/^Reason/i), {
+      target: { value: "long enough reason here" },
+    });
+    expect(screen.getByRole("button", { name: /Save Override/i })).toBeDisabled();
+  });
 });

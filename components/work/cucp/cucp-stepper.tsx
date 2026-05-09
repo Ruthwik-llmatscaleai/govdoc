@@ -8,7 +8,7 @@ import {
   type L2Row,
   type L2OverridePayload,
 } from "./l2-classifications-table";
-import { L3CriteriaTable, type L3OverrideMap } from "./l3-criteria-table";
+import { L3CriteriaTable } from "./l3-criteria-table";
 import { L3OverrideForm, type L3OverridePayload } from "./l3-override-form";
 import { RequestInfoBanner } from "./request-info-banner";
 import type { ExtractedFact, Criterion } from "@/lib/usecases/cucp-reevals/types";
@@ -25,6 +25,7 @@ const STEPS: readonly StepBarStep[] = [
 const PRIMARY_BTN_CLASS = cn(
   "rounded-md px-4 py-2 text-sm font-medium transition-colors",
   "bg-primary text-primary-foreground hover:bg-primary/90",
+  "disabled:cursor-not-allowed disabled:opacity-50",
 );
 
 const SECONDARY_BTN_CLASS = cn(
@@ -32,44 +33,30 @@ const SECONDARY_BTN_CLASS = cn(
   "transition-colors hover:bg-muted",
 );
 
-export type CucpStepperSubmitPayload = {
-  l2: L2OverridePayload[];
-  l3: L3OverridePayload[];
-};
-
 export function CucpStepper({
+  runId,
   facts,
   classifications,
   criteria,
-  onSubmit,
+  isReRunning,
+  onComplete,
 }: {
+  runId: string;
   facts: readonly ExtractedFact[];
   classifications: readonly L2Row[];
   criteria: readonly Criterion[];
-  onSubmit: (payload: CucpStepperSubmitPayload) => void;
+  isReRunning: boolean;
+  onComplete: () => void;
 }): React.JSX.Element {
   const [step, setStep] = useState<StepId>("l1");
   const [l1Approved, setL1Approved] = useState(false);
-  const [l2Overrides, setL2Overrides] = useState<L2OverridePayload[]>([]);
   const [l2Approved, setL2Approved] = useState(false);
-  const [l3Overrides, setL3Overrides] = useState<L3OverridePayload[]>([]);
-
-  const l3OverrideMap = useMemo<L3OverrideMap>(() => {
-    const m: L3OverrideMap = {};
-    for (const o of l3Overrides) {
-      m[o.s_no] = { verdict: o.verdict, request_info: o.request_info, reason: o.reason };
-    }
-    return m;
-  }, [l3Overrides]);
 
   // request_info=Yes flips final_decision per caltrans cucp_reevals.py:207.
-  // Either an analyst override OR the original AI verdict can set it.
-  const requestInfoSet =
-    l3Overrides.some((o) => o.request_info === "Yes") ||
-    criteria.some(
-      (c) =>
-        c.request_info === "Yes" && l3OverrideMap[String(c.s_no)] === undefined,
-    );
+  // Without client-side staged overrides, this is purely a function of the
+  // latest criteria prop — the LLM stamps request_info=Yes on re-eval when an
+  // override (now resolved server-side) demands additional information.
+  const requestInfoSet = criteria.some((c) => c.request_info === "Yes");
 
   const approvedIds: StepId[] = [];
   if (l1Approved) approvedIds.push("l1");
@@ -84,6 +71,51 @@ export function CucpStepper({
       })),
     [criteria],
   );
+
+  function approveL1() {
+    // L1 has no rendezvous waiter (single-pass) — no network call needed.
+    setL1Approved(true);
+    setStep("l2");
+  }
+
+  async function postOverrideL2(p: L2OverridePayload) {
+    await fetch(`/api/usecases/cucp-reevals/run/${runId}/level/2/override`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ override: p }),
+    });
+    // No-op locally — wait for SSE-driven re-render via prop changes.
+  }
+
+  async function postApproveL2() {
+    const res = await fetch(
+      `/api/usecases/cucp-reevals/run/${runId}/level/2/approve`,
+      { method: "POST" },
+    );
+    if (res.ok) {
+      setL2Approved(true);
+      setStep("l3");
+    }
+  }
+
+  async function postOverrideL3(p: L3OverridePayload) {
+    await fetch(`/api/usecases/cucp-reevals/run/${runId}/level/3/override`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ override: p }),
+    });
+  }
+
+  async function postFinalize() {
+    const res = await fetch(
+      `/api/usecases/cucp-reevals/run/${runId}/finalize`,
+      { method: "POST" },
+    );
+    if (res.ok) {
+      setStep("done");
+      onComplete();
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -101,10 +133,7 @@ export function CucpStepper({
             <button
               type="button"
               className={PRIMARY_BTN_CLASS}
-              onClick={() => {
-                setL1Approved(true);
-                setStep("l2");
-              }}
+              onClick={approveL1}
             >
               Approve & Continue →
             </button>
@@ -116,12 +145,8 @@ export function CucpStepper({
         <div className="space-y-3">
           <L2ClassificationsTable
             rows={classifications}
-            onSaveOverride={(p) =>
-              setL2Overrides((prev) => [
-                ...prev.filter((x) => x.fact_id !== p.fact_id),
-                p,
-              ])
-            }
+            onSaveOverride={postOverrideL2}
+            disabled={isReRunning}
           />
           <div className="flex items-center justify-between">
             <button
@@ -134,10 +159,8 @@ export function CucpStepper({
             <button
               type="button"
               className={PRIMARY_BTN_CLASS}
-              onClick={() => {
-                setL2Approved(true);
-                setStep("l3");
-              }}
+              onClick={postApproveL2}
+              disabled={isReRunning}
             >
               Approve & Continue →
             </button>
@@ -148,12 +171,11 @@ export function CucpStepper({
       {step === "l3" && (
         <div className="space-y-3">
           <RequestInfoBanner show={requestInfoSet} />
-          <L3CriteriaTable criteria={criteria} overrideMap={l3OverrideMap} />
+          <L3CriteriaTable criteria={criteria} />
           <L3OverrideForm
             criteria={l3FormCriteria}
-            onSave={(p) =>
-              setL3Overrides((prev) => [...prev.filter((x) => x.s_no !== p.s_no), p])
-            }
+            onSave={postOverrideL3}
+            disabled={isReRunning}
           />
           <div className="flex items-center justify-between">
             <button
@@ -166,10 +188,8 @@ export function CucpStepper({
             <button
               type="button"
               className={PRIMARY_BTN_CLASS}
-              onClick={() => {
-                onSubmit({ l2: l2Overrides, l3: l3Overrides });
-                setStep("done");
-              }}
+              onClick={postFinalize}
+              disabled={isReRunning}
             >
               Submit & Finalize
             </button>
@@ -181,7 +201,7 @@ export function CucpStepper({
         <div className="space-y-3">
           <RequestInfoBanner show={requestInfoSet} />
           <h3 className="text-sm font-semibold">L3 Criteria (final)</h3>
-          <L3CriteriaTable criteria={criteria} overrideMap={l3OverrideMap} />
+          <L3CriteriaTable criteria={criteria} />
         </div>
       )}
     </div>

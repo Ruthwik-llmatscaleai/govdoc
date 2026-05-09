@@ -100,4 +100,12 @@ describe("L2ClassificationsTable", () => {
     fireEvent.click(screen.getByRole("button", { name: /Save Override/i }));
     expect(reason.value).toBe("");
   });
+
+  it("disables Save when the disabled prop is true even with a valid reason", () => {
+    render(<L2ClassificationsTable rows={rows} onSaveOverride={() => {}} disabled={true} />);
+    fireEvent.change(screen.getByLabelText(/Legal Rationale/i), {
+      target: { value: "long enough reason here" },
+    });
+    expect(screen.getByRole("button", { name: /Save Override/i })).toBeDisabled();
+  });
 });

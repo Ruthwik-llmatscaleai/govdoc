@@ -34,10 +34,9 @@ import type { OverrideCardQuestion } from "@/components/work/cmgc/override-card"
 import { RUBRIC_QUESTIONS } from "@/lib/usecases/cmgc-pde/rubric";
 import { useOverridesStore } from "@/store/use-overrides";
 import { InputsForm as CucpInputsForm } from "@/components/work/cucp/inputs-form";
-import { CucpStepper, type CucpStepperSubmitPayload } from "@/components/work/cucp/cucp-stepper";
+import { CucpStepper } from "@/components/work/cucp/cucp-stepper";
 import { ReportView } from "@/components/work/cucp/report-view";
 import type { L2Row } from "@/components/work/cucp/l2-classifications-table";
-import type { AnalystOverride } from "@/lib/usecases/cucp-reevals/types";
 import { InputsForm as RowInputsForm } from "@/components/work/row/inputs-form";
 import { RowResultTabs } from "@/components/work/row/result-tabs";
 import { composeCmgcResult } from "@/lib/usecases/cmgc-pde/compose-result";
@@ -397,40 +396,15 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
       ai_reasoning: c.reasoning,
     }));
     const criteria = level3.criteria ?? [];
-    const runId = current.runId;
 
-    async function handleStepperSubmit(payload: CucpStepperSubmitPayload) {
-      // Convert L3 overrides to AnalystOverride[]: each L3OverridePayload yields a
-      // pass_fail entry; if request_info=Yes was chosen, also a request_info entry.
-      // L2 overrides are captured for analyst memory but the current pipeline does
-      // not re-evaluate from them (see CLAUDE.md follow-up #6).
-      const analystOverrides: AnalystOverride[] = [];
-      for (const o of payload.l3) {
-        analystOverrides.push({
-          s_no: Number(o.s_no),
-          field: "pass_fail",
-          value: o.verdict,
-          reasoning: o.reason,
-        });
-        if (o.request_info === "Yes") {
-          analystOverrides.push({
-            s_no: Number(o.s_no),
-            field: "request_info",
-            value: "Yes",
-            reasoning: o.reason,
-          });
-        }
-      }
-      const res = await fetch(`/api/usecases/cucp-reevals/run/${runId}/respond`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          overrides: analystOverrides,
-          l2_overrides: payload.l2,
-        }),
-      });
-      if (res.ok) setOverridesSubmitted(true);
-    }
+    // While the rendezvous is open, run.status stays at "needs-input" through
+    // the entire HITL phase (the store only flips run.status on needs-input /
+    // done / error events). When the pipeline re-runs a level after an override
+    // it emits `progress` which sets the per-stage status to "running" — that's
+    // the signal the stepper uses to grey out its primary buttons.
+    const isReRunning = Object.values(current.stages).some(
+      (s) => s.status === "running",
+    );
 
     return (
       <div className="space-y-6">
@@ -439,10 +413,12 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
           description="GovDoc has completed the three review passes. Walk through Facts → Legal Categories → Criteria and apply any corrections before generating the final report."
         >
           <CucpStepper
+            runId={current.runId}
             facts={facts}
             classifications={classifications}
             criteria={criteria}
-            onSubmit={handleStepperSubmit}
+            isReRunning={isReRunning}
+            onComplete={() => setOverridesSubmitted(true)}
           />
         </WorkCard>
         <div className="flex justify-end">

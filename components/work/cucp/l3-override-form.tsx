@@ -25,9 +25,11 @@ const TEXTAREA_CLASS =
 export function L3OverrideForm({
   criteria,
   onSave,
+  disabled = false,
 }: {
   criteria: readonly { s_no: string; criterion: string }[];
   onSave: (payload: L3OverridePayload) => void;
+  disabled?: boolean;
 }): React.JSX.Element {
   const first = criteria[0]?.s_no ?? "";
   const [sNo, setSNo] = useState(first);
@@ -118,7 +120,7 @@ export function L3OverrideForm({
       <div className="flex justify-end">
         <button
           type="button"
-          disabled={!reasonOk}
+          disabled={!reasonOk || disabled}
           onClick={submit}
           className={cn(
             "rounded-md px-4 py-2 text-sm font-medium transition-colors",
