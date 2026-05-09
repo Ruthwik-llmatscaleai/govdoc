@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { buildLevel3SystemPrompt, buildLevel3UserMessage } from "./level-3-threshold";
 import type { Classification, ExtractedFact } from "@/lib/usecases/cucp-reevals/types";
+import type { Precedent } from "@/lib/usecases/cucp-reevals/memory/precedents";
 
 describe("buildLevel3SystemPrompt", () => {
   it("contains all 7 criteria labels", () => {
@@ -18,6 +19,20 @@ describe("buildLevel3SystemPrompt", () => {
     const p = buildLevel3SystemPrompt();
     expect(p).toContain("Preponderance of the Evidence");
     expect(p).toContain("49 CFR §26.67");
+  });
+
+  it("includes the institutional memory block when precedents are provided", () => {
+    const precedents: Precedent[] = [
+      { target: "Past Experiences", correction: "Fail", human_reasoning: "lacks dates", s_no: 4 },
+    ];
+    const p = buildLevel3SystemPrompt(precedents);
+    expect(p).toContain("INSTITUTIONAL MEMORY - LEVEL 3 HUMAN CORRECTIONS:");
+    expect(p).toContain("Correction for 'Past Experiences': Fail");
+  });
+
+  it("omits the institutional memory block when precedents is empty", () => {
+    const p = buildLevel3SystemPrompt();
+    expect(p).not.toContain("INSTITUTIONAL MEMORY");
   });
 });
 

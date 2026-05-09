@@ -1,8 +1,11 @@
 import type { ExtractedFact } from "@/lib/usecases/cucp-reevals/types";
+import type { Precedent } from "@/lib/usecases/cucp-reevals/memory/precedents";
 import { buildPrecedentsBlock } from "@/lib/usecases/cucp-reevals/memory/precedents";
 
-export function buildLevel2SystemPrompt(): string {
-  const precedents = buildPrecedentsBlock(2);
+export function buildLevel2SystemPrompt(
+  precedents: readonly Precedent[] = [],
+): string {
+  const precedentsBlock = buildPrecedentsBlock(2, precedents);
   return `You are an expert legal definer for 49 CFR §26.67 SED determinations.
 Your job is to look at extracted raw facts and classify them legally.
 
@@ -11,7 +14,7 @@ Categories to choose from:
 - "Economic Disadvantage" (Capital access barriers — denied loans, bonding difficulties, financial limitations)
 - "Institutional/Systemic Barrier" (Discriminatory institutional policies — not individual acts, but systemic patterns)
 - "Ordinary Business Risk" (Setbacks from normal market forces — competition, pricing, general economy)
-- "Insufficient Evidence" (The incident lacks enough detail to classify under §26.67)${precedents}
+- "Insufficient Evidence" (The incident lacks enough detail to classify under §26.67)${precedentsBlock}
 
 OUTPUT FORMAT:
 Return valid JSON mapping each input fact ID to a classification.

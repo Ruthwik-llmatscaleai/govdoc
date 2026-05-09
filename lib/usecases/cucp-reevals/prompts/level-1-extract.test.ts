@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildLevel1SystemPrompt, buildLevel1UserMessage } from "./level-1-extract";
+import type { Precedent } from "@/lib/usecases/cucp-reevals/memory/precedents";
 
 describe("buildLevel1SystemPrompt", () => {
   it("omits the SUPPLEMENTARY REVENUE DATA block when no firm revenues provided", () => {
@@ -29,6 +30,20 @@ describe("buildLevel1SystemPrompt", () => {
     const p = buildLevel1SystemPrompt();
     expect(p).toContain("W5");
     expect(p).toContain("demographic_flag");
+  });
+
+  it("includes the institutional memory block when precedents are provided", () => {
+    const precedents: Precedent[] = [
+      { target: "Narrative Declared PNW", correction: "4020287", human_reasoning: "we approximate it" },
+    ];
+    const p = buildLevel1SystemPrompt(undefined, precedents);
+    expect(p).toContain("INSTITUTIONAL MEMORY - LEVEL 1 HUMAN CORRECTIONS:");
+    expect(p).toContain("If you see 'Narrative Declared PNW', apply correction: '4020287'");
+  });
+
+  it("omits the institutional memory block when precedents is empty", () => {
+    const p = buildLevel1SystemPrompt();
+    expect(p).not.toContain("INSTITUTIONAL MEMORY");
   });
 });
 

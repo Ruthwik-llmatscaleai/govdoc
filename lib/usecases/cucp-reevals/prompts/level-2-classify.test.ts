@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { buildLevel2SystemPrompt, buildLevel2UserMessage } from "./level-2-classify";
 import type { ExtractedFact } from "@/lib/usecases/cucp-reevals/types";
+import type { Precedent } from "@/lib/usecases/cucp-reevals/memory/precedents";
 
 describe("buildLevel2SystemPrompt", () => {
   it("contains all 5 category labels", () => {
@@ -16,6 +17,20 @@ describe("buildLevel2SystemPrompt", () => {
     const p = buildLevel2SystemPrompt();
     expect(p).toContain("49 CFR §26.67");
     expect(p).toContain("OUTPUT FORMAT");
+  });
+
+  it("includes the institutional memory block when precedents are provided", () => {
+    const precedents: Precedent[] = [
+      { target: "Lost a contract due to pricing", correction: "Ordinary Business Risk", human_reasoning: "no demo factor" },
+    ];
+    const prompt = buildLevel2SystemPrompt(precedents);
+    expect(prompt).toContain("INSTITUTIONAL MEMORY - LEVEL 2 HUMAN CORRECTIONS:");
+    expect(prompt).toContain("'Lost a contract due to pricing' -> Classify as: 'Ordinary Business Risk'");
+  });
+
+  it("omits the block when precedents is empty", () => {
+    const prompt = buildLevel2SystemPrompt();
+    expect(prompt).not.toContain("INSTITUTIONAL MEMORY");
   });
 });
 

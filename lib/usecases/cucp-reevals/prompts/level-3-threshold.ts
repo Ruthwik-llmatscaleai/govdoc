@@ -1,8 +1,11 @@
 import type { Classification, ExtractedFact } from "@/lib/usecases/cucp-reevals/types";
+import type { Precedent } from "@/lib/usecases/cucp-reevals/memory/precedents";
 import { buildPrecedentsBlock } from "@/lib/usecases/cucp-reevals/memory/precedents";
 
-export function buildLevel3SystemPrompt(): string {
-  const precedents = buildPrecedentsBlock(3);
+export function buildLevel3SystemPrompt(
+  precedents: readonly Precedent[] = [],
+): string {
+  const precedentsBlock = buildPrecedentsBlock(3, precedents);
   return `You are the final evaluator applying the exact standard of proof (Preponderance of the Evidence) under 49 CFR §26.67.
 You will evaluate against the 7 mandatory CUCP criteria based on the classified evidence.
 
@@ -13,7 +16,7 @@ The 7 Criteria rows are exactly:
 4. Demonstration of Disadvantage (Past Experiences)
 5. Evidence of Specific Impediments
 6. Link Between Impediments and Harm
-7. Economic Disadvantage in Fact${precedents}
+7. Economic Disadvantage in Fact${precedentsBlock}
 
 OUTPUT FORMAT:
 Return valid JSON exactly matching this structure.
