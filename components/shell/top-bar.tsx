@@ -1,13 +1,12 @@
 import Link from "next/link";
-import { ChevronDown, LogOut, Search } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import { AppLogo } from "@/components/brand/app-logo";
 
 type Props = {
   user: string;
-  showSearch?: boolean;
 };
 
-export function TopBar({ user, showSearch = true }: Props) {
+export function TopBar({ user }: Props) {
   const initials = user
     .split(/[.\s@_-]+/)
     .filter(Boolean)
@@ -24,19 +23,6 @@ export function TopBar({ user, showSearch = true }: Props) {
         >
           <AppLogo size={36} />
         </Link>
-
-        {showSearch && (
-          <div className="ml-6 hidden max-w-md flex-1 md:flex">
-            <div className="relative w-full">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search & ask anything across documents…"
-                className="h-9 w-full rounded-full border border-border bg-muted/40 pl-9 pr-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
-              />
-            </div>
-          </div>
-        )}
 
         <div className="ml-auto flex items-center gap-2">
           <div className="hidden items-center gap-2 rounded-full bg-muted/40 py-1 pl-1 pr-2.5 ring-1 ring-border sm:flex">

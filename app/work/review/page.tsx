@@ -59,20 +59,13 @@ export default function ReviewPicker() {
                     {uc.blurb}
                   </p>
                 </div>
-                <div className="mt-auto flex flex-col gap-2">
+                <div className="mt-auto">
                   <Link
                     href={`/work/review/${uc.id}` as any}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)]"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)]"
                   >
                     Open evaluator
                     <ArrowRight className="size-3.5" />
-                  </Link>
-                  <Link
-                    href={`/work/review/${uc.id}/rubric` as any}
-                    className="inline-flex items-center justify-center gap-1 text-xs font-medium text-muted-foreground transition hover:text-primary"
-                  >
-                    Preview rubric
-                    <ArrowRight className="size-3" />
                   </Link>
                 </div>
               </div>

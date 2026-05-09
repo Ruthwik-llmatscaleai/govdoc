@@ -29,7 +29,7 @@ export default async function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopBar user={session.user} showSearch={false} />
+      <TopBar user={session.user} />
 
       <main className="mx-auto max-w-5xl px-6 pb-16 pt-12 md:pt-16">
         <header className="mb-10 space-y-2">

@@ -17,5 +17,11 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
+  // Skip middleware for Next internals and root-level static assets (anything
+  // ending in a common image / font / manifest extension served from /public).
+  // Without this, requests for /llm-at-scale-logo.png on the unauthenticated
+  // login page get 307'd to /login and the image breaks.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|public|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|avif|woff|woff2|ttf|otf|eot|webmanifest)$).*)",
+  ],
 };
