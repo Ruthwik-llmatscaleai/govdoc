@@ -2,6 +2,7 @@ import type { PipelineStep, StepEvent } from "@/lib/usecases/types";
 import type { LlmProvider } from "@/lib/llm/types";
 import type { Level1Data } from "@/lib/usecases/cucp-reevals/types";
 import { buildLevel1SystemPrompt, buildLevel1UserMessage } from "@/lib/usecases/cucp-reevals/prompts/level-1-extract";
+import { loadPrecedents } from "@/lib/usecases/cucp-reevals/memory/store";
 
 export const level1Step: PipelineStep<FormData> = {
   id: "level1",
@@ -13,11 +14,13 @@ export const level1Step: PipelineStep<FormData> = {
     const narrativeText = prior.narrativeText ?? "";
     const firmRevenues = prior.firmRevenues ?? {};
 
+    const persisted = await loadPrecedents(ctx.projectId);
+
     const provider: LlmProvider = "openai";
     const model = "gpt-4o";
 
     const messages = [
-      { role: "system" as const, content: buildLevel1SystemPrompt(firmRevenues as any) },
+      { role: "system" as const, content: buildLevel1SystemPrompt(firmRevenues as any, persisted.level_1_precedents) },
       { role: "user" as const, content: buildLevel1UserMessage(narrativeText) },
     ];
 

@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { level1Step } from "./level-1-step";
 import type { StepContext } from "@/lib/usecases/types";
+import { __setStoreRootForTests } from "@/lib/usecases/cucp-reevals/memory/store";
 
 const sampleL1 = {
   firm_name: "Acme",
@@ -59,5 +63,40 @@ describe("level1Step", () => {
     const err = events.find((e) => e.type === "error");
     expect(err.message).toBe("AI Level 1 fact extraction failed");
     expect(err.message).not.toContain("upstream-credential");
+  });
+
+  it("includes per-project L1 precedents in the system prompt", async () => {
+    const root = mkdtempSync(join(tmpdir(), "l1-precedents-"));
+    __setStoreRootForTests(root);
+    writeFileSync(
+      join(root, "proj-x.json"),
+      JSON.stringify({
+        level_1_precedents: [
+          { target: "Some target", correction: "Some correction", human_reasoning: "rationale" },
+        ],
+        level_2_precedents: [],
+        level_3_precedents: [],
+      }),
+    );
+
+    const llmCall = vi.fn(async () => ({ text: JSON.stringify(sampleL1) }));
+    const ctx: StepContext = {
+      userId: "u", projectId: "proj-x", runId: "r",
+      prior: { extract: { narrativeText: "body", firmRevenues: {} } },
+      staged: { level_1_precedents: [], level_2_precedents: [], level_3_precedents: [] },
+      llm: { call: llmCall } as any,
+      abortSignal: new AbortController().signal, log: vi.fn(),
+    };
+
+    await collect(level1Step.run(new FormData(), ctx));
+
+    expect(llmCall).toHaveBeenCalledTimes(1);
+    const calls = llmCall.mock.calls as any[];
+    const sys = calls[0][0].messages[0].content;
+    expect(sys).toContain("INSTITUTIONAL MEMORY - LEVEL 1 HUMAN CORRECTIONS:");
+    expect(sys).toContain("If you see 'Some target', apply correction: 'Some correction'");
+
+    __setStoreRootForTests(null);
+    rmSync(root, { recursive: true, force: true });
   });
 });
