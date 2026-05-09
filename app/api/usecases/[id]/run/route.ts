@@ -43,6 +43,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         level_1_precedents: [...EMPTY_PRECEDENTS.level_1_precedents],
         level_2_precedents: [...EMPTY_PRECEDENTS.level_2_precedents],
         level_3_precedents: [...EMPTY_PRECEDENTS.level_3_precedents],
+        l1_field_overrides: {},
+        l1_action_log: [],
       },
       llm: makeLlmRouter(),
       abortSignal: req.signal,
