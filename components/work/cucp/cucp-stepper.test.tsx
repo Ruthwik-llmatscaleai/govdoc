@@ -42,6 +42,7 @@ const criteria: Criterion[] = [
 
 const baseProps = {
   runId: "r-1",
+  projectId: "proj-test",
   facts,
   classifications,
   criteria,
@@ -52,9 +53,29 @@ const baseProps = {
 let fetchSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
-  fetchSpy = vi
-    .spyOn(global, "fetch")
-    .mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+  fetchSpy = vi.spyOn(global, "fetch").mockImplementation((url: any) => {
+    const u = String(url);
+    if (u.includes("/projects/") && u.endsWith("/precedents")) {
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            level_1_precedents: [
+              { target: "x", correction: "y", human_reasoning: "z" },
+            ],
+            level_2_precedents: [],
+            level_3_precedents: [
+              { target: "a", correction: "b", human_reasoning: "c" },
+              { target: "d", correction: "e", human_reasoning: "f" },
+            ],
+          }),
+          { status: 200 },
+        ),
+      );
+    }
+    return Promise.resolve(
+      new Response(JSON.stringify({ ok: true }), { status: 200 }),
+    );
+  });
 });
 
 afterEach(() => {
@@ -62,20 +83,25 @@ afterEach(() => {
 });
 
 describe("CucpStepper", () => {
-  it("starts on Step 1 and shows the facts table (caltrans 9-col)", () => {
+  it("starts on Step 1 and shows the facts table (caltrans 9-col)", async () => {
     render(<CucpStepper {...baseProps} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // Wait for precedents fetch
     expect(screen.getByRole("columnheader", { name: /Source Quote/i })).toBeTruthy();
   });
 
-  it("L1 Approve & Continue advances to Step 2 without any fetch", () => {
+  it("L1 Approve & Continue advances to Step 2 without any fetch beyond the precedents fetch", async () => {
     render(<CucpStepper {...baseProps} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // precedents fetch
+    fetchSpy.mockClear();
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i }));
     expect(screen.getByRole("columnheader", { name: /Legal Category/i })).toBeTruthy();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("Back from Step 2 returns to Step 1 (facts table) without fetch", () => {
+  it("Back from Step 2 returns to Step 1 (facts table) without fetch beyond the precedents fetch", async () => {
     render(<CucpStepper {...baseProps} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // precedents fetch
+    fetchSpy.mockClear();
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i }));
     fireEvent.click(screen.getByRole("button", { name: /← Back to Facts/i }));
     expect(screen.getByRole("columnheader", { name: /Source Quote/i })).toBeTruthy();
@@ -84,7 +110,10 @@ describe("CucpStepper", () => {
 
   it("L2 Save Override POSTs to /level/2/override with the override payload", async () => {
     render(<CucpStepper {...baseProps} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // precedents fetch
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L1→L2
+
+    fetchSpy.mockClear();
 
     fireEvent.change(screen.getByLabelText(/New category/i), {
       target: { value: "Economic Disadvantage" },
@@ -108,7 +137,10 @@ describe("CucpStepper", () => {
 
   it("L2 Approve & Continue POSTs to /level/2/approve and advances to Step 3", async () => {
     render(<CucpStepper {...baseProps} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // precedents fetch
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L1→L2
+
+    fetchSpy.mockClear();
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L2 approve
 
     await waitFor(() => expect(fetchSpy).toHaveBeenCalledTimes(1));
@@ -123,6 +155,7 @@ describe("CucpStepper", () => {
 
   it("L3 Save Override POSTs to /level/3/override with the override payload", async () => {
     render(<CucpStepper {...baseProps} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // precedents fetch
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L1→L2
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L2→L3
     await waitFor(() =>
@@ -155,6 +188,7 @@ describe("CucpStepper", () => {
   it("L3 Submit & Finalize POSTs to /finalize, transitions to Done, and calls onComplete", async () => {
     const onComplete = vi.fn();
     render(<CucpStepper {...baseProps} onComplete={onComplete} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // precedents fetch
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L1→L2
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L2→L3
     await waitFor(() =>
@@ -174,15 +208,17 @@ describe("CucpStepper", () => {
     expect(screen.getByText(/L3 Criteria \(final\)/i)).toBeTruthy();
   });
 
-  it("disables L2 Approve & Continue while isReRunning is true", () => {
+  it("disables L2 Approve & Continue while isReRunning is true", async () => {
     render(<CucpStepper {...baseProps} isReRunning={true} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // precedents fetch
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L1→L2
     const approveBtn = screen.getByRole("button", { name: /Approve & Continue/i });
     expect(approveBtn).toBeDisabled();
   });
 
-  it("Back from Step 3 returns to Step 2 without fetch", async () => {
+  it("Back from Step 3 returns to Step 2 without fetch beyond the precedents fetch", async () => {
     render(<CucpStepper {...baseProps} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // precedents fetch
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L1→L2
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L2→L3
     await waitFor(() =>
@@ -201,6 +237,7 @@ describe("CucpStepper", () => {
       { ...criteria[0]!, request_info: "Yes" },
     ];
     render(<CucpStepper {...baseProps} criteria={criteriaWithRequestInfo} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // precedents fetch
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L1→L2
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L2 approve → POST → L3
 
@@ -212,6 +249,7 @@ describe("CucpStepper", () => {
 
   it("Done step still shows the L3 criteria table (regression check)", async () => {
     render(<CucpStepper {...baseProps} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // precedents fetch
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L1→L2
     fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L2→L3
     await waitFor(() =>
@@ -223,5 +261,28 @@ describe("CucpStepper", () => {
       expect(screen.getByText(/L3 Criteria \(final\)/i)).toBeTruthy(),
     );
     expect(screen.getByRole("columnheader", { name: /^Pass\/Fail$/i })).toBeTruthy();
+  });
+
+  it("renders the persistent counter chip from the GET projects/{projectId}/precedents fetch", async () => {
+    // Mocked to return 1 L1, 0 L2, 2 L3 precedents
+    render(<CucpStepper {...baseProps} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i);
+    expect(screen.getByText(/L2: 0 persistent \+ 0 staged/i)).toBeTruthy();
+    expect(screen.getByText(/L3: 2 persistent \+ 0 staged/i)).toBeTruthy();
+  });
+
+  it("increments the staged L2 chip after a successful override POST", async () => {
+    render(<CucpStepper {...baseProps} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // Wait for initial fetch
+    fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i }));
+    // Save an override
+    fireEvent.change(screen.getByLabelText(/New category/i), {
+      target: { value: "Social Disadvantage" },
+    });
+    fireEvent.change(screen.getByLabelText(/Legal Rationale/i), {
+      target: { value: "long enough rationale here" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Save Override/i }));
+    await screen.findByText(/L2: 0 persistent \+ 1 staged/i);
   });
 });

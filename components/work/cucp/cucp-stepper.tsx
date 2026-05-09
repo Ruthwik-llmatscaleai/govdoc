@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { StepBar, type StepBarStep } from "../shared/step-bar";
 import { L1FactsTable } from "./l1-facts-table";
@@ -35,6 +35,7 @@ const SECONDARY_BTN_CLASS = cn(
 
 export function CucpStepper({
   runId,
+  projectId,
   facts,
   classifications,
   criteria,
@@ -42,6 +43,7 @@ export function CucpStepper({
   onComplete,
 }: {
   runId: string;
+  projectId: string;
   facts: readonly ExtractedFact[];
   classifications: readonly L2Row[];
   criteria: readonly Criterion[];
@@ -51,6 +53,35 @@ export function CucpStepper({
   const [step, setStep] = useState<StepId>("l1");
   const [l1Approved, setL1Approved] = useState(false);
   const [l2Approved, setL2Approved] = useState(false);
+  const [persistentCounts, setPersistentCounts] = useState({ l1: 0, l2: 0, l3: 0 });
+  const [stagedCounts, setStagedCounts] = useState({ l1: 0, l2: 0, l3: 0 });
+
+  // Fetch persistent precedent counts at mount
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/usecases/cucp-reevals/projects/${encodeURIComponent(projectId)}/precedents`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then(
+        (db: {
+          level_1_precedents?: unknown[];
+          level_2_precedents?: unknown[];
+          level_3_precedents?: unknown[];
+        } | null) => {
+          if (!alive || !db) return;
+          setPersistentCounts({
+            l1: (db.level_1_precedents ?? []).length,
+            l2: (db.level_2_precedents ?? []).length,
+            l3: (db.level_3_precedents ?? []).length,
+          });
+        },
+      )
+      .catch(() => {
+        /* leave at 0 */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [projectId]);
 
   // request_info=Yes flips final_decision per caltrans cucp_reevals.py:207.
   // Without client-side staged overrides, this is purely a function of the
@@ -79,11 +110,12 @@ export function CucpStepper({
   }
 
   async function postOverrideL2(p: L2OverridePayload) {
-    await fetch(`/api/usecases/cucp-reevals/run/${runId}/level/2/override`, {
+    const res = await fetch(`/api/usecases/cucp-reevals/run/${runId}/level/2/override`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ override: p }),
     });
+    if (res.ok) setStagedCounts((c) => ({ ...c, l2: c.l2 + 1 }));
     // No-op locally — wait for SSE-driven re-render via prop changes.
   }
 
@@ -99,11 +131,12 @@ export function CucpStepper({
   }
 
   async function postOverrideL3(p: L3OverridePayload) {
-    await fetch(`/api/usecases/cucp-reevals/run/${runId}/level/3/override`, {
+    const res = await fetch(`/api/usecases/cucp-reevals/run/${runId}/level/3/override`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ override: p }),
     });
+    if (res.ok) setStagedCounts((c) => ({ ...c, l3: c.l3 + 1 }));
   }
 
   async function postFinalize() {
@@ -125,6 +158,18 @@ export function CucpStepper({
         approvedIds={approvedIds}
         onJump={(id) => setStep(id as StepId)}
       />
+
+      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+        <span className="rounded-full border border-border bg-muted/30 px-3 py-1">
+          L1: {persistentCounts.l1} persistent + {stagedCounts.l1} staged
+        </span>
+        <span className="rounded-full border border-border bg-muted/30 px-3 py-1">
+          L2: {persistentCounts.l2} persistent + {stagedCounts.l2} staged
+        </span>
+        <span className="rounded-full border border-border bg-muted/30 px-3 py-1">
+          L3: {persistentCounts.l3} persistent + {stagedCounts.l3} staged
+        </span>
+      </div>
 
       {step === "l1" && (
         <div className="space-y-3">

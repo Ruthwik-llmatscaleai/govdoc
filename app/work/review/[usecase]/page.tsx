@@ -414,6 +414,7 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
         >
           <CucpStepper
             runId={current.runId}
+            projectId={current.projectId}
             facts={facts}
             classifications={classifications}
             criteria={criteria}

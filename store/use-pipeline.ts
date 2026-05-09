@@ -15,6 +15,7 @@ type StageState = {
 type PipelineRun = {
   runId: string;
   useCaseId: string;
+  projectId: string;
   status: "idle" | "running" | "needs-input" | "done" | "error";
   stages: Record<string, StageState>;
   pendingInput?: HumanInput;
@@ -84,7 +85,9 @@ export const usePipelineStore = create<Store>((set, get) => ({
       return { current: run };
     }),
   start: async (useCaseId, formData) => {
-    set({ current: { runId: "", useCaseId, status: "running", stages: {} } });
+    const projectIdRaw = formData.get("projectId");
+    const projectId = typeof projectIdRaw === "string" ? projectIdRaw.trim() : "_default";
+    set({ current: { runId: "", useCaseId, projectId, status: "running", stages: {} } });
     const res = await fetch(`/api/usecases/${useCaseId}/run`, { method: "POST", body: formData });
     if (!res.ok || !res.body) {
       get().applyEvent({ type: "error", stage: "init", message: await res.text() });
