@@ -39,7 +39,7 @@ describe("POST /api/usecases/cucp-reevals/run/[runId]/level/[n]/approve", () => 
     const res = await POST(req, { params: Promise.resolve({ runId: "r", n: "3" }) });
     expect(res.status).toBe(400);
     const json = (await res.json()) as { error: string };
-    expect(json.error).toMatch(/Only level 2 uses this endpoint/);
+    expect(json.error).toMatch(/level 3 uses \/finalize/);
   });
 
   it("returns 400 when n=4", async () => {
@@ -59,6 +59,16 @@ describe("POST /api/usecases/cucp-reevals/run/[runId]/level/[n]/approve", () => 
     const waiter = awaitLevelDecision<{ action: string }>(runId, 2);
     const req = await authedReq(runId, "2");
     const res = await POST(req, { params: Promise.resolve({ runId, n: "2" }) });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    await expect(waiter).resolves.toEqual({ action: "approve" });
+  });
+
+  it("resolves the L1 waiter with action=approve (200)", async () => {
+    const runId = "approve-l1";
+    const waiter = awaitLevelDecision<{ action: string }>(runId, 1);
+    const req = await authedReq(runId, "1");
+    const res = await POST(req, { params: Promise.resolve({ runId, n: "1" }) });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
     await expect(waiter).resolves.toEqual({ action: "approve" });

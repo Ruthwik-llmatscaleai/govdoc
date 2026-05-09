@@ -20,8 +20,8 @@ export async function POST(
 
   const { runId, n } = await params;
   const level = Number(n);
-  if (level !== 2) {
-    return NextResponse.json({ error: "Only level 2 uses this endpoint; level 3 uses /finalize" }, { status: 400 });
+  if (level !== 1 && level !== 2) {
+    return NextResponse.json({ error: "Only levels 1-2 use this endpoint; level 3 uses /finalize" }, { status: 400 });
   }
   const ok = resolveLevelDecision(runId, level, { action: "approve" });
   if (!ok) return new NextResponse("Run not waiting for input on this level", { status: 404 });
