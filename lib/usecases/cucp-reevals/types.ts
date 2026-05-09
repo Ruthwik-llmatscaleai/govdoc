@@ -66,3 +66,20 @@ export type CucpRunResult = {
   markdown_report: string;
   evaluation_date: string;
 };
+
+export type L1FactField = "When" | "Where" | "Who" | "What" | "Why" | "Magnitude";
+export type L1FieldKey = "firm_name" | "narrative_pnw";
+
+export type L1Override =
+  | { kind: "fact-field"; fact_id: string; field: L1FactField; corrected_value: string; reason: string }
+  | { kind: "firm-name"; corrected_value: string; reason: string }
+  | { kind: "narrative-pnw"; corrected_value: string; reason: string }
+  | { kind: "specific-incident"; description: string; reason: string };
+
+export type L1Decision =
+  | { action: "approve" }
+  | { action: "override-fact"; override: Extract<L1Override, { kind: "fact-field" }> }
+  | { action: "override-incident"; override: Extract<L1Override, { kind: "specific-incident" }> }
+  | { action: "override-field"; override: { field: L1FieldKey; corrected_value: string; reason: string } }
+  | { action: "undo" }
+  | { action: "clear" };
