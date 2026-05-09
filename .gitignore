@@ -44,3 +44,6 @@ AGENTS.md
 
 # Internal planning docs (superpowers workflow plan artifacts, not for the repo)
 docs/superpowers/
+
+# Per-project CUCP institutional-memory precedents (created at runtime, not in repo).
+data/cucp-precedents/
