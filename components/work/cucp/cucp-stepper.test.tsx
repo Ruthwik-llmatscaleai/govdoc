@@ -271,6 +271,36 @@ describe("CucpStepper", () => {
     expect(screen.getByText(/L3: 2 persistent \+ 0 staged/i)).toBeTruthy();
   });
 
+  it("surfaces a user-visible error when L2 Approve & Continue POST returns 4xx", async () => {
+    // Override fetch so /level/2/approve fails with 404, mimicking a dropped
+    // rendezvous. Currently the button click is silently swallowed — the user
+    // sees no advance to L3 and no error explanation.
+    fetchSpy.mockImplementation((url: any) => {
+      const u = String(url);
+      if (u.includes("/projects/") && u.endsWith("/precedents")) {
+        return Promise.resolve(new Response(JSON.stringify({}), { status: 200 }));
+      }
+      if (u.includes("/level/2/approve")) {
+        return Promise.resolve(
+          new Response("Run not waiting for input on this level", { status: 404 }),
+        );
+      }
+      return Promise.resolve(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    });
+
+    render(<CucpStepper {...baseProps} />);
+    await screen.findByText(/L1: 0 persistent \+ 0 staged/i);
+    fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L1→L2
+    fireEvent.click(screen.getByRole("button", { name: /Approve & Continue/i })); // L2 approve
+
+    // The error must be visible to the reviewer — not silent.
+    await screen.findByRole("alert");
+    expect(screen.getByText(/404|Run not waiting/i)).toBeTruthy();
+
+    // And we must NOT have advanced to L3 (no Pass/Fail column yet).
+    expect(screen.queryByRole("columnheader", { name: /^Pass\/Fail$/i })).toBeNull();
+  });
+
   it("increments the staged L2 chip after a successful override POST", async () => {
     render(<CucpStepper {...baseProps} />);
     await screen.findByText(/L1: 1 persistent \+ 0 staged/i); // Wait for initial fetch

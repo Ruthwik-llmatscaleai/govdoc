@@ -55,6 +55,24 @@ export function CucpStepper({
   const [l2Approved, setL2Approved] = useState(false);
   const [persistentCounts, setPersistentCounts] = useState({ l1: 0, l2: 0, l3: 0 });
   const [stagedCounts, setStagedCounts] = useState({ l1: 0, l2: 0, l3: 0 });
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  async function postJson(url: string, body?: unknown): Promise<Response | null> {
+    setActionError(null);
+    const res = await fetch(url, {
+      method: "POST",
+      ...(body !== undefined && {
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    });
+    if (!res.ok) {
+      const detail = (await res.text().catch(() => "")) || res.statusText;
+      setActionError(`Request failed (${res.status}): ${detail}`);
+      return null;
+    }
+    return res;
+  }
 
   // Fetch persistent precedent counts at mount
   useEffect(() => {
@@ -110,41 +128,33 @@ export function CucpStepper({
   }
 
   async function postOverrideL2(p: L2OverridePayload) {
-    const res = await fetch(`/api/usecases/cucp-reevals/run/${runId}/level/2/override`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ override: p }),
-    });
-    if (res.ok) setStagedCounts((c) => ({ ...c, l2: c.l2 + 1 }));
+    const res = await postJson(
+      `/api/usecases/cucp-reevals/run/${runId}/level/2/override`,
+      { override: p },
+    );
+    if (res) setStagedCounts((c) => ({ ...c, l2: c.l2 + 1 }));
     // No-op locally — wait for SSE-driven re-render via prop changes.
   }
 
   async function postApproveL2() {
-    const res = await fetch(
-      `/api/usecases/cucp-reevals/run/${runId}/level/2/approve`,
-      { method: "POST" },
-    );
-    if (res.ok) {
+    const res = await postJson(`/api/usecases/cucp-reevals/run/${runId}/level/2/approve`);
+    if (res) {
       setL2Approved(true);
       setStep("l3");
     }
   }
 
   async function postOverrideL3(p: L3OverridePayload) {
-    const res = await fetch(`/api/usecases/cucp-reevals/run/${runId}/level/3/override`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ override: p }),
-    });
-    if (res.ok) setStagedCounts((c) => ({ ...c, l3: c.l3 + 1 }));
+    const res = await postJson(
+      `/api/usecases/cucp-reevals/run/${runId}/level/3/override`,
+      { override: p },
+    );
+    if (res) setStagedCounts((c) => ({ ...c, l3: c.l3 + 1 }));
   }
 
   async function postFinalize() {
-    const res = await fetch(
-      `/api/usecases/cucp-reevals/run/${runId}/finalize`,
-      { method: "POST" },
-    );
-    if (res.ok) {
+    const res = await postJson(`/api/usecases/cucp-reevals/run/${runId}/finalize`);
+    if (res) {
       setStep("done");
       onComplete();
     }
@@ -158,6 +168,15 @@ export function CucpStepper({
         approvedIds={approvedIds}
         onJump={(id) => setStep(id as StepId)}
       />
+
+      {actionError && (
+        <div
+          role="alert"
+          className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+        >
+          {actionError}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
         <span className="rounded-full border border-border bg-muted/30 px-3 py-1">
