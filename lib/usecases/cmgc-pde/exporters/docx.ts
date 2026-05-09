@@ -84,7 +84,7 @@ export async function buildEvaluationDocx(result: CmgcRunResult, projectName: st
   );
   for (const r of result.evaluation.ratings) {
     children.push(
-      new Paragraph(`[${r.question_id}] ${r.selected_rating} (conf ${r.confidence.toFixed(2)})`),
+      new Paragraph(`[${r.question_id}] ${r.selected_rating || "—"} (conf ${r.confidence.toFixed(2)})`),
     );
     if (r.source_reasoning) {
       children.push(new Paragraph(`  ${r.source_reasoning.slice(0, 400)}`));

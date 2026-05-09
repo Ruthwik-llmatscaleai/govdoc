@@ -16,7 +16,9 @@ export function runValidationAnalysis(
 
   for (const r of aiRatings) {
     const qid = r.question_id;
-    const aiRating = (r.selected_rating ?? "B").toUpperCase() as Rating;
+    // `||` not `??`: empty-string ratings (legitimate when the narrative lacks
+    // evidence) should fall through to the "B" default along with null/undefined.
+    const aiRating = (r.selected_rating || "B").toUpperCase() as Rating;
     let userRating = (userRatings[qid] ?? "").toString().toUpperCase() as Rating | "";
     if (!userRating) userRating = aiRating;
 

@@ -124,6 +124,68 @@ describe("composeCmgcResult", () => {
     expect(out.error).toMatch(/selected_rating/);
   });
 
+  it("accepts empty selected_rating as legitimate (e.g. narrative missing info)", () => {
+    const out = composeCmgcResult({
+      evaluate: {
+        ratings: [
+          {
+            question_id: "A1",
+            question_text: "Q",
+            selected_rating: "",
+            confidence: 0.0,
+            source_reasoning: "",
+            missing_info_reasoning: "No evidence for this question in sections 1-12.",
+            missing_info: true,
+          },
+        ],
+      },
+      score: { recommendation: "x", multi_method: [] },
+    });
+    expect(out.kind).toBe("ok");
+  });
+
+  it("accepts null/undefined selected_rating as legitimate", () => {
+    const out = composeCmgcResult({
+      evaluate: {
+        ratings: [
+          {
+            question_id: "A1",
+            question_text: "Q",
+            selected_rating: null,
+            confidence: 0.0,
+            source_reasoning: "",
+            missing_info_reasoning: "",
+            missing_info: true,
+          },
+        ],
+      },
+      score: { recommendation: "x", multi_method: [] },
+    });
+    expect(out.kind).toBe("ok");
+  });
+
+  it("returns debug when selected_rating is a valid string but not A/B/C", () => {
+    const out = composeCmgcResult({
+      evaluate: {
+        ratings: [
+          {
+            question_id: "A1",
+            question_text: "Q",
+            selected_rating: "D",
+            confidence: 0.7,
+            source_reasoning: "",
+            missing_info_reasoning: "",
+            missing_info: false,
+          },
+        ],
+      },
+      score: { recommendation: "x", multi_method: [] },
+    });
+    expect(out.kind).toBe("debug");
+    if (out.kind !== "debug") return;
+    expect(out.error).toMatch(/selected_rating/);
+  });
+
   it("returns debug when confidence is not a number", () => {
     const out = composeCmgcResult({
       evaluate: {

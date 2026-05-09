@@ -93,7 +93,7 @@ export function FindingsTable({ results }: { results: EvaluationResult[] }) {
             <tr key={`${f.category}-${f.scoreLevel}-${i}`} className="border-b align-top">
               <td className="p-2 font-medium">{f.category}</td>
               <td className="p-2 whitespace-nowrap">{f.scoreLevel}</td>
-              <td className="p-2 max-w-md">{f.rule}</td>
+              <td className="p-2 max-w-md break-words">{f.rule}</td>
               <td className="p-2 text-center font-mono">{f.ruleScore}</td>
               <td className="p-2">
                 <span
@@ -103,7 +103,7 @@ export function FindingsTable({ results }: { results: EvaluationResult[] }) {
                   {f.status}
                 </span>
               </td>
-              <td className="p-2 max-w-md">{f.evidence}</td>
+              <td className="p-2 max-w-md break-words">{f.evidence}</td>
             </tr>
           ))}
         </tbody>

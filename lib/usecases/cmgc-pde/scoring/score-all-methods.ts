@@ -17,7 +17,9 @@ export function scoreAllMethods(ratings: CmgcRating[]): MultiMethodResult {
 
   for (const r of ratings) {
     const qid = r.question_id;
-    const rating = (r.selected_rating ?? "B").toUpperCase() as Rating;
+    // `||` not `??`: empty-string ratings (legitimate when the narrative lacks
+    // evidence) should fall through to the "B" default along with null/undefined.
+    const rating = (r.selected_rating || "B").toUpperCase() as Rating;
     if (qid && qid[0] && qid[0] in sectionRatingStrings) {
       ratingLookup[qid] = rating;
       sectionRatingStrings[qid[0]]!.push(rating);

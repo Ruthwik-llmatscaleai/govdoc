@@ -44,7 +44,7 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
     rubric.getRow(i + 2).values = [
       r.question_id,
       r.question_text,
-      r.selected_rating,
+      r.selected_rating || "—",
       r.confidence,
       r.source_reasoning,
       r.missing_info_reasoning,

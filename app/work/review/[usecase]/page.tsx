@@ -339,7 +339,7 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
         <MethodRanking multiMethod={result.multi_method} />
         <ViewPerspectiveToggle value={pdeView} onChange={setPdeView} />
         {pdeView === "district" ? (
-          <ScoreTable ratings={result.evaluation.ratings} viewMode={pdeView} />
+          <ScoreTable ratings={result.evaluation.ratings} />
         ) : (
           <HiflWizard
             questions={result.evaluation.ratings.map(toOverrideCardQuestion)}

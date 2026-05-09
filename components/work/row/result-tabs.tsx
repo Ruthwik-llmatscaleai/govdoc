@@ -15,10 +15,17 @@ function tabRender(props: React.ComponentPropsWithRef<"button">, state: { active
 }
 
 export function RowResultTabs({ results }: { results: EvaluationResult[] }) {
+  // Jump straight to Detailed Findings when any category failed (score 0-2 or
+  // explicit "Fail" status); otherwise land on the Executive Summary.
+  const defaultTab = results.some(
+    (r) => r.status.includes("Fail") || (r.score >= 0 && r.score < 3),
+  )
+    ? "detailed"
+    : "exec";
   return (
     <div className="space-y-6">
       <ScoreSummary results={results} />
-      <Tabs.Root defaultValue="exec" className="rounded-2xl border border-border bg-card">
+      <Tabs.Root defaultValue={defaultTab} className="rounded-2xl border border-border bg-card">
         <Tabs.List className="flex gap-1 border-b border-border px-4">
           <Tabs.Tab value="exec" className={TAB_TRIGGER} render={tabRender}>Executive Summary</Tabs.Tab>
           <Tabs.Tab value="detailed" className={TAB_TRIGGER} render={tabRender}>Detailed Findings</Tabs.Tab>

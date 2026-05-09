@@ -42,10 +42,14 @@ export function composeCmgcResult(raw: unknown): ComposeOutput {
         raw,
       };
     }
-    if (typeof rObj["selected_rating"] !== "string") {
+    // selected_rating is allowed to be missing/empty when the narrative lacks
+    // evidence for the question (paired with missing_info: true). Anything other
+    // than A/B/C/empty/null/undefined is a payload shape error.
+    const sr = rObj["selected_rating"];
+    if (sr !== undefined && sr !== null && sr !== "" && sr !== "A" && sr !== "B" && sr !== "C") {
       return {
         kind: "debug",
-        error: `evaluate.ratings[${i}]: missing or non-string selected_rating`,
+        error: `evaluate.ratings[${i}]: selected_rating must be "A", "B", "C", or empty (got ${JSON.stringify(sr)})`,
         raw,
       };
     }
