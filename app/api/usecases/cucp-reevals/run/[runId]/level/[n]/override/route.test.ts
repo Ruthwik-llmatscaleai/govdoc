@@ -34,12 +34,12 @@ describe("POST /api/usecases/cucp-reevals/run/[runId]/level/[n]/override", () =>
     expect(res.status).toBe(401);
   });
 
-  it("returns 400 when n is not 2 or 3", async () => {
+  it("returns 400 when n is not 1, 2, or 3", async () => {
     const req = await authedReq("r", "4", { override: { fact_id: "f", new_category: "c", reason: "r" } });
     const res = await POST(req, { params: Promise.resolve({ runId: "r", n: "4" }) });
     expect(res.status).toBe(400);
     const json = (await res.json()) as { error: string };
-    expect(json.error).toMatch(/n must be 2 or 3/);
+    expect(json.error).toMatch(/n must be 1, 2, or 3/);
   });
 
   it("returns 400 on invalid JSON body", async () => {
@@ -110,5 +110,89 @@ describe("POST /api/usecases/cucp-reevals/run/[runId]/level/[n]/override", () =>
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
     await expect(waiter).resolves.toEqual({ action: "override-and-rerun", override });
+  });
+
+  // ─── L1 ─────────────────────────────────────────────────────────────────────
+
+  it("L1 fact-field override resolves the L1 waiter with action=override-fact", async () => {
+    const runId = "l1-fact";
+    const waiter = awaitLevelDecision<{ action: string; override?: { kind?: string } }>(runId, 1);
+    const req = await authedReq(runId, "1", {
+      override: {
+        kind: "fact-field",
+        fact_id: "fact_3",
+        field: "When",
+        corrected_value: "2020",
+        reason: "narrative explicitly says 2020 plainly",
+      },
+    });
+    const res = await POST(req, { params: Promise.resolve({ runId, n: "1" }) });
+    expect(res.status).toBe(200);
+    const decision = await waiter;
+    expect(decision.action).toBe("override-fact");
+    expect(decision.override?.kind).toBe("fact-field");
+  });
+
+  it("L1 firm-name override resolves with action=override-field, field=firm_name", async () => {
+    const runId = "l1-firm";
+    const waiter = awaitLevelDecision<{ action: string; override?: { field?: string } }>(runId, 1);
+    const req = await authedReq(runId, "1", {
+      override: { kind: "firm-name", corrected_value: "Acme, LLC.", reason: "matches incorporation documents" },
+    });
+    const res = await POST(req, { params: Promise.resolve({ runId, n: "1" }) });
+    expect(res.status).toBe(200);
+    const decision = await waiter;
+    expect(decision.action).toBe("override-field");
+    expect(decision.override?.field).toBe("firm_name");
+  });
+
+  it("L1 narrative-pnw override resolves with action=override-field, field=narrative_pnw", async () => {
+    const runId = "l1-pnw";
+    const waiter = awaitLevelDecision<{ action: string; override?: { field?: string } }>(runId, 1);
+    const req = await authedReq(runId, "1", {
+      override: { kind: "narrative-pnw", corrected_value: "1.2M", reason: "narrative page 2 says 1.2M plainly" },
+    });
+    const res = await POST(req, { params: Promise.resolve({ runId, n: "1" }) });
+    expect(res.status).toBe(200);
+    const decision = await waiter;
+    expect(decision.action).toBe("override-field");
+    expect(decision.override?.field).toBe("narrative_pnw");
+  });
+
+  it("L1 specific-incident override resolves with action=override-incident", async () => {
+    const runId = "l1-incident";
+    const waiter = awaitLevelDecision<{ action: string; override?: { kind?: string } }>(runId, 1);
+    const req = await authedReq(runId, "1", {
+      override: { kind: "specific-incident", description: "Owner cited 2019 loan denial on page 4", reason: "missed by AI on first pass" },
+    });
+    const res = await POST(req, { params: Promise.resolve({ runId, n: "1" }) });
+    expect(res.status).toBe(200);
+    const decision = await waiter;
+    expect(decision.action).toBe("override-incident");
+    expect(decision.override?.kind).toBe("specific-incident");
+  });
+
+  it("L1 override rejects reason shorter than 15 chars (400)", async () => {
+    const req = await authedReq("r", "1", {
+      override: { kind: "fact-field", fact_id: "fact_1", field: "When", corrected_value: "2020", reason: "too short" },
+    });
+    const res = await POST(req, { params: Promise.resolve({ runId: "r", n: "1" }) });
+    expect(res.status).toBe(400);
+  });
+
+  it("L1 override rejects fact-field with bad fact_id pattern (400)", async () => {
+    const req = await authedReq("r", "1", {
+      override: { kind: "fact-field", fact_id: "bogus", field: "When", corrected_value: "2020", reason: "long enough reason text here please" },
+    });
+    const res = await POST(req, { params: Promise.resolve({ runId: "r", n: "1" }) });
+    expect(res.status).toBe(400);
+  });
+
+  it("L1 override rejects unknown kind (400)", async () => {
+    const req = await authedReq("r", "1", {
+      override: { kind: "made-up-kind", corrected_value: "x", reason: "long enough reason text here please" },
+    });
+    const res = await POST(req, { params: Promise.resolve({ runId: "r", n: "1" }) });
+    expect(res.status).toBe(400);
   });
 });
