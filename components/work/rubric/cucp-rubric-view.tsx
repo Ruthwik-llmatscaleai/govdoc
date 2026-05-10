@@ -26,9 +26,9 @@ export function CucpRubricView({ data }: { data?: CucpRubricData }) {
             (PN); and Personal Net Worth (PNW) (§26.67)
           </h3>
           <p className="text-xs text-muted-foreground">
-            Apply Mandatory Eligibility Requirements first. If any are FAIL, stop
-            — the firm is not eligible. If all PASS, evaluate the four scored
-            criteria below.
+            Apply Mandatory Eligibility Requirements first. If any are marked
+            NO, stop — the firm is not eligible. If all are marked YES,
+            evaluate the four scored criteria below.
           </p>
         </header>
 
@@ -41,8 +41,8 @@ export function CucpRubricView({ data }: { data?: CucpRubricData }) {
           </div>
           <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-foreground/85">
             <strong>Gating rule:</strong> If <em>any</em> of the mandatory
-            eligibility requirements are marked FAIL, the firm is not eligible
-            for certification. STOP. If all are marked PASS, proceed to the
+            eligibility requirements are marked NO, the firm is not eligible
+            for certification. STOP. If all are marked YES, proceed to the
             scored evaluation criteria below. If clarification is needed, the
             firm must be contacted before determination is made.
           </p>
@@ -68,31 +68,18 @@ export function CucpRubricView({ data }: { data?: CucpRubricData }) {
         </section>
 
         <section className="space-y-3">
-          <SectionHeading>Final Decision</SectionHeading>
-          <div className="grid gap-2 md:grid-cols-2">
-            <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-xs leading-relaxed text-foreground/85">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
-                Pass
-              </div>
-              <p className="mt-1">
-                Meets all requirements of social and economic disadvantage. All
-                sections marked PASS; applicant clearly demonstrates Social and
-                Economic Disadvantage through individualized narrative and
-                current Personal Net Worth form.
-              </p>
-            </div>
-            <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs leading-relaxed text-foreground/85">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-destructive">
-                Fail
-              </div>
-              <p className="mt-1">
-                Fails to meet all requirements of social and economic
-                disadvantage. Narrative lacks individualized detail, credible
-                examples, or connection to economic harm. Applicant provides
-                insufficient evidence of disadvantage.
-              </p>
-            </div>
-          </div>
+          <SectionHeading>Final Determination</SectionHeading>
+          <p className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs leading-relaxed text-foreground/85">
+            Consistent with the current version of 49 CFR part 26, an impartial
+            and independent evaluation of the subject application has been
+            completed. Based on the totality of the circumstances, including
+            those factors set forth above, it has been determined by a
+            preponderance of the evidence that the applicant [has/has not]
+            sufficiently demonstrated social and economic disadvantage (SED)
+            affirmatively based on their own experiences and circumstances
+            within American society, and not based in whole or in part on race
+            or sex.
+          </p>
         </section>
 
         <section className="space-y-3">
@@ -108,7 +95,7 @@ export function CucpRubricView({ data }: { data?: CucpRubricData }) {
       <Tabs.Panel value="l2" className="p-5">
         <p className="mb-3 text-xs text-muted-foreground">
           Level 2 categories classify each piece of evidence in the narrative.
-          They are not part of the §26.67 PASS/FAIL rubric — they support the
+          They are not part of the §26.67 YES/NO rubric — they support the
           scored evaluation criteria above.
         </p>
         <dl className="space-y-4">
@@ -158,24 +145,24 @@ function CriterionCard({
         </p>
       )}
       <dl className="mt-3 space-y-2">
-        <PassFailRow label="Pass" tone="pass" text={c.pass} />
-        <PassFailRow label="Fail" tone="fail" text={c.fail} />
+        <YesNoRow label="Yes" tone="yes" text={c.pass} />
+        <YesNoRow label="No" tone="no" text={c.fail} />
       </dl>
     </div>
   );
 }
 
-function PassFailRow({
+function YesNoRow({
   label,
   tone,
   text,
 }: {
   label: string;
-  tone: "pass" | "fail";
+  tone: "yes" | "no";
   text: string | undefined;
 }) {
   const chipClass =
-    tone === "pass"
+    tone === "yes"
       ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/30"
       : "bg-destructive/10 text-destructive border-destructive/30";
   return (

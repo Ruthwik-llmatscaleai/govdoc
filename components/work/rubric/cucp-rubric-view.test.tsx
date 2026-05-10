@@ -25,7 +25,7 @@ describe("CucpRubricView", () => {
     }
   });
 
-  it("renders the Scored Evaluation Criteria with PASS/FAIL definitions", () => {
+  it("renders the Scored Evaluation Criteria with YES/NO definitions", () => {
     render(<CucpRubricView />);
     const evaluation = CUCP_L3_CRITERIA.filter((c) => c.s_no >= 4);
     for (const c of evaluation) {
@@ -35,13 +35,13 @@ describe("CucpRubricView", () => {
     }
   });
 
-  it("renders the gating rule and Final Decision sections", () => {
+  it("renders the gating rule and Final Determination sections", () => {
     render(<CucpRubricView />);
     expect(
       screen.getByText(/the firm is not eligible for certification/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Meets all requirements of social and economic disadvantage/i),
+      screen.getByText(/preponderance of the evidence that the applicant/i),
     ).toBeInTheDocument();
   });
 
