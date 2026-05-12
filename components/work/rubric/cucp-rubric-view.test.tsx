@@ -45,10 +45,10 @@ describe("CucpRubricView", () => {
     ).toBeInTheDocument();
   });
 
-  it("switches to the L2 tab and shows all 5 legal categories", async () => {
+  it("opens the L2 section and shows all 5 legal categories", async () => {
     const user = userEvent.setup();
     render(<CucpRubricView />);
-    await user.click(screen.getByRole("tab", { name: /Level 2/i }));
+    await user.click(screen.getByRole("button", { name: /Level 2 — Legal Categories/i }));
     for (const c of CUCP_L2_CATEGORIES) {
       expect(screen.getByText(c.name)).toBeInTheDocument();
       expect(screen.getByText(c.description)).toBeInTheDocument();
