@@ -79,12 +79,12 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
       }
     }
     if (editor.kind === "addQuestion") {
-      const id = `Q${Date.now()}`;
+      const section = editor.sectionLabel;
       setQuestions((prev) => [
         ...prev,
         {
-          id,
-          section: editor.sectionLabel,
+          id: `Q${Date.now()}`,
+          section,
           question: values.question ?? "",
           option_a: values.option_a ?? "",
           option_b: values.option_b ?? "",
