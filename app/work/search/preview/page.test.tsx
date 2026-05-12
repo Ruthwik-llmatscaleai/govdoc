@@ -19,16 +19,16 @@ describe("PreviewRubricTabs", () => {
 
   it("renders a tab for each of the 3 use cases", () => {
     renderTabs();
-    expect(screen.getByRole("tab", { name: /CMGC PDE/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /CUCP Re-evaluations/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /ROW Appraisal/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Project Review/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Narrative Review/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Appraisal Review/i })).toBeInTheDocument();
   });
 
-  it("defaults to CMGC and switches to CUCP on click", async () => {
+  it("defaults to Project Review and switches to Narrative Review on click", async () => {
     const user = userEvent.setup();
     renderTabs();
     expect(screen.getByText(/Section weights/i)).toBeInTheDocument();
-    await user.click(screen.getByRole("tab", { name: /CUCP Re-evaluations/i }));
-    expect(screen.getByRole("tab", { name: /Level 2/i })).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: /Narrative Review/i }));
+    expect(screen.getByRole("button", { name: /Level 2/i })).toBeInTheDocument();
   });
 });
