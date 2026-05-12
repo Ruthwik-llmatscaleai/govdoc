@@ -16,8 +16,8 @@ describe("RowRubricView", () => {
   it("expanding 'Title Page' shows tier-4 cell as em-dash (empty in schema)", async () => {
     const user = userEvent.setup();
     render(<RowRubricView />);
-    const titleSummary = screen.getByText("Title Page");
-    await user.click(titleSummary);
+    const titleButton = screen.getByRole("button", { name: /Title Page/i });
+    await user.click(titleButton);
     // Tier 4 of "Title Page" is "" in the schema; it must render as "—".
     const dashCells = screen.getAllByText("—");
     expect(dashCells.length).toBeGreaterThanOrEqual(1);

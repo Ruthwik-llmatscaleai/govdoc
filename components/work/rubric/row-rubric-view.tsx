@@ -1,6 +1,8 @@
 import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-data";
 import { defaultRowRubric } from "@/lib/usecases/row-appraisal/rubric-data";
 import { STATUS_TONE, statusFromScore } from "@/components/work/row/status-tone";
+import { RubricShell } from "./shared/rubric-shell";
+import { RubricSection } from "./shared/rubric-section";
 
 const TIERS: ("1" | "2" | "3" | "4" | "5")[] = ["1", "2", "3", "4", "5"];
 
@@ -8,46 +10,37 @@ export function RowRubricView({ data }: { data?: RowRubricData }) {
   const schema = data ?? defaultRowRubric();
   const categories = Object.entries(schema);
 
+  const intro = (
+    <p className="text-[12.5px] leading-[1.5] text-[var(--color-ink-mute)]">
+      {categories.length} categories. Each is rated on a 1–5 scale; cells without text indicate the tier is not used for that category.
+    </p>
+  );
+
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">
-        {categories.length} categories. Each is rated on a 1–5 scale; cells
-        without text indicate the tier is not used for that category.
-      </p>
+    <RubricShell intro={intro}>
       {categories.map(([category, tiers]) => (
-        <details key={category} className="rounded-2xl border border-border bg-card">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-semibold text-foreground">
-            <span className="break-words">{category}</span>
-            <span className="text-xs font-normal text-muted-foreground">▾</span>
-          </summary>
-          <div className="border-t border-border p-4">
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="w-16 py-2">Score</th>
-                  <th className="py-2">Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                {TIERS.map((tier) => {
-                  const tone = STATUS_TONE[statusFromScore(Number(tier))];
-                  const text = tiers[tier];
-                  return (
-                    <tr key={tier} className="border-t border-border">
-                      <td className={`px-2 py-3 align-top font-semibold ${tone.cell}`}>
-                        {tier}
-                      </td>
-                      <td className="break-words px-3 py-3 align-top text-foreground/85">
-                        {text || "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </details>
+        <RubricSection key={category} title={category} count={TIERS.length} countLabel="tier">
+          <dl className="flex flex-col gap-1.5">
+            {TIERS.map((tier) => (
+              <TierRow key={tier} tier={tier} text={tiers[tier]} />
+            ))}
+          </dl>
+        </RubricSection>
       ))}
+    </RubricShell>
+  );
+}
+
+function TierRow({ tier, text }: { tier: "1" | "2" | "3" | "4" | "5"; text: string }) {
+  const tone = STATUS_TONE[statusFromScore(Number(tier))];
+  return (
+    <div className="grid grid-cols-[24px_1fr] items-baseline gap-2.5">
+      <span
+        className={`inline-flex h-5 w-5 items-center justify-center font-mono text-[10.5px] font-semibold tracking-[0.08em] ${tone.cell}`}
+      >
+        {tier}
+      </span>
+      <span className="text-[12.5px] leading-[1.5] text-[var(--color-ink-soft)]">{text || "—"}</span>
     </div>
   );
 }
