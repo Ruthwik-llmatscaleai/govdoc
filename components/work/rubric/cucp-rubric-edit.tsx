@@ -3,20 +3,76 @@ import { useState } from "react";
 import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-data";
 import { defaultCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-data";
 import type { CucpL2Category, CucpL3Criterion } from "@/lib/usecases/cucp-reevals/rubric";
+import { EditableSection } from "./shared/editable-section";
+import { RubricEditorCard, type EditorField } from "./shared/rubric-editor-card";
+
+type EditorTarget =
+  | { kind: "addL2" }
+  | { kind: "editL2"; name: string }
+  | { kind: "addL3" }
+  | { kind: "editL3"; sNo: number };
 
 export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
   const [l2, setL2] = useState<CucpL2Category[]>(() => initial.l2.map((c) => ({ ...c })));
   const [l3, setL3] = useState<CucpL3Criterion[]>(() => initial.l3.map((c) => ({ ...c })));
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [editor, setEditor] = useState<EditorTarget | null>(null);
 
-  function updateL2(idx: number, field: "name" | "description", value: string) {
-    setL2((prev) => prev.map((c, i) => (i === idx ? { ...c, [field]: value } : c)));
+  function applyEditor(values: Record<string, string>) {
+    if (!editor) return;
+    if (editor.kind === "addL2") {
+      setL2((prev) => [...prev, { name: values.name ?? "", description: values.description ?? "" }]);
+    }
+    if (editor.kind === "editL2") {
+      setL2((prev) =>
+        prev.map((c) =>
+          c.name === editor.name
+            ? { name: values.name ?? c.name, description: values.description ?? c.description }
+            : c,
+        ),
+      );
+    }
+    if (editor.kind === "addL3") {
+      const nextNo = (l3.reduce((max, c) => Math.max(max, c.s_no), 0) || 0) + 1;
+      setL3((prev) => [
+        ...prev,
+        {
+          s_no: nextNo,
+          name: values.name ?? "",
+          rule: values.rule || undefined,
+          pass: values.pass || undefined,
+          fail: values.fail || undefined,
+          title: values.title || undefined,
+        },
+      ]);
+    }
+    if (editor.kind === "editL3") {
+      setL3((prev) =>
+        prev.map((c) =>
+          c.s_no === editor.sNo
+            ? {
+                ...c,
+                name: values.name ?? c.name,
+                rule: values.rule || undefined,
+                pass: values.pass || undefined,
+                fail: values.fail || undefined,
+                title: values.title || undefined,
+              }
+            : c,
+        ),
+      );
+    }
+    setEditor(null);
   }
-  function updateL3(idx: number, field: "name" | "rule", value: string) {
-    setL3((prev) =>
-      prev.map((c, i) => (i === idx ? { ...c, [field]: value === "" && field === "rule" ? undefined : value } : c)),
-    );
+
+  function deleteL2(name: string) {
+    if (!confirm(`Delete legal category "${name}"?`)) return;
+    setL2((prev) => prev.filter((c) => c.name !== name));
+  }
+  function deleteL3(sNo: number) {
+    if (!confirm(`Delete criterion #${sNo}?`)) return;
+    setL3((prev) => prev.filter((c) => c.s_no !== sNo).map((c, i) => ({ ...c, s_no: i + 1 })));
   }
 
   async function onSave() {
@@ -38,7 +94,7 @@ export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
   }
 
   async function onReset() {
-    if (!confirm("Reset CUCP rubric to defaults? This deletes any saved edits.")) return;
+    if (!confirm("Reset Narrative Review rubric to defaults? This deletes any saved edits.")) return;
     setSaving(true);
     setMsg(null);
     try {
@@ -55,54 +111,101 @@ export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
     }
   }
 
+  const editorTitle = (() => {
+    if (!editor) return "";
+    if (editor.kind === "addL2") return "New legal category";
+    if (editor.kind === "editL2") return `Edit legal category "${editor.name}"`;
+    if (editor.kind === "addL3") return "New criterion";
+    if (editor.kind === "editL3") return `Edit criterion #${editor.sNo}`;
+    return "";
+  })();
+
+  const editorFields: EditorField[] = (() => {
+    if (!editor) return [];
+    if (editor.kind === "addL2" || editor.kind === "editL2") {
+      return [
+        { name: "name", label: "Category name", type: "text", required: true },
+        { name: "description", label: "Description", type: "textarea", required: true },
+      ];
+    }
+    return [
+      { name: "name", label: "Criterion name", type: "text", required: true },
+      { name: "title", label: "Display title (optional)", type: "text" },
+      { name: "rule", label: "Rule (optional)", type: "textarea" },
+      { name: "pass", label: "YES definition (optional)", type: "textarea" },
+      { name: "fail", label: "NO definition (optional)", type: "textarea" },
+    ];
+  })();
+
+  const editorInitial: Record<string, string> = ((): Record<string, string> => {
+    if (!editor) return {};
+    if (editor.kind === "editL2") {
+      const c = l2.find((x) => x.name === editor.name);
+      return { name: c?.name ?? "", description: c?.description ?? "" };
+    }
+    if (editor.kind === "editL3") {
+      const c = l3.find((x) => x.s_no === editor.sNo);
+      return {
+        name: c?.name ?? "",
+        title: c?.title ?? "",
+        rule: c?.rule ?? "",
+        pass: c?.pass ?? "",
+        fail: c?.fail ?? "",
+      };
+    }
+    if (editor.kind === "addL2") return { name: "", description: "" };
+    return { name: "", title: "", rule: "", pass: "", fail: "" };
+  })();
+
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <h3 className="text-sm font-semibold tracking-tight text-foreground">Level 2 — Legal Categories</h3>
-        {l2.map((c, idx) => (
-          <div key={idx} className="space-y-1.5">
-            <input
-              type="text"
-              value={c.name}
-              onChange={(e) => updateL2(idx, "name", e.target.value)}
-              className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm font-semibold"
-            />
-            <textarea
-              value={c.description}
-              onChange={(e) => updateL2(idx, "description", e.target.value)}
-              rows={2}
-              className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-muted-foreground"
-            />
-          </div>
-        ))}
-      </section>
-
-      <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
-        <h3 className="text-sm font-semibold tracking-tight text-foreground">Level 3 — 7 Criteria</h3>
-        {l3.map((c, idx) => (
-          <div key={c.s_no} className="space-y-2 border-t border-border pt-3 first:border-t-0 first:pt-0">
-            <div className="flex items-baseline gap-2">
-              <span className="font-mono text-xs font-semibold text-muted-foreground">{c.s_no}.</span>
-              <input
-                type="text"
-                value={c.name}
-                onChange={(e) => updateL3(idx, "name", e.target.value)}
-                className="flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-sm font-medium"
-              />
+      <div className="flex flex-col border border-[var(--color-line)] bg-[var(--color-paper)]">
+        <EditableSection
+          title="Level 2 — Legal Categories"
+          items={l2.map((c) => ({ id: c.name, text: c.name, raw: c }))}
+          countLabel="category"
+          defaultOpen
+          renderRow={(it) => (
+            <div>
+              <div className="text-[13.5px] font-semibold text-[var(--color-ink)]">{it.raw.name}</div>
+              <div className="text-[12.5px] leading-[1.5] text-[var(--color-ink-mute)]">{it.raw.description}</div>
             </div>
-            <label className="block">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Rule (optional)</span>
-              <textarea
-                value={c.rule ?? ""}
-                onChange={(e) => updateL3(idx, "rule", e.target.value)}
-                rows={2}
-                className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
-                placeholder="—"
-              />
-            </label>
-          </div>
-        ))}
-      </section>
+          )}
+          onAdd={() => setEditor({ kind: "addL2" })}
+          onEditItem={(id) => setEditor({ kind: "editL2", name: id })}
+          onDeleteItem={(id) => deleteL2(id)}
+        />
+        <EditableSection
+          title="Level 3 — 7 Criteria"
+          items={l3.map((c) => ({ id: String(c.s_no), text: c.title ?? c.name, raw: c }))}
+          countLabel="criterion"
+          renderRow={(it) => (
+            <div>
+              <div className="text-[13.5px] font-semibold text-[var(--color-ink)]">
+                <span className="mr-2 font-mono text-[11px] text-[var(--color-ink-faint)]">{it.raw.s_no}.</span>
+                {it.raw.title ?? it.raw.name}
+              </div>
+              {it.raw.rule && (
+                <div className="mt-1 text-[12px] italic text-[var(--color-ink-mute)]">{it.raw.rule}</div>
+              )}
+            </div>
+          )}
+          onAdd={() => setEditor({ kind: "addL3" })}
+          onEditItem={(id) => setEditor({ kind: "editL3", sNo: Number(id) })}
+          onDeleteItem={(id) => deleteL3(Number(id))}
+        />
+      </div>
+
+      {editor && (
+        <RubricEditorCard
+          mode={editor.kind.startsWith("edit") ? "edit" : "create"}
+          title={editorTitle}
+          fields={editorFields}
+          initialValues={editorInitial}
+          onSave={applyEditor}
+          onCancel={() => setEditor(null)}
+        />
+      )}
 
       <SaveBar
         saving={saving}
@@ -135,10 +238,7 @@ function SaveBar({
     <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/95 p-4 backdrop-blur shadow-md">
       <span className="text-xs text-muted-foreground">{msg ?? "Edits are kept on this server only and are ephemeral on Cloud Run."}</span>
       <div className="flex gap-2">
-        <a
-          href={downloadHref}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
-        >
+        <a href={downloadHref} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted">
           {downloadLabel}
         </a>
         <button
