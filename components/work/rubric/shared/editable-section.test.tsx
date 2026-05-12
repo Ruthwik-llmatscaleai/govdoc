@@ -10,7 +10,6 @@ const items = [
 
 describe("EditableSection", () => {
   it("renders the section title and row content", async () => {
-    const user = userEvent.setup();
     render(
       <EditableSection
         sectionKey="A"
@@ -68,5 +67,24 @@ describe("EditableSection", () => {
     expect(onEdit).toHaveBeenCalledWith("q1");
     await user.click(screen.getAllByRole("button", { name: /Delete Question 2/i })[0]!);
     expect(onDel).toHaveBeenCalledWith("q2");
+  });
+
+  it("renders custom children when provided, replacing the items list", () => {
+    render(
+      <EditableSection
+        title="ROW"
+        items={[]}
+        renderRow={() => null}
+        onAdd={() => {}}
+        onEditItem={() => {}}
+        onDeleteItem={() => {}}
+        countLabel="tier"
+        defaultOpen
+      >
+        <div data-testid="custom-body">custom</div>
+      </EditableSection>,
+    );
+    expect(screen.getByTestId("custom-body")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /\+ Add tier/i })).not.toBeInTheDocument();
   });
 });

@@ -3,8 +3,14 @@ import { useState } from "react";
 import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-data";
 import { defaultRowRubric } from "@/lib/usecases/row-appraisal/rubric-data";
 import { STATUS_TONE, statusFromScore } from "@/components/work/row/status-tone";
+import { EditableSection } from "./shared/editable-section";
+import { RubricEditorCard, type EditorField } from "./shared/rubric-editor-card";
 
 const TIERS: ("1" | "2" | "3" | "4" | "5")[] = ["1", "2", "3", "4", "5"];
+
+type EditorTarget =
+  | { kind: "addCategory" }
+  | { kind: "renameCategory"; name: string };
 
 export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
   const [schema, setSchema] = useState<RowRubricData>(() =>
@@ -12,9 +18,43 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
   );
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [editor, setEditor] = useState<EditorTarget | null>(null);
 
   function updateTier(category: string, tier: (typeof TIERS)[number], value: string) {
     setSchema((prev) => ({ ...prev, [category]: { ...prev[category]!, [tier]: value } }));
+  }
+
+  function applyEditor(values: Record<string, string>) {
+    if (!editor) return;
+    if (editor.kind === "addCategory") {
+      const name = (values.name ?? "").trim();
+      if (!name || schema[name]) return;
+      setSchema((prev) => ({ ...prev, [name]: { "1": "", "2": "", "3": "", "4": "", "5": "" } }));
+    }
+    if (editor.kind === "renameCategory") {
+      const next = (values.name ?? "").trim();
+      if (!next || next === editor.name || schema[next]) {
+        setEditor(null);
+        return;
+      }
+      setSchema((prev) => {
+        const out: RowRubricData = {} as RowRubricData;
+        for (const [k, v] of Object.entries(prev)) {
+          out[k === editor.name ? next : k] = v;
+        }
+        return out;
+      });
+    }
+    setEditor(null);
+  }
+
+  function deleteCategory(name: string) {
+    if (!confirm(`Delete category "${name}"?`)) return;
+    setSchema((prev) => {
+      const next: RowRubricData = {} as RowRubricData;
+      for (const [k, v] of Object.entries(prev)) if (k !== name) next[k] = v;
+      return next;
+    });
   }
 
   async function onSave() {
@@ -36,7 +76,7 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
   }
 
   async function onReset() {
-    if (!confirm("Reset ROW rubric to defaults? This deletes any saved edits.")) return;
+    if (!confirm("Reset Appraisal Review rubric to defaults? This deletes any saved edits.")) return;
     setSaving(true);
     setMsg(null);
     try {
@@ -52,19 +92,57 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
     }
   }
 
+  const editorFields: EditorField[] = [{ name: "name", label: "Category name", type: "text", required: true }];
+  const editorTitle = editor?.kind === "addCategory" ? "New category" : `Rename category "${editor?.kind === "renameCategory" ? editor.name : ""}"`;
+  const editorInitial = editor?.kind === "renameCategory" ? { name: editor.name } : { name: "" };
+
   return (
     <div className="space-y-6">
-      <p className="text-xs text-muted-foreground">
-        {Object.keys(schema).length} categories. Leave a tier blank to indicate it&rsquo;s not used for that category.
-      </p>
-      <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {Object.keys(schema).length} categories. The 1–5 scale is fixed; tier descriptions are editable inline.
+        </p>
+        <button
+          type="button"
+          onClick={() => setEditor({ kind: "addCategory" })}
+          className="rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-foreground transition hover:bg-muted"
+        >
+          + Add category
+        </button>
+      </div>
+
+      <div className="flex flex-col border border-[var(--color-line)] bg-[var(--color-paper)]">
         {Object.entries(schema).map(([category, tiers]) => (
-          <details key={category} className="rounded-2xl border border-border bg-card">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-semibold text-foreground">
-              <span className="break-words">{category}</span>
-              <span className="text-xs font-normal text-muted-foreground">▾</span>
-            </summary>
-            <div className="border-t border-border p-4 space-y-3">
+          <EditableSection
+            key={category}
+            title={category}
+            items={TIERS.map((t) => ({ id: t, text: `Tier ${t}` }))}
+            countLabel="tier"
+            renderRow={() => null}
+            onAdd={() => {}}
+            onEditItem={() => {}}
+            onDeleteItem={() => {}}
+            sectionActions={
+              <>
+                <button
+                  type="button"
+                  onClick={() => setEditor({ kind: "renameCategory", name: category })}
+                  className="rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-foreground transition hover:bg-muted"
+                >
+                  Rename
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteCategory(category)}
+                  className="rounded-md border border-destructive/40 px-2.5 py-1 text-[11px] font-medium text-destructive transition hover:bg-destructive/5"
+                >
+                  Delete
+                </button>
+              </>
+            }
+          >
+            {/* Tier rows: edit-only inline. */}
+            <div className="space-y-3 pt-3">
               {TIERS.map((tier) => {
                 const tone = STATUS_TONE[statusFromScore(Number(tier))];
                 return (
@@ -73,6 +151,7 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
                       {tier}
                     </span>
                     <textarea
+                      aria-label={`Tier ${tier} for ${category}`}
                       value={tiers[tier]}
                       onChange={(e) => updateTier(category, tier, e.target.value)}
                       rows={2}
@@ -83,9 +162,21 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
                 );
               })}
             </div>
-          </details>
+          </EditableSection>
         ))}
       </div>
+
+      {editor && (
+        <RubricEditorCard
+          mode={editor.kind === "addCategory" ? "create" : "edit"}
+          title={editorTitle}
+          fields={editorFields}
+          initialValues={editorInitial}
+          onSave={applyEditor}
+          onCancel={() => setEditor(null)}
+        />
+      )}
+
       <SaveBar
         saving={saving}
         msg={msg}
@@ -117,10 +208,7 @@ function SaveBar({
     <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/95 p-4 backdrop-blur shadow-md">
       <span className="text-xs text-muted-foreground">{msg ?? "Edits are kept on this server only and are ephemeral on Cloud Run."}</span>
       <div className="flex gap-2">
-        <a
-          href={downloadHref}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
-        >
+        <a href={downloadHref} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted">
           {downloadLabel}
         </a>
         <button
