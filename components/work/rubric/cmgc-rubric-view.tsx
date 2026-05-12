@@ -1,84 +1,122 @@
+"use client";
 import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
 import { defaultCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-data";
+import type { RubricQuestion } from "@/lib/usecases/cmgc-pde/rubric";
+import { RubricShell } from "./shared/rubric-shell";
+import { RubricSection } from "./shared/rubric-section";
 
 const SECTION_KEYS = ["A", "B", "C", "D", "E", "F"] as const;
+
+function splitSection(label: string): { key: string; name: string } {
+  const m = label.match(/^([A-Z]):\s*(.+)$/);
+  if (m && m[1] && m[2]) return { key: m[1], name: m[2] };
+  return { key: label.charAt(0), name: label };
+}
 
 export function CmgcRubricView({ data }: { data?: CmgcRubricData }) {
   const { questions, weights } = data ?? defaultCmgcRubric();
 
-  const bySection = new Map<string, typeof questions[number][]>();
+  const bySection = new Map<string, { name: string; qs: RubricQuestion[] }>();
   for (const q of questions) {
-    const arr = bySection.get(q.section) ?? [];
-    arr.push(q);
-    bySection.set(q.section, arr);
+    const { key, name } = splitSection(q.section);
+    const cur = bySection.get(key) ?? { name, qs: [] };
+    cur.qs.push(q);
+    bySection.set(key, cur);
   }
-  const sections = Array.from(bySection.entries());
+  const sections = SECTION_KEYS.map((k) => ({
+    key: k,
+    name: bySection.get(k)?.name ?? k,
+    qs: bySection.get(k)?.qs ?? [],
+    weight: weights[k],
+  }));
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-4 text-xs">
-        <span className="font-semibold uppercase tracking-wider text-muted-foreground">
-          Section weights
-        </span>
-        {SECTION_KEYS.map((k) => (
-          <span
-            key={k}
-            className="rounded-full bg-muted px-2.5 py-1 font-medium text-foreground"
-          >
-            {k} {Math.round(weights[k] * 100)}%
-          </span>
-        ))}
+  const dominantKey = sections.reduce(
+    (acc, s) => (s.weight > (acc?.weight ?? -1) ? s : acc),
+    sections[0],
+  )?.key;
+
+  const intro = (
+    <div
+      aria-label="Section weights"
+      className="flex items-center overflow-hidden border border-[var(--color-line)] bg-[var(--color-paper)]"
+    >
+      <div className="shrink-0 border-r border-[var(--color-line)] bg-[var(--color-cream)] px-5 py-3.5 font-mono text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-ink)]">
+        Section Weights
       </div>
-
-      <div className="space-y-3">
-        {sections.map(([section, qs], i) => (
-          <details
-            key={section}
-            open={i === 0}
-            className="group rounded-2xl border border-border bg-card"
-          >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 text-base font-semibold text-foreground">
-              <span>{section}</span>
-              <span className="text-xs font-medium text-muted-foreground">
-                {qs.length} question{qs.length === 1 ? "" : "s"}
-                <span className="ml-2 text-foreground/60 transition group-open:rotate-180 inline-block">
-                  ▾
-                </span>
+      <div className="flex h-12 flex-1">
+        {sections.map((s, i) => {
+          const isLast = i === sections.length - 1;
+          const isDominant = s.key === dominantKey;
+          return (
+            <div
+              key={s.key}
+              style={{ flex: Math.round(s.weight * 100) }}
+              className={`flex flex-col items-center justify-center transition-colors hover:bg-[var(--color-cream-soft)] ${
+                isLast ? "" : "border-r border-[var(--color-line-soft)]"
+              }`}
+            >
+              <span
+                className={`font-mono text-[11px] font-semibold leading-none tracking-[0.08em] ${
+                  isDominant ? "text-[var(--color-govdoc-primary)]" : "text-[var(--color-ink)]"
+                }`}
+              >
+                {s.key}
               </span>
-            </summary>
-            <div className="space-y-5 border-t border-border p-5">
-              {qs.map((q) => (
-                <div key={q.id} className="space-y-2">
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-mono text-xs font-semibold text-muted-foreground">
-                      {q.id}
-                    </span>
-                    <h4 className="text-sm font-semibold text-foreground">
-                      {q.question}
-                    </h4>
-                  </div>
-                  <ul className="space-y-1.5 pl-6">
-                    <Option label="A" text={q.option_a} />
-                    <Option label="B" text={q.option_b} />
-                    <Option label="C" text={q.option_c} />
-                  </ul>
-                </div>
-              ))}
+              <span
+                className={`mt-0.5 font-mono text-[9.5px] leading-none tracking-[0.08em] ${
+                  isDominant ? "font-medium text-[var(--color-govdoc-deep)]" : "text-[var(--color-ink-mute)]"
+                }`}
+              >
+                {Math.round(s.weight * 100)}%
+              </span>
             </div>
-          </details>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
+
+  return (
+    <RubricShell intro={intro}>
+      {sections.map((s, i) => (
+        <RubricSection
+          key={s.key}
+          sectionKey={s.key}
+          title={s.name}
+          count={s.qs.length}
+          countLabel="question"
+          defaultOpen={i === 0}
+        >
+          <ol className="flex list-none flex-col gap-4">
+            {s.qs.map((q) => (
+              <li key={q.id} className="border-b border-[var(--color-line-soft)] py-3 last:border-b-0">
+                <div className="grid grid-cols-[auto_1fr] items-baseline gap-3.5 text-[13.5px] leading-[1.5] text-[var(--color-ink-soft)]">
+                  <span className="font-mono text-[10.5px] tracking-[0.08em] text-[var(--color-ink-faint)]">
+                    {q.id}
+                  </span>
+                  <span className="font-medium">{q.question}</span>
+                </div>
+                <dl className="mt-2.5 ml-[42px] flex flex-col gap-1.5">
+                  <RatingRow letter="A" text={q.option_a} />
+                  <RatingRow letter="B" text={q.option_b} />
+                  <RatingRow letter="C" text={q.option_c} />
+                </dl>
+              </li>
+            ))}
+          </ol>
+        </RubricSection>
+      ))}
+    </RubricShell>
+  );
 }
 
-function Option({ label, text }: { label: string; text: string }) {
+function RatingRow({ letter, text }: { letter: "A" | "B" | "C"; text: string }) {
   return (
-    <li className="flex items-start gap-2 text-sm">
-      <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[oklch(0.94_0.05_280)] text-[10px] font-bold text-[oklch(0.45_0.15_280)]">
-        {label}
+    <div className="grid grid-cols-[24px_1fr] items-baseline gap-2.5">
+      <span className="font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--color-ink-faint)]">
+        {letter}
       </span>
-      <span className="break-words text-foreground/85">{text}</span>
-    </li>
+      <span className="text-[12.5px] leading-[1.5] text-[var(--color-ink-soft)]">{text}</span>
+    </div>
   );
 }
