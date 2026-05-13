@@ -26,7 +26,7 @@ describe("ResultsTable", () => {
     }
   });
 
-  it("score -1 shows N/A with gray class", () => {
+  it("score -1 shows N/A with muted class", () => {
     const results: EvaluationResult[] = [{
       category: "Title Page",
       score: -1,
@@ -37,11 +37,11 @@ describe("ResultsTable", () => {
     }];
     render(<ResultsTable results={results} />);
     const cell = screen.getByText("N/A");
-    expect(cell.className).toContain("bg-[#e2e3e5]");
-    expect(cell.className).toContain("text-[#383d41]");
+    expect(cell.className).toContain("bg-muted");
+    expect(cell.className).toContain("text-muted-foreground");
   });
 
-  it("score 5 has green class", () => {
+  it("score 5 has emerald class", () => {
     const results: EvaluationResult[] = [{
       category: "Title Page",
       score: 5,
@@ -52,11 +52,11 @@ describe("ResultsTable", () => {
     }];
     render(<ResultsTable results={results} />);
     const cell = screen.getByText("5");
-    expect(cell.className).toContain("bg-[#d4edda]");
-    expect(cell.className).toContain("text-[#155724]");
+    expect(cell.className).toContain("bg-emerald-50");
+    expect(cell.className).toContain("text-emerald-700");
   });
 
-  it("score 1 has red class", () => {
+  it("score 1 has rose class", () => {
     const results: EvaluationResult[] = [{
       category: "Title Page",
       score: 1,
@@ -67,11 +67,11 @@ describe("ResultsTable", () => {
     }];
     render(<ResultsTable results={results} />);
     const cell = screen.getByText("1");
-    expect(cell.className).toContain("bg-[#f8d7da]");
-    expect(cell.className).toContain("text-[#721c24]");
+    expect(cell.className).toContain("bg-rose-50");
+    expect(cell.className).toContain("text-rose-700");
   });
 
-  it("score 3 has yellow class", () => {
+  it("score 3 has amber class", () => {
     const results: EvaluationResult[] = [{
       category: "Title Page",
       score: 3,
@@ -82,15 +82,15 @@ describe("ResultsTable", () => {
     }];
     render(<ResultsTable results={results} />);
     const cell = screen.getByText("3");
-    expect(cell.className).toContain("bg-[#fff3cd]");
-    expect(cell.className).toContain("text-[#856404]");
+    expect(cell.className).toContain("bg-amber-50");
+    expect(cell.className).toContain("text-amber-800");
   });
 
-  it("applies caltrans Fail color to score cell when score is 1", () => {
+  it("applies Fail tone to score cell when score is 1", () => {
     const results = [{ category: "Title Page", score: 1, status: "❌ Fail", criteria_met: "", evidence: "", comments: "" }];
     // @ts-expect-error structural input fine for test
     const { container } = render(<ResultsTable results={results} />);
     const cell = container.querySelector("[data-row-status='Fail']");
-    expect(cell?.className).toContain("#f8d7da");
+    expect(cell?.className).toContain("bg-rose-50");
   });
 });

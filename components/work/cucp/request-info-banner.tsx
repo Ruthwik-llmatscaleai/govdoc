@@ -10,12 +10,7 @@ export function RequestInfoBanner({ show }: { show: boolean }): React.JSX.Elemen
   return (
     <div
       role="alert"
-      className="mb-3 rounded-md border p-3"
-      style={{
-        background: "#fff3cd",
-        borderColor: "#ffe08a",
-        color: "#5b4a00",
-      }}
+      className="mb-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800"
     >
       ⚠ {FINAL_DECISION_COPY}
     </div>

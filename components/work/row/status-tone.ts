@@ -5,13 +5,15 @@ type ToneClasses = {
   rowBorder: string;
 };
 
-// Palette mirrors caltrans landing_ai_ui.py (Pass/Warning/Fail/N/A bg+fg).
+// Soft theme-toned palette — Pass/Warning/Fail/N/A read clearly against the
+// cream background without the saturated caltrans red/green. Original caltrans
+// hexes were #d4edda/#fff3cd/#f8d7da/#e2e3e5 — kept here as a paper trail.
 export const STATUS_TONE: Record<RowStatus, ToneClasses> = {
-  Pass:    { cell: "bg-[#d4edda] text-[#155724]", rowBorder: "border-l-4 border-l-[#28a745]" },
-  Warning: { cell: "bg-[#fff3cd] text-[#856404]", rowBorder: "border-l-4 border-l-[#ffc107]" },
-  Fail:    { cell: "bg-[#f8d7da] text-[#721c24]", rowBorder: "border-l-4 border-l-[#dc3545]" },
-  "N/A":   { cell: "bg-[#e2e3e5] text-[#383d41]", rowBorder: "border-l-4 border-l-[#808080]" },
-  Error:   { cell: "bg-[#f8d7da] text-[#721c24]", rowBorder: "border-l-4 border-l-[#dc3545]" },
+  Pass:    { cell: "bg-emerald-50 text-emerald-700",          rowBorder: "border-l-4 border-l-emerald-300" },
+  Warning: { cell: "bg-amber-50 text-amber-800",              rowBorder: "border-l-4 border-l-amber-300" },
+  Fail:    { cell: "bg-rose-50 text-rose-700",                rowBorder: "border-l-4 border-l-rose-300" },
+  "N/A":   { cell: "bg-muted text-muted-foreground",          rowBorder: "border-l-4 border-l-border" },
+  Error:   { cell: "bg-rose-50 text-rose-700",                rowBorder: "border-l-4 border-l-rose-300" },
 };
 
 export function statusFromScore(score: number): RowStatus {

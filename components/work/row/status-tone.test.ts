@@ -5,17 +5,17 @@ describe("STATUS_TONE", () => {
   const all: RowStatus[] = ["Pass", "Warning", "Fail", "N/A", "Error"];
   it("has cell + row classes for every status", () => {
     for (const s of all) {
-      expect(STATUS_TONE[s].cell).toMatch(/bg-\[/);
+      expect(STATUS_TONE[s].cell).toMatch(/^bg-/);
       expect(STATUS_TONE[s].rowBorder).toMatch(/border-l-/);
     }
   });
-  it("uses the caltrans pass green for Pass", () => {
-    expect(STATUS_TONE.Pass.cell).toContain("#d4edda");
-    expect(STATUS_TONE.Pass.cell).toContain("#155724");
+  it("uses the soft theme-toned emerald palette for Pass", () => {
+    expect(STATUS_TONE.Pass.cell).toContain("bg-emerald-50");
+    expect(STATUS_TONE.Pass.cell).toContain("text-emerald-700");
   });
-  it("uses the caltrans fail red for Fail", () => {
-    expect(STATUS_TONE.Fail.cell).toContain("#f8d7da");
-    expect(STATUS_TONE.Fail.cell).toContain("#721c24");
+  it("uses the soft theme-toned rose palette for Fail", () => {
+    expect(STATUS_TONE.Fail.cell).toContain("bg-rose-50");
+    expect(STATUS_TONE.Fail.cell).toContain("text-rose-700");
   });
 });
 

@@ -34,12 +34,12 @@ describe("ExecSummary", () => {
     expect(screen.getAllByText(/N\/A/).length).toBeGreaterThan(0);
   });
 
-  it("applies caltrans Pass background to the status cell when score >= 4", () => {
+  it("applies the Pass background to the status cell when score >= 4", () => {
     const results = [{ category: "Title Page", score: 5, status: "✅ Pass", criteria_met: "", evidence: "", comments: "ok" }];
     // @ts-expect-error structural input is fine for this test
     const { container } = render(<ExecSummary results={results} />);
     const statusCell = container.querySelector('[data-status="Pass"]');
-    expect(statusCell?.className).toContain("#d4edda");
+    expect(statusCell?.className).toContain("bg-emerald-50");
   });
 
   it("applies a left border colored by status on each row", () => {
@@ -50,7 +50,7 @@ describe("ExecSummary", () => {
     // @ts-expect-error structural input is fine for this test
     const { container } = render(<ExecSummary results={results} />);
     const rows = container.querySelectorAll("tbody tr");
-    expect((rows[0] as HTMLTableRowElement).className).toContain("border-l-[#dc3545]");
-    expect((rows[1] as HTMLTableRowElement).className).toContain("border-l-[#28a745]");
+    expect((rows[0] as HTMLTableRowElement).className).toContain("border-l-rose-300");
+    expect((rows[1] as HTMLTableRowElement).className).toContain("border-l-emerald-300");
   });
 });

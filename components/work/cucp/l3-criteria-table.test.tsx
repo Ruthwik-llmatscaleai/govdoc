@@ -85,28 +85,28 @@ describe("L3CriteriaTable", () => {
     );
   });
 
-  it("colors Pass cell with caltrans pass palette", () => {
+  it("colors Pass cell with the emerald palette", () => {
     const { container } = render(<L3CriteriaTable criteria={[passCriterion]} />);
     const verdictCell = container.querySelector("td[data-verdict='pass']");
     expect(verdictCell).not.toBeNull();
-    expect(verdictCell!.className).toMatch(/bg-\[#d4edda\]/);
+    expect(verdictCell!.className).toMatch(/bg-emerald-50/);
   });
 
-  it("colors Fail cell with caltrans fail palette", () => {
+  it("colors Fail cell with the rose palette", () => {
     const { container } = render(<L3CriteriaTable criteria={[failCriterion]} />);
     const verdictCell = container.querySelector("td[data-verdict='fail']");
     expect(verdictCell).not.toBeNull();
-    expect(verdictCell!.className).toMatch(/bg-\[#f8d7da\]/);
+    expect(verdictCell!.className).toMatch(/bg-rose-50/);
   });
 
-  it("colors verdict cell with warning palette when request_info=Yes (overrides Pass/Fail)", () => {
+  it("colors verdict cell with amber palette when request_info=Yes (overrides Pass/Fail)", () => {
     const { container } = render(<L3CriteriaTable criteria={[infoCriterion]} />);
     const verdictCell = container.querySelector("td[data-verdict='warning']");
     expect(verdictCell).not.toBeNull();
-    expect(verdictCell!.className).toMatch(/bg-\[#fff3cd\]/);
+    expect(verdictCell!.className).toMatch(/bg-amber-50/);
   });
 
-  it("renders 'Need More Info?' as Yes/No and tints Yes with warning palette", () => {
+  it("renders 'Need More Info?' as Yes/No and tints Yes with amber palette", () => {
     const { container } = render(
       <L3CriteriaTable criteria={[passCriterion, infoCriterion]} />,
     );
@@ -114,20 +114,20 @@ describe("L3CriteriaTable", () => {
     const yesCell = container.querySelector("td[data-request-info='yes']");
     expect(noCell?.textContent).toBe("No");
     expect(yesCell?.textContent).toBe("Yes");
-    expect(yesCell!.className).toMatch(/bg-\[#fff3cd\]/);
+    expect(yesCell!.className).toMatch(/bg-amber-50/);
   });
 
-  it("colors Confidence cell green at >=0.80, amber at >=0.50, red below", () => {
+  it("colors Confidence cell emerald at >=0.80, amber at >=0.50, rose below", () => {
     const { container } = render(
       <L3CriteriaTable criteria={[passCriterion, infoCriterion, lowConfCriterion]} />,
     );
     const cells = container.querySelectorAll("td[data-confidence-tone]");
     expect(cells[0]!.getAttribute("data-confidence-tone")).toBe("pass");
-    expect(cells[0]!.className).toMatch(/bg-\[#d4edda\]/);
+    expect(cells[0]!.className).toMatch(/bg-emerald-50/);
     expect(cells[1]!.getAttribute("data-confidence-tone")).toBe("warning");
-    expect(cells[1]!.className).toMatch(/bg-\[#fff3cd\]/);
+    expect(cells[1]!.className).toMatch(/bg-amber-50/);
     expect(cells[2]!.getAttribute("data-confidence-tone")).toBe("fail");
-    expect(cells[2]!.className).toMatch(/bg-\[#f8d7da\]/);
+    expect(cells[2]!.className).toMatch(/bg-rose-50/);
   });
 
   it("when overrideMap provides a new verdict, displays the override verdict and reason", () => {
