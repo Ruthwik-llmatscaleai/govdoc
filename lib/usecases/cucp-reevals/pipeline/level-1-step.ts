@@ -71,6 +71,7 @@ export const level1Step: PipelineStep<FormData> = {
       yield {
         type: "needs-input",
         stage: "level1",
+        level: 1,
         prompt: { kind: "approve-or-override", category: "level-1-facts", proposed: { decision: "Facts ready for review", rationale: "" } },
       } satisfies StepEvent;
 

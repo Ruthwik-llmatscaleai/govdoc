@@ -4,7 +4,7 @@ import type { StepContext } from "@/lib/usecases/types";
 
 vi.mock("@/lib/usecases/cucp-reevals/report/markdown", () => ({
   generateFinalMarkdownReport: vi.fn(
-    (_l1: unknown, _l2: unknown, _l3: unknown, _overrides: unknown, _date: unknown) =>
+    (_l1: unknown, _l2: unknown, _l3: unknown, _overrides: unknown, _date: unknown, _session: unknown) =>
       "# CUCP EVALUATION REPORT\n## PART 1 – EVALUATION TABLE",
   ),
 }));
@@ -63,5 +63,18 @@ describe("reportStep", () => {
     const events = await collect(reportStep.run(new FormData(), ctx));
     const types = events.map((e: any) => e.type);
     expect(types.indexOf("progress")).toBeLessThan(types.indexOf("stage-done"));
+  });
+
+  it("threads ctx.staged precedents and field overrides into session_overrides on stage-done", async () => {
+    const ctx = makeCtx();
+    ctx.staged.level_2_precedents.push({ target: "Social Disadvantage", correction: "Economic Disadvantage", human_reasoning: "r", fact_id: "fact_1" });
+    ctx.staged.level_3_precedents.push({ target: "Crit 2", correction: "Fail", human_reasoning: "r", s_no: 2 });
+    ctx.staged.l1_field_overrides = { firm_name: { value: "Acme LLC", reason: "typo" } };
+    const events = await collect(reportStep.run(new FormData(), ctx));
+    const done: any = events.find((e: any) => e.type === "stage-done");
+    expect(done.data.session_overrides).toBeDefined();
+    expect(done.data.session_overrides.l2Precedents).toHaveLength(1);
+    expect(done.data.session_overrides.l3Precedents).toHaveLength(1);
+    expect(done.data.session_overrides.l1FieldOverrides.firm_name?.value).toBe("Acme LLC");
   });
 });

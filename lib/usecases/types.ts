@@ -19,7 +19,7 @@ export type StepEvent =
   | { type: "progress"; stage: string; pct: number; message?: string }
   | { type: "partial"; stage: string; data: unknown }
   | { type: "stage-done"; stage: string; data: unknown }
-  | { type: "needs-input"; stage: string; prompt: HumanInput }
+  | { type: "needs-input"; stage: string; level?: 1 | 2 | 3; prompt: HumanInput }
   | { type: "done"; result: unknown }
   | { type: "error"; stage: string; message: string };
 

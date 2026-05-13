@@ -67,6 +67,7 @@ export const level3Step: PipelineStep<FormData> = {
       yield {
         type: "needs-input",
         stage: "level3",
+        level: 3,
         prompt: {
           kind: "approve-or-override",
           category: "level-3-criteria",

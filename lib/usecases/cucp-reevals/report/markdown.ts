@@ -1,4 +1,56 @@
-import type { Level1Data, Level2Data, Level3Data, AnalystOverride } from "@/lib/usecases/cucp-reevals/types";
+import type { Level1Data, Level2Data, Level3Data, AnalystOverride, L1FieldKey } from "@/lib/usecases/cucp-reevals/types";
+import type { Precedent } from "@/lib/usecases/cucp-reevals/memory/precedents";
+
+export type SessionOverrides = {
+  l1FieldOverrides?: Partial<Record<L1FieldKey, { value: string; reason: string }>>;
+  l1Precedents?: readonly Precedent[];
+  l2Precedents?: readonly Precedent[];
+  l3Precedents?: readonly Precedent[];
+};
+
+const L1_FIELD_LABEL: Record<L1FieldKey, string> = {
+  firm_name: "Firm name",
+  narrative_pnw: "Narrative-declared PNW",
+};
+
+function hasSessionOverrides(s?: SessionOverrides): boolean {
+  if (!s) return false;
+  const fields = Object.keys(s.l1FieldOverrides ?? {}).length;
+  return fields + (s.l1Precedents?.length ?? 0) + (s.l2Precedents?.length ?? 0) + (s.l3Precedents?.length ?? 0) > 0;
+}
+
+function renderSessionOverridesBlock(s: SessionOverrides): string {
+  let md = "";
+  const l1Fields = Object.entries(s.l1FieldOverrides ?? {}) as [L1FieldKey, { value: string; reason: string }][];
+  const hasL1 = l1Fields.length > 0 || (s.l1Precedents?.length ?? 0) > 0;
+  if (hasL1) {
+    md += `**Level 1 — Facts**\n`;
+    for (const [field, entry] of l1Fields) {
+      md += `- **${L1_FIELD_LABEL[field]} →** \`${entry.value}\` *(Justification: ${entry.reason})*\n`;
+    }
+    for (const p of s.l1Precedents ?? []) {
+      md += `- **${p.target} →** \`${p.correction}\` *(Justification: ${p.human_reasoning})*\n`;
+    }
+    md += `\n`;
+  }
+  if ((s.l2Precedents?.length ?? 0) > 0) {
+    md += `**Level 2 — Classifications**\n`;
+    for (const p of s.l2Precedents!) {
+      const id = p.fact_id ? ` ${p.fact_id}` : "";
+      md += `- **Fact${id}:** \`${p.target}\` → \`${p.correction}\` *(Justification: ${p.human_reasoning})*\n`;
+    }
+    md += `\n`;
+  }
+  if ((s.l3Precedents?.length ?? 0) > 0) {
+    md += `**Level 3 — Criteria**\n`;
+    for (const p of s.l3Precedents!) {
+      const tag = p.s_no ? `#${p.s_no} ` : "";
+      md += `- **${tag}${p.target} →** \`${p.correction}\` *(Justification: ${p.human_reasoning})*\n`;
+    }
+    md += `\n`;
+  }
+  return md;
+}
 
 export function applyOverridesToLevel3(level3: Level3Data, overrides: AnalystOverride[]): Level3Data {
   if (overrides.length === 0) return level3;
@@ -23,6 +75,7 @@ export function generateFinalMarkdownReport(
   level3: Level3Data,
   analystOverrides: AnalystOverride[] = [],
   evaluationDateIso: string = new Date().toISOString(),
+  sessionOverrides?: SessionOverrides,
 ): string {
   const adjusted = applyOverridesToLevel3(level3, analystOverrides);
   const dateStr = fmtDate(evaluationDateIso);
@@ -46,13 +99,18 @@ export function generateFinalMarkdownReport(
     md += `- **How/Magnitude:** ${f.magnitude ?? "NOT PROVIDED"}\n\n`;
   });
 
-  if (analystOverrides.length > 0) {
+  const showOverrides = analystOverrides.length > 0 || hasSessionOverrides(sessionOverrides);
+  if (showOverrides) {
     md += `### 🧑‍⚖️ ANALYST OVERRIDES\n`;
-    md += `The following external facts or manual adjustments were provided by the human reviewer:\n`;
-    for (const o of analystOverrides) {
-      md += `- **${o.field}:** ${o.value} *(Justification: ${o.reasoning})*\n`;
+    md += `The following manual adjustments were applied by the human reviewer during this run:\n\n`;
+    if (sessionOverrides) md += renderSessionOverridesBlock(sessionOverrides);
+    if (analystOverrides.length > 0) {
+      md += `**Level 3 — Field edits**\n`;
+      for (const o of analystOverrides) {
+        md += `- **${o.field}:** ${o.value} *(Justification: ${o.reasoning})*\n`;
+      }
+      md += `\n`;
     }
-    md += `\n`;
   }
 
   md += `---\n\n`;

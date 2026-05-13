@@ -12,7 +12,7 @@ const ALL_METADATA: UseCaseMetadata[] = [
   {
     id: "cmgc-pde",
     label: "Project Review",
-    blurb: "Score project narratives against the 32-category delivery method rubric.",
+    blurb: "Score project narratives against the 25-category delivery method rubric.",
     tile: "review",
     exporters: [
       { id: "xlsx", label: "Download Excel" },

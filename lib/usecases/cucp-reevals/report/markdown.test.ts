@@ -155,4 +155,48 @@ describe("generateFinalMarkdownReport", () => {
     const md = generateFinalMarkdownReport(baseL1, baseL2, baseL3, [], "2026-05-05T00:00:00.000Z");
     expect(md).not.toContain("ANALYST OVERRIDES");
   });
+
+  it("renders L1 field overrides, L2 precedents, and L3 precedents from sessionOverrides", () => {
+    const md = generateFinalMarkdownReport(baseL1, baseL2, baseL3, [], "2026-05-05T00:00:00.000Z", {
+      l1FieldOverrides: { firm_name: { value: "Acme LLC", reason: "added LLC suffix" } },
+      l2Precedents: [
+        { target: "Social Disadvantage", correction: "Economic Disadvantage", human_reasoning: "fits PNW pattern better", fact_id: "fact_1" },
+      ],
+      l3Precedents: [
+        { target: "PNW < $2.047M", correction: "Fail", human_reasoning: "applicant exceeds PNW threshold", s_no: 2 },
+      ],
+    });
+    expect(md).toContain("ANALYST OVERRIDES");
+    expect(md).toContain("Level 1 — Facts");
+    expect(md).toContain("Firm name");
+    expect(md).toContain("`Acme LLC`");
+    expect(md).toContain("added LLC suffix");
+    expect(md).toContain("Level 2 — Classifications");
+    expect(md).toContain("fact_1");
+    expect(md).toContain("`Social Disadvantage`");
+    expect(md).toContain("`Economic Disadvantage`");
+    expect(md).toContain("fits PNW pattern better");
+    expect(md).toContain("Level 3 — Criteria");
+    expect(md).toContain("#2 PNW < $2.047M");
+    expect(md).toContain("`Fail`");
+    expect(md).toContain("applicant exceeds PNW threshold");
+  });
+
+  it("renders sessionOverrides even when analystOverrides is empty", () => {
+    const md = generateFinalMarkdownReport(baseL1, baseL2, baseL3, [], "2026-05-05T00:00:00.000Z", {
+      l2Precedents: [{ target: "Social Disadvantage", correction: "Economic Disadvantage", human_reasoning: "rationale long enough here", fact_id: "fact_1" }],
+    });
+    expect(md).toContain("ANALYST OVERRIDES");
+    expect(md).toContain("Level 2 — Classifications");
+  });
+
+  it("omits ANALYST OVERRIDES when sessionOverrides is empty and analystOverrides is empty", () => {
+    const md = generateFinalMarkdownReport(baseL1, baseL2, baseL3, [], "2026-05-05T00:00:00.000Z", {
+      l1FieldOverrides: {},
+      l1Precedents: [],
+      l2Precedents: [],
+      l3Precedents: [],
+    });
+    expect(md).not.toContain("ANALYST OVERRIDES");
+  });
 });

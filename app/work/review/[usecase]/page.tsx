@@ -60,7 +60,7 @@ const USECASE_EYEBROW: Record<string, string> = {
 const HOW_IT_WORKS: Record<string, string[]> = {
   "cmgc-pde": [
     "Upload one or more nomination fact sheets (DOCX/PDF).",
-    "GovDoc rates the project across the 32-category PDE rubric and scores delivery method fit.",
+    "GovDoc rates the project across the 25-category delivery rubric and scores delivery method fit.",
     "You review the recommendation, validate it, and export DOCX or XLSX.",
   ],
   "cucp-reevals": [
