@@ -51,14 +51,14 @@ describe("L1FactsTable", () => {
     expect(rows).toHaveLength(3); // header + 2 data rows
   });
 
-  it("displays demographic_flag as ✓ / blank checkbox column", () => {
+  it("displays demographic_flag as Yes / blank checkbox column", () => {
     render(<L1FactsTable facts={facts} />);
     const rows = screen.getAllByRole("row");
     const fact1Cells = within(rows[1]!).getAllByRole("cell");
     const fact2Cells = within(rows[2]!).getAllByRole("cell");
     // Demographics Checkbox is column index 7 (0-based after Fact #/When/Where/Who/What/Why/Magnitude)
-    expect(fact1Cells[7]!.textContent).toMatch(/✓|true|yes/i);
-    expect(fact2Cells[7]!.textContent).not.toMatch(/✓|true|yes/i);
+    expect(fact1Cells[7]!.textContent).toMatch(/yes/i);
+    expect(fact2Cells[7]!.textContent).not.toMatch(/yes/i);
   });
 
   it("renders em-dash for blank source quote", () => {

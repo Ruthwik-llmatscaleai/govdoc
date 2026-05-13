@@ -35,15 +35,15 @@ export function StepBar({
                 onClick={() => onJump(s.id)}
                 className={cn(
                   "rounded-full px-3 py-1 text-sm font-medium transition",
-                  isCurrent && "bg-slate-900 text-white",
-                  !isCurrent && isApproved && "bg-slate-200 text-slate-900 hover:bg-slate-300",
-                  !isCurrent && !isApproved && "bg-slate-100 text-slate-400",
+                  isCurrent && "bg-primary text-primary-foreground",
+                  !isCurrent && isApproved && "bg-muted text-foreground hover:bg-muted/80",
+                  !isCurrent && !isApproved && "bg-card text-muted-foreground",
                 )}
               >
-                <span className="mr-1">{isApproved && !isCurrent ? "✓" : i + 1}</span>
+                <span className="mr-1">{i + 1}</span>
                 {s.label}
               </button>
-              {i < steps.length - 1 ? <span className="text-slate-400">→</span> : null}
+              {i < steps.length - 1 ? <span className="text-muted-foreground">→</span> : null}
             </li>
           );
         })}

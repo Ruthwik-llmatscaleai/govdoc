@@ -5,15 +5,17 @@ type ToneClasses = {
   rowBorder: string;
 };
 
-// Soft theme-toned palette — Pass/Warning/Fail/N/A read clearly against the
-// cream background without the saturated caltrans red/green. Original caltrans
-// hexes were #d4edda/#fff3cd/#f8d7da/#e2e3e5 — kept here as a paper trail.
+// Theme-tokens-only palette — Pass/Warning/Fail/N/A read clearly against the
+// cream background using only --primary / --destructive / --muted / --border.
+// Status differentiation comes from text weight + left-border accent, not
+// from saturated cell backgrounds. (Earlier caltrans hexes and emerald/rose
+// variants both retired 2026-05-14 for theme consistency.)
 export const STATUS_TONE: Record<RowStatus, ToneClasses> = {
-  Pass:    { cell: "bg-emerald-50 text-emerald-700",          rowBorder: "border-l-4 border-l-emerald-300" },
-  Warning: { cell: "bg-amber-50 text-amber-800",              rowBorder: "border-l-4 border-l-amber-300" },
-  Fail:    { cell: "bg-rose-50 text-rose-700",                rowBorder: "border-l-4 border-l-rose-300" },
-  "N/A":   { cell: "bg-muted text-muted-foreground",          rowBorder: "border-l-4 border-l-border" },
-  Error:   { cell: "bg-rose-50 text-rose-700",                rowBorder: "border-l-4 border-l-rose-300" },
+  Pass:    { cell: "bg-card text-foreground font-semibold",                rowBorder: "border-l-4 border-l-primary" },
+  Warning: { cell: "bg-card text-foreground font-semibold italic",         rowBorder: "border-l-4 border-l-muted-foreground" },
+  Fail:    { cell: "bg-destructive/5 text-destructive font-semibold",      rowBorder: "border-l-4 border-l-destructive" },
+  "N/A":   { cell: "bg-muted text-muted-foreground",                       rowBorder: "border-l-4 border-l-border" },
+  Error:   { cell: "bg-destructive/5 text-destructive font-semibold",      rowBorder: "border-l-4 border-l-destructive" },
 };
 
 export function statusFromScore(score: number): RowStatus {

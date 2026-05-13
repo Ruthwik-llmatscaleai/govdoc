@@ -39,7 +39,7 @@ describe("ExecSummary", () => {
     // @ts-expect-error structural input is fine for this test
     const { container } = render(<ExecSummary results={results} />);
     const statusCell = container.querySelector('[data-status="Pass"]');
-    expect(statusCell?.className).toContain("bg-emerald-50");
+    expect(statusCell?.className).toContain("bg-card");
   });
 
   it("applies a left border colored by status on each row", () => {
@@ -50,7 +50,7 @@ describe("ExecSummary", () => {
     // @ts-expect-error structural input is fine for this test
     const { container } = render(<ExecSummary results={results} />);
     const rows = container.querySelectorAll("tbody tr");
-    expect((rows[0] as HTMLTableRowElement).className).toContain("border-l-rose-300");
-    expect((rows[1] as HTMLTableRowElement).className).toContain("border-l-emerald-300");
+    expect((rows[0] as HTMLTableRowElement).className).toContain("border-l-destructive");
+    expect((rows[1] as HTMLTableRowElement).className).toContain("border-l-primary");
   });
 });

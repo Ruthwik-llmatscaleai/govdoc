@@ -9,13 +9,15 @@ describe("STATUS_TONE", () => {
       expect(STATUS_TONE[s].rowBorder).toMatch(/border-l-/);
     }
   });
-  it("uses the soft theme-toned emerald palette for Pass", () => {
-    expect(STATUS_TONE.Pass.cell).toContain("bg-emerald-50");
-    expect(STATUS_TONE.Pass.cell).toContain("text-emerald-700");
+  it("uses only theme tokens for Pass (primary accent on card surface)", () => {
+    expect(STATUS_TONE.Pass.cell).toContain("bg-card");
+    expect(STATUS_TONE.Pass.cell).toContain("text-foreground");
+    expect(STATUS_TONE.Pass.rowBorder).toContain("border-l-primary");
   });
-  it("uses the soft theme-toned rose palette for Fail", () => {
-    expect(STATUS_TONE.Fail.cell).toContain("bg-rose-50");
-    expect(STATUS_TONE.Fail.cell).toContain("text-rose-700");
+  it("uses only theme tokens for Fail (destructive accent)", () => {
+    expect(STATUS_TONE.Fail.cell).toContain("bg-destructive/5");
+    expect(STATUS_TONE.Fail.cell).toContain("text-destructive");
+    expect(STATUS_TONE.Fail.rowBorder).toContain("border-l-destructive");
   });
 });
 

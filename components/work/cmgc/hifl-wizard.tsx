@@ -223,16 +223,8 @@ export function HiflWizard({
       {/* ── Step 2: Export ── */}
       {currentStep === "export" && (
         <div className="space-y-4">
-          <div className="rounded-md border border-border bg-card p-6 space-y-3 shadow-sm">
-            <div className="flex items-center gap-2">
-              <span
-                aria-hidden="true"
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"
-              >
-                ✓
-              </span>
-              <p className="text-lg font-semibold text-foreground">Review complete</p>
-            </div>
+          <div className="rounded-md border border-l-4 border-border border-l-primary bg-card p-6 space-y-3 shadow-sm">
+            <p className="text-lg font-semibold text-foreground">Review complete</p>
             <p className="text-sm text-foreground">
               <span className="font-medium">Final recommendation:</span>{" "}
               <span className="font-semibold">{recommendationLabel}</span>

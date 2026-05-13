@@ -10,9 +10,9 @@ export function RequestInfoBanner({ show }: { show: boolean }): React.JSX.Elemen
   return (
     <div
       role="alert"
-      className="mb-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800"
+      className="mb-3 rounded-md border border-l-4 border-border border-l-muted-foreground bg-card p-3 text-sm font-medium text-foreground"
     >
-      ⚠ {FINAL_DECISION_COPY}
+      {FINAL_DECISION_COPY}
     </div>
   );
 }

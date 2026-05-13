@@ -114,12 +114,12 @@ export function L1OverrideForm({
         )}
 
         {limitReached ? (
-          <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            🚨 Correction limit reached ({total}/45). Your corrections will be auto-merged.
+          <p className="rounded-md border border-l-4 border-destructive/30 border-l-destructive bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">
+            Correction limit reached ({total}/45). Your corrections will be auto-merged.
           </p>
         ) : total >= 36 ? (
-          <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-foreground/85">
-            ⚠ Approaching correction limit ({total}/45). Corrections will be auto-merged when the limit is reached.
+          <p className="rounded-md border border-l-4 border-border border-l-muted-foreground bg-card px-3 py-2 text-xs font-medium text-foreground">
+            Approaching correction limit ({total}/45). Corrections will be auto-merged when the limit is reached.
           </p>
         ) : null}
 

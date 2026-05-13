@@ -42,6 +42,6 @@ describe("FindingsTable", () => {
     // @ts-expect-error structural input
     const { container } = render(<FindingsTable results={results} />);
     const passCell = container.querySelector("[data-rule-status='Pass']");
-    expect(passCell?.className).toContain("bg-emerald-50");
+    expect(passCell?.className).toContain("bg-card");
   });
 });

@@ -33,7 +33,7 @@ export function ResultsTable({ results }: { results: EvaluationResult[] }) {
                   {scoreLabel(r.score)}
                 </td>
                 <td className={`p-2 font-medium ${tone.cell}`} data-row-status-label={status}>
-                  {r.status}
+                  {status}
                 </td>
                 <td className="p-2 max-w-xs">{r.criteria_met}</td>
                 <td className="p-2 max-w-xs">{r.evidence}</td>

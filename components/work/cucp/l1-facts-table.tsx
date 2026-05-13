@@ -21,7 +21,7 @@ const HEADERS: ReadonlyArray<{ key: keyof ExtractedFact; label: string }> = [
 function renderCell(fact: ExtractedFact, key: keyof ExtractedFact): string {
   const v = fact[key];
   if (key === "demographic_flag") {
-    return v === true ? "✓" : "";
+    return v === true ? "Yes" : "";
   }
   if (typeof v === "string" && v.trim().length > 0) return v;
   return "—";
