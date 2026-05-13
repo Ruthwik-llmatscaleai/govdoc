@@ -80,6 +80,44 @@ describe("HiflWizard", () => {
     expect(screen.getByText(/Final recommendation/i)).toBeTruthy();
   });
 
+  it("renders the markdown summary report on the Export step when provided", () => {
+    render(
+      <HiflWizard
+        {...baseProps}
+        markdownReport={"# Project Delivery Evaluation\n\n**Recommended method:** CM/GC"}
+        overrides={[{ question_id: "A1", oldValue: "B", newValue: "A", reason: "needs deeper study yes" }]}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Approve & Export/i }));
+    expect(screen.getByText(/Project Delivery Evaluation/i)).toBeTruthy();
+  });
+
+  it("offers a 'Switch to District view' button when onPreviewDistrict is provided", () => {
+    const onPreview = vi.fn();
+    render(
+      <HiflWizard
+        {...baseProps}
+        onPreviewDistrict={onPreview}
+        overrides={[{ question_id: "A1", oldValue: "B", newValue: "A", reason: "needs deeper study yes" }]}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Approve & Export/i }));
+    const switchBtn = screen.getByRole("button", { name: /Switch to District view/i });
+    fireEvent.click(switchBtn);
+    expect(onPreview).toHaveBeenCalledTimes(1);
+  });
+
+  it("Back from Export now reads 'Back to Review'", () => {
+    render(
+      <HiflWizard
+        {...baseProps}
+        overrides={[{ question_id: "A1", oldValue: "B", newValue: "A", reason: "needs deeper study yes" }]}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Approve & Export/i }));
+    expect(screen.getByRole("button", { name: /Back to Review/i })).toBeTruthy();
+  });
+
   it("Pending Corrections shows current overrides with a Remove button", () => {
     const onRemove = vi.fn();
     render(

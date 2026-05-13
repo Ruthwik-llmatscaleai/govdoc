@@ -5,6 +5,7 @@ import { StepBar } from "@/components/work/shared/step-bar";
 import { OverrideCard } from "./override-card";
 import type { OverrideCardQuestion } from "./override-card";
 import type { Rating } from "@/lib/usecases/cmgc-pde/rubric";
+import { ReportView } from "@/components/work/cucp/report-view";
 
 export type HiflOverrideEntry = {
   question_id: string;
@@ -28,14 +29,18 @@ export function HiflWizard({
   questions,
   recommendationLabel,
   overrides,
+  markdownReport,
   onSaveOverride,
   onRemoveOverride,
+  onPreviewDistrict,
 }: {
   questions: readonly OverrideCardQuestion[];
   recommendationLabel: string;
   overrides: readonly HiflOverrideEntry[];
+  markdownReport?: string;
   onSaveOverride: (entry: HiflOverrideEntry) => void;
   onRemoveOverride: (questionId: string) => void;
+  onPreviewDistrict?: () => void;
 }): React.JSX.Element {
   const [currentStep, setCurrentStep] = useState<Step>("review");
   const [acknowledgedNoChanges, setAcknowledgedNoChanges] = useState(false);
@@ -218,16 +223,30 @@ export function HiflWizard({
       {/* ── Step 2: Export ── */}
       {currentStep === "export" && (
         <div className="space-y-4">
-          <div className="rounded-md border border-emerald-300 bg-emerald-50 p-6 space-y-2 text-emerald-900">
-            <p className="text-lg font-semibold">✅ Review complete</p>
-            <p>
-              <span className="font-medium">Final recommendation:</span> {recommendationLabel}
+          <div className="rounded-md border border-border bg-card p-6 space-y-3 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"
+              >
+                ✓
+              </span>
+              <p className="text-lg font-semibold text-foreground">Review complete</p>
+            </div>
+            <p className="text-sm text-foreground">
+              <span className="font-medium">Final recommendation:</span>{" "}
+              <span className="font-semibold">{recommendationLabel}</span>
             </p>
-            <p className="text-sm text-emerald-800">
-              Your overrides are recorded. Use the Export buttons above to download.
+            <p className="text-sm text-muted-foreground">
+              Your overrides are recorded. Use the Export buttons above to download the full evaluation.
             </p>
           </div>
-          <div className="flex items-center justify-start gap-3 pt-2">
+
+          {markdownReport && markdownReport.trim().length > 0 && (
+            <ReportView markdown={markdownReport} />
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
             <button
               type="button"
               onClick={() => setCurrentStep("review")}
@@ -236,8 +255,20 @@ export function HiflWizard({
                 "border border-border hover:bg-muted",
               )}
             >
-              ← Back
+              ← Back to Review
             </button>
+            {onPreviewDistrict && (
+              <button
+                type="button"
+                onClick={onPreviewDistrict}
+                className={cn(
+                  "rounded-md px-4 py-2 text-sm font-medium transition-colors",
+                  "border border-border hover:bg-muted",
+                )}
+              >
+                Switch to District view →
+              </button>
+            )}
           </div>
         </div>
       )}

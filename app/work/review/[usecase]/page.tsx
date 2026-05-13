@@ -40,6 +40,7 @@ import type { L2Row } from "@/components/work/cucp/l2-classifications-table";
 import { InputsForm as RowInputsForm } from "@/components/work/row/inputs-form";
 import { RowResultTabs } from "@/components/work/row/result-tabs";
 import { composeCmgcResult } from "@/lib/usecases/cmgc-pde/compose-result";
+import { composeCmgcReport } from "@/lib/usecases/cmgc-pde/compose-report";
 import type { Level1Data, Level2Data, Level3Data } from "@/lib/usecases/cucp-reevals/types";
 import type { RowRunResult } from "@/lib/usecases/row-appraisal/types";
 
@@ -337,6 +338,16 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
             questions={result.evaluation.ratings.map(toOverrideCardQuestion)}
             recommendationLabel={recommendationLabel}
             overrides={wizardOverrides}
+            markdownReport={composeCmgcReport(
+              result,
+              wizardOverrides.map((o) => ({
+                question_id: o.question_id,
+                oldValue: o.oldValue,
+                newValue: o.newValue,
+                reason: o.reason,
+              })),
+            )}
+            onPreviewDistrict={() => setPdeView("district")}
             onSaveOverride={(entry) =>
               pushOverride({
                 category: entry.question_id,
