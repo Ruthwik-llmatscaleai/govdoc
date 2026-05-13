@@ -386,13 +386,13 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
     }));
     const criteria = level3.criteria ?? [];
 
-    // While the rendezvous is open, run.status stays at "needs-input" through
-    // the entire HITL phase (the store only flips run.status on needs-input /
-    // done / error events). When the pipeline re-runs a level after an override
-    // it emits `progress` which sets the per-stage status to "running" — that's
-    // the signal the stepper uses to grey out its primary buttons.
-    const isReRunning = Object.values(current.stages).some(
-      (s) => s.status === "running",
+    // Re-running = a level stage is currently being re-evaluated after an override.
+    // Scope to the three level stages only — the route emits a `progress init` event
+    // at run start with no matching `stage-done`, so a generic
+    // `some(s.status === "running")` check would stay true forever and permanently
+    // disable Approve & Continue.
+    const isReRunning = (["level1", "level2", "level3"] as const).some(
+      (id) => current.stages[id]?.status === "running",
     );
 
     return (

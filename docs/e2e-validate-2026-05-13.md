@@ -42,6 +42,14 @@ All three pipelines completed; all three XLSX exports opened cleanly.
      *(Justification: …)*
    ```
 
+## Follow-up bug fixed after first commit
+
+**Narrative Review "Approve & Continue →" button permanently disabled.** Reported by the user after the API-level e2e passed. Root cause: `isReRunning` in `app/work/review/[usecase]/page.tsx` was `Object.values(current.stages).some((s) => s.status === "running")`. The `/api/usecases/[id]/run` route emits a `progress` event with `stage: "init"` at run start and never emits a matching `stage-done` for it, so the `init` stage stays `"running"` forever. That kept `isReRunning === true` during the entire HITL phase, which the stepper uses to grey out its primary buttons.
+
+Fix: scope `isReRunning` to the three level stages only (`level1`/`level2`/`level3`), since re-running semantically means "a level is being re-evaluated after an override."
+
+This wasn't caught by the initial e2e because the driver POSTed JSON directly to the API endpoints and bypassed the Zustand store / React UI entirely. Lesson: server-side endpoint OK ≠ click-through UI OK.
+
 ## Issues confirmed but NOT fixed in this run
 
 - **CUCP HITL rendezvous never rejects on client disconnect.** `lib/runs/level-rendezvous.ts` has a 30-min TTL reaper that deletes the map entry but does not reject the awaiting promise — a closed browser tab leaks the SSE generator. Decided as not major for now.
