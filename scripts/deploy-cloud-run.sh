@@ -9,18 +9,24 @@ SERVICE="govdoc"
 SA="govdoc-runtime@${PROJECT}.iam.gserviceaccount.com"
 
 DRY_RUN=0
+ALLOW_DIRTY=0
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=1 ;;
+    --allow-dirty) ALLOW_DIRTY=1 ;;
     --help|-h)
       cat <<EOF
-Usage: scripts/deploy-cloud-run.sh [--dry-run] [--help]
+Usage: scripts/deploy-cloud-run.sh [--dry-run] [--allow-dirty] [--help]
 
 Deploys the govdoc Next.js service to Cloud Run.
 
 Flags:
-  --dry-run   Print the gcloud command without executing it.
-  --help      Show this message.
+  --dry-run      Print the gcloud command without executing it.
+  --allow-dirty  Deploy even when the working tree has uncommitted changes.
+                 The deploy will be tagged GIT_COMMIT=<sha>-dirty and is
+                 not reproducible from git. Use only for short-lived
+                 throw-away builds.
+  --help         Show this message.
 
 Required env vars (read from Secret Manager at runtime, not by this script):
   OPENAI_API_KEY ANTHROPIC_API_KEY GROQ_API_KEY
@@ -34,7 +40,40 @@ EOF
   esac
 done
 
+# Refuse to deploy a dirty working tree by default.
+# `gcloud run deploy --source .` bakes the entire working directory into the
+# image, INCLUDING uncommitted edits and untracked files, producing a build
+# that lives nowhere in git. The May 2026 "stash-only design" incident is the
+# precedent. Override with --allow-dirty if you really need it.
+IS_DIRTY=0
+if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
+  IS_DIRTY=1
+fi
+
+if [[ "$IS_DIRTY" -eq 1 && "$ALLOW_DIRTY" -eq 0 ]]; then
+  cat >&2 <<EOF
+ERROR: working tree is dirty. Refusing to deploy.
+
+Uncommitted changes would be baked into the Cloud Run image but live nowhere
+in git, making the deploy un-reproducible.
+
+Resolve one of:
+  1. Commit (or stash with intent to revisit) and re-run.
+  2. If you truly know what you are doing, re-run with --allow-dirty.
+
+Current changes:
+$(git status --short | head -20)
+EOF
+  exit 3
+fi
+
 GIT_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+if [[ "$IS_DIRTY" -eq 1 ]]; then
+  GIT_COMMIT="${GIT_COMMIT}-dirty"
+  echo "WARNING: --allow-dirty set; deploying with uncommitted changes." >&2
+  echo "         GIT_COMMIT will be tagged '${GIT_COMMIT}'." >&2
+  echo "         /api/health will report dirty=true on this revision." >&2
+fi
 
 CMD=(
   gcloud run deploy "$SERVICE"

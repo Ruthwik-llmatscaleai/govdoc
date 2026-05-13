@@ -24,5 +24,27 @@ describe("GET /api/health", () => {
     const res = await GET();
     const body = await res.json();
     expect(body.commit).toBeUndefined();
+    expect(body.dirty).toBeUndefined();
+    expect(body.warning).toBeUndefined();
+  });
+
+  it("flags dirty=true and a warning when GIT_COMMIT ends with -dirty", async () => {
+    process.env.GIT_COMMIT = "abc1234-dirty";
+    const res = await GET();
+    const body = await res.json();
+    expect(body.commit).toBe("abc1234-dirty");
+    expect(body.dirty).toBe(true);
+    expect(body.warning).toMatch(/dirty working tree/i);
+    delete process.env.GIT_COMMIT;
+  });
+
+  it("does NOT set dirty for a clean commit", async () => {
+    process.env.GIT_COMMIT = "abc1234";
+    const res = await GET();
+    const body = await res.json();
+    expect(body.commit).toBe("abc1234");
+    expect(body.dirty).toBeUndefined();
+    expect(body.warning).toBeUndefined();
+    delete process.env.GIT_COMMIT;
   });
 });
