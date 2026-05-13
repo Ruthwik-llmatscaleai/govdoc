@@ -3,76 +3,83 @@ import { useState } from "react";
 import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-data";
 import { defaultCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-data";
 import type { CucpL2Category, CucpL3Criterion } from "@/lib/usecases/cucp-reevals/rubric";
-import { EditableSection } from "./shared/editable-section";
+import { RubricShell } from "./shared/rubric-shell";
+import { RubricSection } from "./shared/rubric-section";
 import { RubricEditorCard, type EditorField } from "./shared/rubric-editor-card";
+import { ConfirmDialog, type ConfirmRequest } from "./shared/confirm-dialog";
 
-type EditorTarget =
-  | { kind: "addL2" }
-  | { kind: "editL2"; name: string }
+type ComposeTarget =
   | { kind: "addL3" }
   | { kind: "editL3"; sNo: number };
 
 export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
   const [l2, setL2] = useState<CucpL2Category[]>(() => initial.l2.map((c) => ({ ...c })));
   const [l3, setL3] = useState<CucpL3Criterion[]>(() => initial.l3.map((c) => ({ ...c })));
+  const [target, setTarget] = useState<ComposeTarget | null>(null);
+  const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
+  const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [editor, setEditor] = useState<EditorTarget | null>(null);
+
+  const mandatory = l3.filter((c) => c.s_no <= 3);
+  const evaluation = l3.filter((c) => c.s_no >= 4);
 
   function applyEditor(values: Record<string, string>) {
-    if (!editor) return;
-    if (editor.kind === "addL2") {
-      setL2((prev) => [...prev, { name: values.name ?? "", description: values.description ?? "" }]);
-    }
-    if (editor.kind === "editL2") {
-      setL2((prev) =>
-        prev.map((c) =>
-          c.name === editor.name
-            ? { name: values.name ?? c.name, description: values.description ?? c.description }
-            : c,
-        ),
-      );
-    }
-    if (editor.kind === "addL3") {
+    if (!target) return;
+    if (target.kind === "addL3") {
+      const name = (values.name ?? "").trim();
+      if (!name) return;
       const nextNo = (l3.reduce((max, c) => Math.max(max, c.s_no), 0) || 0) + 1;
       setL3((prev) => [
         ...prev,
         {
           s_no: nextNo,
-          name: values.name ?? "",
+          name,
+          title: values.title || undefined,
           rule: values.rule || undefined,
           pass: values.pass || undefined,
           fail: values.fail || undefined,
-          title: values.title || undefined,
         },
       ]);
+      setDirty(true);
+      setTarget(null);
+      return;
     }
-    if (editor.kind === "editL3") {
+    if (target.kind === "editL3") {
       setL3((prev) =>
         prev.map((c) =>
-          c.s_no === editor.sNo
+          c.s_no === target.sNo
             ? {
                 ...c,
                 name: values.name ?? c.name,
+                title: values.title || undefined,
                 rule: values.rule || undefined,
                 pass: values.pass || undefined,
                 fail: values.fail || undefined,
-                title: values.title || undefined,
               }
             : c,
         ),
       );
+      setDirty(true);
+      setTarget(null);
     }
-    setEditor(null);
   }
 
-  function deleteL2(name: string) {
-    if (!confirm(`Delete legal category "${name}"?`)) return;
-    setL2((prev) => prev.filter((c) => c.name !== name));
-  }
   function deleteL3(sNo: number) {
-    if (!confirm(`Delete criterion #${sNo}?`)) return;
-    setL3((prev) => prev.filter((c) => c.s_no !== sNo).map((c, i) => ({ ...c, s_no: i + 1 })));
+    const c = l3.find((x) => x.s_no === sNo);
+    const heading = c?.title ?? c?.name ?? `#${sNo}`;
+    setConfirm({
+      title: "Delete criterion",
+      message: `Delete criterion "${heading}"? This cannot be undone.`,
+      confirmLabel: "Delete criterion",
+      danger: true,
+      onConfirm: () => {
+        setL3((prev) => prev.filter((c) => c.s_no !== sNo).map((c, i) => ({ ...c, s_no: i + 1 })));
+        setDirty(true);
+        if (target?.kind === "editL3" && target.sNo === sNo) setTarget(null);
+        setConfirm(null);
+      },
+    });
   }
 
   async function onSave() {
@@ -86,6 +93,7 @@ export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setMsg("Saved. Preview rubrics will reflect this on next load.");
+      setDirty(false);
     } catch (e) {
       setMsg(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
@@ -93,135 +101,269 @@ export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
     }
   }
 
-  async function onReset() {
-    if (!confirm("Reset Narrative Review rubric to defaults? This deletes any saved edits.")) return;
-    setSaving(true);
-    setMsg(null);
-    try {
-      const res = await fetch("/api/usecases/cucp-reevals/rubric", { method: "DELETE" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const def = defaultCucpRubric();
-      setL2(def.l2.map((c) => ({ ...c })));
-      setL3(def.l3.map((c) => ({ ...c })));
-      setMsg("Reset to defaults.");
-    } catch (e) {
-      setMsg(`Reset failed: ${e instanceof Error ? e.message : String(e)}`);
-    } finally {
-      setSaving(false);
-    }
+  function onReset() {
+    setConfirm({
+      title: "Reset rubric",
+      message: "Reset Narrative Review rubric to defaults? This deletes any saved edits.",
+      confirmLabel: "Reset to defaults",
+      danger: true,
+      onConfirm: async () => {
+        setConfirm(null);
+        setSaving(true);
+        setMsg(null);
+        try {
+          const res = await fetch("/api/usecases/cucp-reevals/rubric", { method: "DELETE" });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const def = defaultCucpRubric();
+          setL2(def.l2.map((c) => ({ ...c })));
+          setL3(def.l3.map((c) => ({ ...c })));
+          setMsg("Reset to defaults.");
+          setDirty(false);
+          setTarget(null);
+        } catch (e) {
+          setMsg(`Reset failed: ${e instanceof Error ? e.message : String(e)}`);
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   }
 
-  const editorTitle = (() => {
-    if (!editor) return "";
-    if (editor.kind === "addL2") return "New legal category";
-    if (editor.kind === "editL2") return `Edit legal category "${editor.name}"`;
-    if (editor.kind === "addL3") return "New criterion";
-    if (editor.kind === "editL3") return `Edit criterion #${editor.sNo}`;
-    return "";
-  })();
+  const intro = (
+    <header className="flex items-start justify-between gap-4">
+      <div className="space-y-1">
+        <h3
+          className="text-[17px] font-medium leading-[1.2] tracking-[-0.012em] text-[var(--color-ink)]"
+          style={{ fontFamily: "var(--font-display)", fontVariationSettings: '"opsz" 48' }}
+        >
+          Rubric for Evaluating Social and Economic Disadvantage (SED) Narrative (PN); and Personal Net Worth (PNW) (§26.67)
+        </h3>
+        <p className="text-[12.5px] leading-[1.5] text-[var(--color-ink-mute)]">
+          Apply Mandatory Eligibility Requirements first. If any are marked NO, stop — the firm is not eligible. If all are marked YES, evaluate the scored criteria below.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => setTarget({ kind: "addL3" })}
+        className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)]"
+      >
+        Create criterion
+      </button>
+    </header>
+  );
 
-  const editorFields: EditorField[] = (() => {
-    if (!editor) return [];
-    if (editor.kind === "addL2" || editor.kind === "editL2") {
-      return [
-        { name: "name", label: "Category name", type: "text", required: true },
-        { name: "description", label: "Description", type: "textarea", required: true },
-      ];
-    }
-    return [
+  const compose = target ? buildCompose(target, l3) : null;
+
+  return (
+    <div className="space-y-6 pb-2">
+      <RubricShell intro={intro}>
+        <RubricSection
+          title="SED Rubric — Mandatory & Scored Criteria (§26.67)"
+          count={l3.length}
+          countLabel="criterion"
+          defaultOpen
+        >
+          {l3.length === 0 ? (
+            <p className="border border-dashed border-[var(--color-line)] bg-[var(--color-cream-soft)] px-4 py-6 text-center text-[12.5px] text-[var(--color-ink-mute)]">
+              No criteria yet. Click “Create criterion” to add the first one.
+            </p>
+          ) : (
+            <div className="space-y-7">
+              <section className="space-y-3">
+                <SectionHeading>Mandatory Eligibility Requirements</SectionHeading>
+                <ol className="flex list-none flex-col">
+                  {mandatory.map((c) => (
+                    <CriterionItem
+                      key={c.s_no}
+                      criterion={c}
+                      onEdit={() => setTarget({ kind: "editL3", sNo: c.s_no })}
+                      onDelete={() => deleteL3(c.s_no)}
+                    />
+                  ))}
+                </ol>
+              </section>
+
+              <section className="space-y-3">
+                <SectionHeading>Scored Evaluation Criteria</SectionHeading>
+                <ol className="flex list-none flex-col">
+                  {evaluation.map((c, i) => (
+                    <CriterionItem
+                      key={c.s_no}
+                      criterion={c}
+                      displayNumber={i + 1}
+                      onEdit={() => setTarget({ kind: "editL3", sNo: c.s_no })}
+                      onDelete={() => deleteL3(c.s_no)}
+                    />
+                  ))}
+                </ol>
+              </section>
+            </div>
+          )}
+        </RubricSection>
+      </RubricShell>
+
+      <SaveBar
+        saving={saving}
+        msg={msg}
+        dirty={dirty}
+        onSave={onSave}
+        onReset={onReset}
+        downloadHref="/api/usecases/cucp-reevals/rubric/download"
+        downloadLabel="Download .xlsx"
+      />
+
+      {target && compose && (
+        <RubricEditorCard
+          mode={compose.mode}
+          title={compose.title}
+          fields={compose.fields}
+          initialValues={compose.initial}
+          saveLabel={compose.saveLabel}
+          onSave={applyEditor}
+          onCancel={() => setTarget(null)}
+        />
+      )}
+
+      {confirm && <ConfirmDialog request={confirm} onCancel={() => setConfirm(null)} />}
+    </div>
+  );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h4 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
+      {children}
+    </h4>
+  );
+}
+
+function CriterionItem({
+  criterion: c,
+  displayNumber,
+  onEdit,
+  onDelete,
+}: {
+  criterion: CucpL3Criterion;
+  displayNumber?: number;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const heading = c.title ?? c.name;
+  const marker = displayNumber !== undefined ? `${displayNumber}.` : `${c.s_no}.`;
+  return (
+    <li className="border-b border-[var(--color-line-soft)] py-3 last:border-b-0">
+      <div className="grid grid-cols-[28px_1fr_auto] items-baseline gap-3.5">
+        <span className="font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--color-ink-faint)]">
+          {marker}
+        </span>
+        <span className="text-[13.5px] font-medium leading-[1.5] text-[var(--color-ink)]">
+          {heading}
+        </span>
+        <span className="flex shrink-0 gap-1">
+          <button
+            type="button"
+            aria-label={`Edit ${heading}`}
+            onClick={onEdit}
+            className={chip()}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            aria-label={`Delete ${heading}`}
+            onClick={onDelete}
+            className={chipDanger()}
+          >
+            Delete
+          </button>
+        </span>
+      </div>
+      {c.rule && (
+        <p className="mt-2 ml-[42px] text-[12px] italic leading-[1.5] text-[var(--color-ink-mute)]">
+          <span className="font-semibold not-italic text-[var(--color-ink-soft)]">Rule:</span>{" "}
+          {c.rule}
+        </p>
+      )}
+      <dl className="mt-2.5 ml-[42px] flex flex-col gap-1.5">
+        <YesNoRow label="YES" text={c.pass} />
+        <YesNoRow label="NO" text={c.fail} />
+      </dl>
+    </li>
+  );
+}
+
+function YesNoRow({ label, text }: { label: string; text: string | undefined }) {
+  return (
+    <div className="grid grid-cols-[32px_1fr] items-baseline gap-2.5">
+      <span className="font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--color-ink-faint)]">
+        {label}
+      </span>
+      <dd className="break-words text-[12.5px] leading-[1.5] text-[var(--color-ink-soft)]">
+        {text ?? "—"}
+      </dd>
+    </div>
+  );
+}
+
+function chip() {
+  return "rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-foreground transition hover:bg-muted";
+}
+
+function chipDanger() {
+  return "rounded-md border border-destructive/30 px-2.5 py-1 text-[11px] font-medium text-destructive/80 transition hover:bg-destructive/5 hover:text-destructive";
+}
+
+function buildCompose(
+  target: ComposeTarget,
+  l3: CucpL3Criterion[],
+): {
+  mode: "create" | "edit";
+  title: string;
+  saveLabel: string;
+  fields: EditorField[];
+  initial: Record<string, string>;
+} {
+  if (target.kind === "addL3") {
+    return {
+      mode: "create",
+      title: "Criterion",
+      saveLabel: "Add criterion",
+      fields: [
+        { name: "name", label: "Criterion name", type: "text", required: true },
+        { name: "title", label: "Display title (optional)", type: "text" },
+        { name: "rule", label: "Rule (optional)", type: "textarea" },
+        { name: "pass", label: "YES definition (optional)", type: "textarea" },
+        { name: "fail", label: "NO definition (optional)", type: "textarea" },
+      ],
+      initial: { name: "", title: "", rule: "", pass: "", fail: "" },
+    };
+  }
+  const c = l3.find((x) => x.s_no === target.sNo);
+  return {
+    mode: "edit",
+    title: `Criterion #${target.sNo}`,
+    saveLabel: "Save criterion",
+    fields: [
       { name: "name", label: "Criterion name", type: "text", required: true },
       { name: "title", label: "Display title (optional)", type: "text" },
       { name: "rule", label: "Rule (optional)", type: "textarea" },
       { name: "pass", label: "YES definition (optional)", type: "textarea" },
       { name: "fail", label: "NO definition (optional)", type: "textarea" },
-    ];
-  })();
-
-  const editorInitial: Record<string, string> = ((): Record<string, string> => {
-    if (!editor) return {};
-    if (editor.kind === "editL2") {
-      const c = l2.find((x) => x.name === editor.name);
-      return { name: c?.name ?? "", description: c?.description ?? "" };
-    }
-    if (editor.kind === "editL3") {
-      const c = l3.find((x) => x.s_no === editor.sNo);
-      return {
-        name: c?.name ?? "",
-        title: c?.title ?? "",
-        rule: c?.rule ?? "",
-        pass: c?.pass ?? "",
-        fail: c?.fail ?? "",
-      };
-    }
-    if (editor.kind === "addL2") return { name: "", description: "" };
-    return { name: "", title: "", rule: "", pass: "", fail: "" };
-  })();
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col border border-[var(--color-line)] bg-[var(--color-paper)]">
-        <EditableSection
-          title="Level 2 — Legal Categories"
-          items={l2.map((c) => ({ id: c.name, text: c.name, raw: c }))}
-          countLabel="category"
-          defaultOpen
-          renderRow={(it) => (
-            <div>
-              <div className="text-[13.5px] font-semibold text-[var(--color-ink)]">{it.raw.name}</div>
-              <div className="text-[12.5px] leading-[1.5] text-[var(--color-ink-mute)]">{it.raw.description}</div>
-            </div>
-          )}
-          onAdd={() => setEditor({ kind: "addL2" })}
-          onEditItem={(id) => setEditor({ kind: "editL2", name: id })}
-          onDeleteItem={(id) => deleteL2(id)}
-        />
-        <EditableSection
-          title="Level 3 — 7 Criteria"
-          items={l3.map((c) => ({ id: String(c.s_no), text: c.title ?? c.name, raw: c }))}
-          countLabel="criterion"
-          renderRow={(it) => (
-            <div>
-              <div className="text-[13.5px] font-semibold text-[var(--color-ink)]">
-                <span className="mr-2 font-mono text-[11px] text-[var(--color-ink-faint)]">{it.raw.s_no}.</span>
-                {it.raw.title ?? it.raw.name}
-              </div>
-              {it.raw.rule && (
-                <div className="mt-1 text-[12px] italic text-[var(--color-ink-mute)]">{it.raw.rule}</div>
-              )}
-            </div>
-          )}
-          onAdd={() => setEditor({ kind: "addL3" })}
-          onEditItem={(id) => setEditor({ kind: "editL3", sNo: Number(id) })}
-          onDeleteItem={(id) => deleteL3(Number(id))}
-        />
-      </div>
-
-      {editor && (
-        <RubricEditorCard
-          mode={editor.kind.startsWith("edit") ? "edit" : "create"}
-          title={editorTitle}
-          fields={editorFields}
-          initialValues={editorInitial}
-          onSave={applyEditor}
-          onCancel={() => setEditor(null)}
-        />
-      )}
-
-      <SaveBar
-        saving={saving}
-        msg={msg}
-        onSave={onSave}
-        onReset={onReset}
-        downloadHref="/api/usecases/cucp-reevals/rubric/download"
-        downloadLabel="Download .pdf"
-      />
-    </div>
-  );
+    ],
+    initial: {
+      name: c?.name ?? "",
+      title: c?.title ?? "",
+      rule: c?.rule ?? "",
+      pass: c?.pass ?? "",
+      fail: c?.fail ?? "",
+    },
+  };
 }
 
 function SaveBar({
   saving,
   msg,
+  dirty,
   onSave,
   onReset,
   downloadHref,
@@ -229,16 +371,25 @@ function SaveBar({
 }: {
   saving: boolean;
   msg: string | null;
+  dirty: boolean;
   onSave: () => void;
   onReset: () => void;
   downloadHref: string;
   downloadLabel: string;
 }) {
+  const status = msg ?? (dirty ? "You have unsaved changes." : "No unsaved changes.");
   return (
-    <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/95 p-4 backdrop-blur shadow-md">
-      <span className="text-xs text-muted-foreground">{msg ?? "Edits are kept on this server only and are ephemeral on Cloud Run."}</span>
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
+      <span
+        className={`text-xs ${dirty && !msg ? "font-medium text-foreground" : "text-muted-foreground"}`}
+      >
+        {status}
+      </span>
       <div className="flex gap-2">
-        <a href={downloadHref} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted">
+        <a
+          href={downloadHref}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+        >
           {downloadLabel}
         </a>
         <button
@@ -252,10 +403,10 @@ function SaveBar({
         <button
           type="button"
           onClick={onSave}
-          disabled={saving}
+          disabled={saving || !dirty}
           className="rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)] disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save"}
+          {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
         </button>
       </div>
     </div>

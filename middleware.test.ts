@@ -25,20 +25,20 @@ describe("middleware", () => {
     expect(res.status).not.toBe(307);
   });
 
-  it("redirects unauthenticated /landing to /login", async () => {
-    const res = await middleware(reqAt("/landing"));
+  it("redirects unauthenticated /workspace to /login", async () => {
+    const res = await middleware(reqAt("/workspace"));
     expect(res.status).toBe(307);
     expect(res.headers.get("location")).toContain("/login");
   });
 
-  it("allows authenticated /landing through", async () => {
+  it("allows authenticated /workspace through", async () => {
     const token = await signSession({ user: "joe" });
-    const res = await middleware(reqAt("/landing", token));
+    const res = await middleware(reqAt("/workspace", token));
     expect(res.status).not.toBe(307);
   });
 
-  it("redirects /landing on tampered cookie", async () => {
-    const res = await middleware(reqAt("/landing", "garbage"));
+  it("redirects /workspace on tampered cookie", async () => {
+    const res = await middleware(reqAt("/workspace", "garbage"));
     expect(res.status).toBe(307);
   });
 

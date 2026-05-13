@@ -16,6 +16,18 @@ function getCookie(req: Request, name: string): string | undefined {
   return undefined;
 }
 
+// Strip the extension and replace path-unsafe characters so the result passes
+// the cucp memory store's projectId validator (no /, \, .., \0, no empty string).
+function projectIdFromFilename(filename: string): string {
+  const stem = filename.replace(/\.[^./\\]+$/, "");
+  const cleaned = stem
+    .replace(/[\\/]/g, "_")
+    .replace(/\.{2,}/g, "_")
+    .replace(/\0/g, "")
+    .trim();
+  return cleaned || "";
+}
+
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await verifySession(getCookie(req, "govdoc_session"));
   if (!session) return new NextResponse("Unauthorized", { status: 401 });
@@ -26,11 +38,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const formData = await req.formData();
   const projectIdRaw = formData.get("projectId");
-  const projectId = typeof projectIdRaw === "string" ? projectIdRaw.trim() : "";
-  if (id === "cucp-reevals" && !projectId) {
-    return new NextResponse("projectId is required", { status: 400 });
+  const submittedProjectId = typeof projectIdRaw === "string" ? projectIdRaw.trim() : "";
+  let derivedProjectId = "";
+  if (id === "cucp-reevals" && !submittedProjectId) {
+    const narrative = formData.get("narrative");
+    if (narrative instanceof File && narrative.name) {
+      derivedProjectId = projectIdFromFilename(narrative.name);
+    }
+    if (!derivedProjectId) {
+      return new NextResponse("Narrative file is required", { status: 400 });
+    }
+  } else if (id === "cmgc-pde" && !submittedProjectId) {
+    const factSheets = formData.getAll("factSheet").filter((v): v is File => v instanceof File);
+    const first = factSheets[0];
+    if (first?.name) derivedProjectId = projectIdFromFilename(first.name);
   }
-  const effectiveProjectId = projectId || "_default";
+  const effectiveProjectId = submittedProjectId || derivedProjectId || "_default";
   const runId = crypto.randomUUID();
 
   return sseStream(async function* () {
@@ -50,7 +73,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       abortSignal: req.signal,
       log: (msg, data) => logger.warn({ runId, projectId: effectiveProjectId, data }, msg),
     };
-    yield { type: "run-started", runId } satisfies StepEvent;
+    yield { type: "run-started", runId, projectId: effectiveProjectId } satisfies StepEvent;
     yield { type: "progress", stage: "init", pct: 0, message: `Starting ${useCase.label}` } satisfies StepEvent;
 
     let stepFailed = false;

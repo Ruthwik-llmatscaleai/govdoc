@@ -7,7 +7,7 @@ export default function Page() {
       title="Classify & Tag"
       blurb="Auto-label documents by type and topic."
       icon={Tag}
-      backHref="/landing"
+      backHref="/workspace"
     />
   );
 }

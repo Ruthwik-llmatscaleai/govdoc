@@ -7,44 +7,67 @@ import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
 import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-data";
 import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-data";
 
-const TAB_TRIGGER =
-  "px-4 py-3 text-sm font-semibold tracking-tight text-muted-foreground transition-colors data-[selected=true]:text-foreground data-[selected=true]:border-b-2 data-[selected=true]:border-primary";
-
-function tabRender(
-  props: React.ComponentPropsWithRef<"button">,
-  state: { active: boolean },
-) {
-  return <button {...props} data-selected={state.active ? "true" : undefined} />;
-}
-
 type Props = {
   cmgc: CmgcRubricData;
   cucp: CucpRubricData;
   row: RowRubricData;
 };
 
-export function PreviewRubricTabs({ cmgc, cucp, row }: Props) {
+const TAB_BASE =
+  "inline-flex items-center gap-2.5 border-b-2 border-transparent bg-transparent px-[22px] py-3.5 text-[13.5px] font-medium tracking-[-0.005em] text-[var(--color-ink-mute)] -mb-px transition-colors hover:bg-[var(--color-cream-soft)] hover:text-[var(--color-ink)] data-[selected=true]:border-[var(--color-govdoc-primary)] data-[selected=true]:font-semibold data-[selected=true]:text-[var(--color-ink)]";
+
+const COUNT_CHIP =
+  "border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-1.5 py-0.5 font-mono text-[10px] tracking-[0.08em] text-[var(--color-ink-faint)]";
+
+const COUNT_CHIP_ACTIVE =
+  "border-[var(--color-govdoc-primary)] bg-[var(--color-accent-soft)] text-[var(--color-govdoc-primary)]";
+
+function TabButton({
+  value,
+  label,
+  count,
+}: {
+  value: string;
+  label: string;
+  count: number;
+}) {
   return (
-    <Tabs.Root defaultValue="cmgc-pde" className="rounded-2xl border border-border bg-card">
-      <Tabs.List className="flex gap-1 overflow-x-auto border-b border-border px-2">
-        <Tabs.Tab value="cmgc-pde" className={TAB_TRIGGER} render={tabRender}>
-          CMGC PDE
-        </Tabs.Tab>
-        <Tabs.Tab value="cucp-reevals" className={TAB_TRIGGER} render={tabRender}>
-          CUCP Re-evaluations
-        </Tabs.Tab>
-        <Tabs.Tab value="row-appraisal" className={TAB_TRIGGER} render={tabRender}>
-          ROW Appraisal
-        </Tabs.Tab>
+    <Tabs.Tab
+      value={value}
+      className={TAB_BASE}
+      render={(props, state) => (
+        <button {...props} data-selected={state.active ? "true" : undefined}>
+          <span>{label}</span>
+          <span className={`${COUNT_CHIP} ${state.active ? COUNT_CHIP_ACTIVE : ""}`}>
+            {count}
+          </span>
+        </button>
+      )}
+    />
+  );
+}
+
+export function PreviewRubricTabs({ cmgc, cucp, row }: Props) {
+  const cmgcCount = cmgc.questions.length;
+  const cucpCount = cucp.l2.length + cucp.l3.length;
+  const rowCount = Object.keys(row).length;
+
+  return (
+    <Tabs.Root defaultValue="cmgc-pde">
+      <Tabs.List className="mb-6 flex items-stretch gap-0 border-b border-[var(--color-line)]">
+        <TabButton value="cmgc-pde" label="Project Review" count={cmgcCount} />
+        <TabButton value="row-appraisal" label="Appraisal Review" count={rowCount} />
+        <TabButton value="cucp-reevals" label="Narrative Review" count={cucpCount} />
       </Tabs.List>
-      <Tabs.Panel value="cmgc-pde" className="p-5">
+
+      <Tabs.Panel value="cmgc-pde" className="space-y-6">
         <CmgcRubricView data={cmgc} />
       </Tabs.Panel>
-      <Tabs.Panel value="cucp-reevals" className="p-5">
-        <CucpRubricView data={cucp} />
-      </Tabs.Panel>
-      <Tabs.Panel value="row-appraisal" className="p-5">
+      <Tabs.Panel value="row-appraisal" className="space-y-6">
         <RowRubricView data={row} />
+      </Tabs.Panel>
+      <Tabs.Panel value="cucp-reevals" className="space-y-6">
+        <CucpRubricView data={cucp} />
       </Tabs.Panel>
     </Tabs.Root>
   );

@@ -41,14 +41,14 @@ describe("/api/usecases/[id]/rubric/download", () => {
     expect(buf.subarray(0, 2).toString("utf-8")).toBe("PK");
   });
 
-  it("CUCP returns a PDF with attachment disposition", async () => {
+  it("CUCP returns an XLSX with attachment disposition", async () => {
     const req = await authedReq("http://localhost/api/usecases/cucp-reevals/rubric/download");
     const res = await GET(req, { params: Promise.resolve({ id: "cucp-reevals" }) });
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("application/pdf");
-    expect(res.headers.get("content-disposition")).toContain("cucp-reevals-rubric.pdf");
+    expect(res.headers.get("content-type")).toContain("spreadsheetml");
+    expect(res.headers.get("content-disposition")).toContain("cucp-reevals-rubric.xlsx");
     const buf = Buffer.from(await res.arrayBuffer());
-    expect(buf.subarray(0, 4).toString("utf-8")).toBe("%PDF");
+    expect(buf.subarray(0, 2).toString("utf-8")).toBe("PK");
   });
 
   it("ROW returns an XLSX with attachment disposition", async () => {

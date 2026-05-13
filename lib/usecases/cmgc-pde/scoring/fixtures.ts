@@ -35,5 +35,5 @@ export function mockRunResult(overrides: Partial<Record<string, "A" | "B" | "C">
   const evaluation = mockEvaluation(overrides);
   const recommendation = computeDeliveryRecommendation(evaluation.ratings);
   const multi_method = scoreAllMethods(evaluation.ratings);
-  return { evaluation, recommendation, multi_method, validation: null };
+  return { evaluation, recommendation, multi_method };
 }

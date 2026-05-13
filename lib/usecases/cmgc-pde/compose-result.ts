@@ -12,7 +12,6 @@ export function composeCmgcResult(raw: unknown): ComposeOutput {
   const r = raw as Record<string, unknown>;
   const evaluate = r["evaluate"] as Record<string, unknown> | undefined;
   const score = r["score"] as Record<string, unknown> | undefined;
-  const validate = r["validate"];
   const extract = r["extract"] as { projectName?: string } | undefined;
 
   // Validate evaluate.ratings
@@ -99,7 +98,6 @@ export function composeCmgcResult(raw: unknown): ComposeOutput {
       },
       recommendation: score["recommendation"] as unknown as CmgcRunResult["recommendation"],
       multi_method: score["multi_method"] as unknown as CmgcRunResult["multi_method"],
-      validation: (validate as CmgcRunResult["validation"]) ?? null,
     },
   };
 }

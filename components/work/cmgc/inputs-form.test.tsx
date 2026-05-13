@@ -8,11 +8,9 @@ beforeEach(() => {
 });
 
 describe("InputsForm", () => {
-  it("renders the three CMGC inputs", () => {
+  it("renders the CMGC inputs", () => {
     render(<InputsForm />);
     expect(screen.getByLabelText(/fact sheet/i)).toBeDefined();
-    expect(screen.getByLabelText(/project name/i)).toBeDefined();
-    expect(screen.getByLabelText(/district pre-filled/i)).toBeDefined();
     expect(screen.getByRole("button", { name: /run evaluation/i })).toBeDefined();
   });
 

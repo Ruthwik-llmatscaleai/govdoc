@@ -7,8 +7,8 @@ import { docxExporter } from "./exporters/docx";
 
 export const rowAppraisal: UseCase = {
   id: "row-appraisal",
-  label: "ROW Appraisal Evaluator",
-  blurb: "Score Caltrans Right of Way appraisal reports against the 34-category rubric.",
+  label: "Appraisal Review",
+  blurb: "Score Caltrans appraisal reports against the 34-category rubric.",
   tile: "review",
   inputs: [
     { kind: "file", id: "pdf", label: "Appraisal PDF", accept: [".pdf"], required: true },

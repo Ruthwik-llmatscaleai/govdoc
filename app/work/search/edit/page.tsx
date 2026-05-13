@@ -18,7 +18,7 @@ export default async function EditRubricsPage() {
     <div className="space-y-6">
       <WorkBreadcrumbs
         crumbs={[
-          { label: "Landing", href: "/landing" },
+          { label: "Workspace", href: "/workspace" },
           { label: "Search & Ask", href: "/work/search" },
           { label: "Edit Rubrics" },
         ]}

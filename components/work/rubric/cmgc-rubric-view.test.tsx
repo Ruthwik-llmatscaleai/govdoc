@@ -6,9 +6,13 @@ import { RUBRIC_QUESTIONS, SECTION_WEIGHTS } from "@/lib/usecases/cmgc-pde/rubri
 describe("CmgcRubricView", () => {
   it("renders one section header per distinct section in the rubric", () => {
     render(<CmgcRubricView />);
-    const sections = new Set(RUBRIC_QUESTIONS.map((q) => q.section));
-    for (const section of sections) {
-      expect(screen.getByText(section)).toBeInTheDocument();
+    // Section labels are now stored as "A: Project Scope & Characteristics" but
+    // displayed as the trailing name only. Assert on the displayed name.
+    const names = new Set(
+      RUBRIC_QUESTIONS.map((q) => q.section.replace(/^[A-Z]:\s*/, "")),
+    );
+    for (const name of names) {
+      expect(screen.getByText(name)).toBeInTheDocument();
     }
   });
 
@@ -19,9 +23,11 @@ describe("CmgcRubricView", () => {
     }
   });
 
-  it("displays the section-weight chips with rounded percentages", () => {
+  it("displays the section-weights bar with the rounded percentages", () => {
     render(<CmgcRubricView />);
-    expect(screen.getByText(`A ${Math.round(SECTION_WEIGHTS.A * 100)}%`)).toBeInTheDocument();
-    expect(screen.getByText(`F ${Math.round(SECTION_WEIGHTS.F * 100)}%`)).toBeInTheDocument();
+    // Weights bar renders the key and percent in separate spans.
+    expect(screen.getByText(`${Math.round(SECTION_WEIGHTS.A * 100)}%`)).toBeInTheDocument();
+    expect(screen.getByText(`${Math.round(SECTION_WEIGHTS.F * 100)}%`)).toBeInTheDocument();
+    expect(screen.getByText(/Section Weights/i)).toBeInTheDocument();
   });
 });

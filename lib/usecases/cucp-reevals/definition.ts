@@ -10,7 +10,7 @@ import { jsonExporter } from "./exporters/json";
 
 export const cucpReevals: UseCase = {
   id: "cucp-reevals",
-  label: "CUCP Re-Evaluations",
+  label: "Narrative Review",
   blurb: "Three-pass DBE re-eligibility review (W5 audit → fact extraction → §26.67 thresholds) with a human override gate.",
   tile: "review",
   inputs: [

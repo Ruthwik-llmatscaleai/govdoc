@@ -4,7 +4,6 @@ import type {
   RecommendationResult,
   MethodScore,
   MultiMethodResult,
-  ValidationResult,
   CmgcRunResult,
 } from "./types";
 
@@ -13,7 +12,6 @@ describe("CMGC types", () => {
     expectTypeOf<CmgcRunResult>().toHaveProperty("evaluation");
     expectTypeOf<CmgcRunResult>().toHaveProperty("recommendation");
     expectTypeOf<CmgcRunResult>().toHaveProperty("multi_method");
-    expectTypeOf<CmgcRunResult>().toHaveProperty("validation");
   });
 
   it("CmgcRating has the legacy 7 fields", () => {
@@ -32,9 +30,5 @@ describe("CMGC types", () => {
 
   it("MultiMethodResult.method_scores is an array", () => {
     expectTypeOf<MultiMethodResult["method_scores"]>().toEqualTypeOf<MethodScore[]>();
-  });
-
-  it("ValidationResult or null is allowed in CmgcRunResult", () => {
-    expectTypeOf<CmgcRunResult["validation"]>().toEqualTypeOf<ValidationResult | null>();
   });
 });

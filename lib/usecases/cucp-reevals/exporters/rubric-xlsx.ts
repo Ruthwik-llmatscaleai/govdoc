@@ -1,5 +1,5 @@
 import ExcelJS from "exceljs";
-import type { RowRubricData } from "../rubric-data";
+import type { CucpRubricData } from "../rubric-data";
 import {
   applyTitleBlock,
   applyHeaderBand,
@@ -9,53 +9,46 @@ import {
   addAutofilter,
 } from "../../shared/rubric-xlsx-style";
 
-export async function buildRowRubricXlsx(data: RowRubricData): Promise<Buffer> {
+export async function buildCucpRubricXlsx(data: CucpRubricData): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
-  const sheet = wb.addWorksheet("Categories");
-  const headers = [
-    "Category",
-    "Tier 1 — Unacceptable",
-    "Tier 2 — Poor",
-    "Tier 3 — Acceptable",
-    "Tier 4 — Good",
-    "Tier 5 — Excellent",
-  ];
+  const sheet = wb.addWorksheet("Criteria");
+  const headers = ["S/No", "Type", "Name", "Rule", "YES (Pass)", "NO (Fail)"];
   applyTitleBlock(sheet, {
-    title: "Appraisal Review Rubric",
-    subtitle: `Exported ${new Date().toISOString().slice(0, 10)} · Caltrans ROW Appraisal`,
+    title: "Narrative Review Rubric",
+    subtitle: `Exported ${new Date().toISOString().slice(0, 10)} · CUCP §26.67 SED Narrative + PNW`,
     columnCount: headers.length,
   });
   const headerRow = 4;
   sheet.getRow(headerRow).values = headers;
   applyHeaderBand(sheet, { row: headerRow, columnCount: headers.length });
 
-  const categories = Object.entries(data);
-  categories.forEach(([name, tiers], i) => {
+  const sorted = [...data.l3].sort((a, b) => a.s_no - b.s_no);
+  sorted.forEach((c, i) => {
     sheet.getRow(headerRow + 1 + i).values = [
-      name,
-      tiers["1"] || "—",
-      tiers["2"] || "—",
-      tiers["3"] || "—",
-      tiers["4"] || "—",
-      tiers["5"] || "—",
+      c.s_no,
+      c.s_no <= 3 ? "Mandatory" : "Scored",
+      c.title ?? c.name,
+      c.rule ?? "—",
+      c.pass ?? "—",
+      c.fail ?? "—",
     ];
   });
-  const lastRow = headerRow + categories.length;
+  const lastRow = headerRow + sorted.length;
   applyStripes(sheet, {
     firstDataRow: headerRow + 1,
     lastDataRow: lastRow,
     columnCount: headers.length,
   });
   setupColumns(sheet, [
-    { width: 36 },
-    { width: 38 },
-    { width: 38 },
+    { width: 8 },
+    { width: 14 },
+    { width: 32 },
     { width: 38 },
     { width: 38 },
     { width: 38 },
   ]);
   freezeBelow(sheet, headerRow);
-  if (categories.length > 0) {
+  if (sorted.length > 0) {
     addAutofilter(sheet, {
       fromRow: headerRow,
       toRow: lastRow,

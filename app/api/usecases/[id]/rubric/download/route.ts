@@ -4,10 +4,12 @@ import { loadCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-merged";
 import { loadCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-merged";
 import { loadRowRubric } from "@/lib/usecases/row-appraisal/rubric-merged";
 import { buildCmgcRubricXlsx } from "@/lib/usecases/cmgc-pde/exporters/rubric-xlsx";
-import { buildCucpRubricPdf } from "@/lib/usecases/cucp-reevals/exporters/rubric-pdf";
+import { buildCucpRubricXlsx } from "@/lib/usecases/cucp-reevals/exporters/rubric-xlsx";
 import { buildRowRubricXlsx } from "@/lib/usecases/row-appraisal/exporters/rubric-xlsx";
 
 const KNOWN_IDS = new Set(["cmgc-pde", "cucp-reevals", "row-appraisal"]);
+const XLSX_CONTENT_TYPE =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 function getCookie(req: Request, name: string): string | undefined {
   const cookie = req.headers.get("cookie") ?? "";
@@ -30,40 +32,20 @@ export async function GET(
     return NextResponse.json({ error: "Unknown rubric use case" }, { status: 404 });
   }
 
+  let buf: Buffer;
   if (id === "cmgc-pde") {
-    const data = await loadCmgcRubric();
-    const buf = await buildCmgcRubricXlsx(data);
-    return new NextResponse(new Uint8Array(buf), {
-      status: 200,
-      headers: {
-        "content-type":
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "content-disposition": `attachment; filename="cmgc-pde-rubric.xlsx"`,
-      },
-    });
+    buf = await buildCmgcRubricXlsx(await loadCmgcRubric());
+  } else if (id === "cucp-reevals") {
+    buf = await buildCucpRubricXlsx(await loadCucpRubric());
+  } else {
+    buf = await buildRowRubricXlsx(await loadRowRubric());
   }
 
-  if (id === "cucp-reevals") {
-    const data = await loadCucpRubric();
-    const buf = await buildCucpRubricPdf(data);
-    return new NextResponse(new Uint8Array(buf), {
-      status: 200,
-      headers: {
-        "content-type": "application/pdf",
-        "content-disposition": `attachment; filename="cucp-reevals-rubric.pdf"`,
-      },
-    });
-  }
-
-  // row-appraisal
-  const data = await loadRowRubric();
-  const buf = await buildRowRubricXlsx(data);
   return new NextResponse(new Uint8Array(buf), {
     status: 200,
     headers: {
-      "content-type":
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "content-disposition": `attachment; filename="row-appraisal-rubric.xlsx"`,
+      "content-type": XLSX_CONTENT_TYPE,
+      "content-disposition": `attachment; filename="${id}-rubric.xlsx"`,
     },
   });
 }

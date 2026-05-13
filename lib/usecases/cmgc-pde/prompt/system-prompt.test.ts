@@ -32,23 +32,6 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("Sections 13");
   });
 
-  it("appends district pre-fills when supplied (alphabetical)", () => {
-    const prompt = buildSystemPrompt("KB", { B1: "A", A1: "B", A2: "C" });
-    expect(prompt).toContain("DISTRICT PRE-FILLED RATINGS");
-    // Sorted: A1=B, A2=C, B1=A
-    expect(prompt).toMatch(/A1=B,\s*A2=C,\s*B1=A/);
-  });
-
-  it("omits district block when no pre-fills", () => {
-    const prompt = buildSystemPrompt("KB");
-    expect(prompt).not.toContain("DISTRICT PRE-FILLED RATINGS");
-  });
-
-  it("omits district block when pre-fills object is empty", () => {
-    const prompt = buildSystemPrompt("KB", {});
-    expect(prompt).not.toContain("DISTRICT PRE-FILLED RATINGS");
-  });
-
   it("rubric text shows section headers grouped by section", () => {
     const prompt = buildSystemPrompt("KB");
     expect(prompt).toContain("--- A: Project Scope & Characteristics ---");

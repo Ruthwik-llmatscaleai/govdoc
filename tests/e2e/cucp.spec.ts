@@ -15,7 +15,7 @@ test.describe("CUCP happy path", () => {
     await page.fill('input[name="email"]', process.env.GOVDOC_DEV_USER!);
     await page.fill('input[name="password"]', process.env.GOVDOC_DEV_PASS!);
     await page.click('button[type="submit"]');
-    await page.waitForURL(/\/landing$/);
+    await page.waitForURL(/\/workspace$/);
     await page.click("text=Review Documents");
     await page.click("text=CUCP");
     await page.setInputFiles('input[name="narrative"]', process.env.CUCP_E2E_NARRATIVE_PDF!);

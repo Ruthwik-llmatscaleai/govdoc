@@ -7,7 +7,7 @@ export default function Page() {
       title="Audit & Trace"
       blurb="Trace every change with full provenance."
       icon={ShieldCheck}
-      backHref="/landing"
+      backHref="/workspace"
     />
   );
 }

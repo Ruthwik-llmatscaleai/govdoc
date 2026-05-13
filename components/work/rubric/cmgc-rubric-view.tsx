@@ -114,7 +114,7 @@ function RatingRow({ letter, text }: { letter: "A" | "B" | "C"; text: string }) 
   return (
     <div className="grid grid-cols-[24px_1fr] items-baseline gap-2.5">
       <span className="font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--color-ink-faint)]">
-        {letter}
+        {letter}.
       </span>
       <span className="text-[12.5px] leading-[1.5] text-[var(--color-ink-soft)]">{text}</span>
     </div>

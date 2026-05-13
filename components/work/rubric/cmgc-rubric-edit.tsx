@@ -3,15 +3,22 @@ import { useState } from "react";
 import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
 import { defaultCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-data";
 import type { RubricQuestion } from "@/lib/usecases/cmgc-pde/rubric";
-import { EditableSection } from "./shared/editable-section";
-import { RubricEditorCard, type EditorField } from "./shared/rubric-editor-card";
+import { RubricShell } from "./shared/rubric-shell";
+import { RubricSection } from "./shared/rubric-section";
+import {
+  RubricEditorCard,
+  type EditorField,
+  type EditorSelect,
+} from "./shared/rubric-editor-card";
+import { ConfirmDialog, type ConfirmRequest } from "./shared/confirm-dialog";
+import { CreateNewMenu } from "./shared/create-new-menu";
 
 type SectionWeightKey = keyof CmgcRubricData["weights"];
 
-type EditorTarget =
+type ComposeTarget =
   | { kind: "addSection" }
   | { kind: "editSection"; sectionKey: SectionWeightKey }
-  | { kind: "addQuestion"; sectionLabel: string }
+  | { kind: "addQuestion"; sectionKey: SectionWeightKey; sectionLabel: string }
   | { kind: "editQuestion"; questionId: string };
 
 function nextSectionKey(existing: SectionWeightKey[]): SectionWeightKey | null {
@@ -26,50 +33,84 @@ function sectionLabel(key: string, name: string) {
   return `${key}: ${name}`;
 }
 
-function questionRow(q: RubricQuestion) {
-  return (
-    <div className="grid grid-cols-[auto_1fr] items-baseline gap-3.5">
-      <span className="font-mono text-[10.5px] tracking-[0.08em] text-[var(--color-ink-faint)]">{q.id}</span>
-      <span className="text-[13.5px] font-medium text-[var(--color-ink-soft)]">{q.question}</span>
-    </div>
-  );
-}
-
 export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
   const [questions, setQuestions] = useState<RubricQuestion[]>(() =>
     initial.questions.map((q) => ({ ...q })),
   );
-  const [weights, setWeights] = useState<CmgcRubricData["weights"]>(() => ({ ...initial.weights }));
+  const [weights, setWeights] = useState<CmgcRubricData["weights"]>(() => ({
+    ...initial.weights,
+  }));
+  const [sectionNames, setSectionNames] = useState<Record<string, string>>(() => {
+    const out: Record<string, string> = {};
+    for (const q of initial.questions) {
+      const m = q.section.match(/^([A-Z]):\s*(.+)$/);
+      if (m && m[1] && m[2]) out[m[1]] = m[2];
+    }
+    return out;
+  });
+  const [target, setTarget] = useState<ComposeTarget | null>(null);
+  const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
+  const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [editor, setEditor] = useState<EditorTarget | null>(null);
 
   const sectionKeys = (Object.keys(weights) as SectionWeightKey[]).sort();
-  const sectionsMap = new Map<string, { key: SectionWeightKey; name: string; qs: RubricQuestion[] }>();
-  for (const k of sectionKeys) sectionsMap.set(k, { key: k, name: k, qs: [] });
+  const sectionsMap = new Map<
+    string,
+    { key: SectionWeightKey; name: string; qs: RubricQuestion[] }
+  >();
+  for (const k of sectionKeys) {
+    sectionsMap.set(k, { key: k, name: sectionNames[k] ?? k, qs: [] });
+  }
   for (const q of questions) {
     const m = q.section.match(/^([A-Z]):\s*(.+)$/);
     const key = (m?.[1] ?? "Z") as SectionWeightKey;
     const name = m?.[2] ?? q.section;
     const cur = sectionsMap.get(key) ?? { key, name, qs: [] };
-    cur.name = name;
+    if (name) cur.name = name;
     cur.qs.push(q);
     sectionsMap.set(key, cur);
   }
   const sections = Array.from(sectionsMap.values());
+  const dominantKey = sections.reduce(
+    (acc, s) => (s && weights[s.key] > (acc ? weights[acc.key] : -1) ? s : acc),
+    sections[0],
+  )?.key;
+
+  function openCreate(kind: "section" | "question") {
+    if (kind === "section") {
+      setTarget({ kind: "addSection" });
+    } else {
+      const first = sections[0];
+      if (!first) return;
+      setTarget({
+        kind: "addQuestion",
+        sectionKey: first.key,
+        sectionLabel: sectionLabel(first.key, first.name),
+      });
+    }
+  }
 
   function applyEditor(values: Record<string, string>) {
-    if (!editor) return;
-    if (editor.kind === "addSection") {
+    if (!target) return;
+    if (target.kind === "addSection") {
       const newKey = nextSectionKey(sectionKeys);
       if (!newKey) return;
-      setWeights((prev) => ({ ...prev, [newKey]: 0 }));
+      const name = (values.name ?? "").trim();
+      const weight = Number(values.weight ?? "0");
+      if (!name || Number.isNaN(weight)) return;
+      setWeights((prev) => ({ ...prev, [newKey]: weight }));
+      setSectionNames((prev) => ({ ...prev, [newKey]: name }));
+      setDirty(true);
+      setTarget(null);
+      return;
     }
-    if (editor.kind === "editSection") {
-      const { sectionKey } = editor;
-      const newName = values.name?.trim() ?? "";
+    if (target.kind === "editSection") {
+      const { sectionKey } = target;
+      const newName = (values.name ?? "").trim();
       const newWeight = Number(values.weight ?? "0");
-      const oldLabel = sectionLabel(sectionKey, sectionsMap.get(sectionKey)?.name ?? sectionKey);
+      const oldName = sectionsMap.get(sectionKey)?.name ?? sectionKey;
+      const oldLabel = sectionLabel(sectionKey, oldName);
       const newLabel = sectionLabel(sectionKey, newName);
       setQuestions((prev) =>
         prev.map((q) => (q.section === oldLabel ? { ...q, section: newLabel } : q)),
@@ -77,25 +118,31 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
       if (!Number.isNaN(newWeight)) {
         setWeights((prev) => ({ ...prev, [sectionKey]: newWeight }));
       }
+      setSectionNames((prev) => ({ ...prev, [sectionKey]: newName }));
+      setDirty(true);
+      setTarget(null);
+      return;
     }
-    if (editor.kind === "addQuestion") {
-      const section = editor.sectionLabel;
+    if (target.kind === "addQuestion") {
       setQuestions((prev) => [
         ...prev,
         {
           id: `Q${Date.now()}`,
-          section,
+          section: target.sectionLabel,
           question: values.question ?? "",
           option_a: values.option_a ?? "",
           option_b: values.option_b ?? "",
           option_c: values.option_c ?? "",
         },
       ]);
+      setDirty(true);
+      setTarget(null);
+      return;
     }
-    if (editor.kind === "editQuestion") {
+    if (target.kind === "editQuestion") {
       setQuestions((prev) =>
         prev.map((q) =>
-          q.id === editor.questionId
+          q.id === target.questionId
             ? {
                 ...q,
                 question: values.question ?? q.question,
@@ -106,23 +153,50 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
             : q,
         ),
       );
+      setDirty(true);
+      setTarget(null);
     }
-    setEditor(null);
   }
 
   function deleteSection(key: SectionWeightKey) {
-    if (!confirm(`Delete section ${key} and all its questions?`)) return;
-    setQuestions((prev) => prev.filter((q) => !q.section.startsWith(`${key}:`)));
-    setWeights((prev) => {
-      const next = { ...prev };
-      delete (next as Record<string, number>)[key];
-      return next;
+    const name = sectionsMap.get(key)?.name ?? key;
+    setConfirm({
+      title: "Delete section",
+      message: `Delete section ${key} (${name}) and all its questions? This cannot be undone.`,
+      confirmLabel: "Delete section",
+      danger: true,
+      onConfirm: () => {
+        setQuestions((prev) => prev.filter((q) => !q.section.startsWith(`${key}:`)));
+        setWeights((prev) => {
+          const next = { ...prev };
+          delete (next as Record<string, number>)[key];
+          return next;
+        });
+        setSectionNames((prev) => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+        setDirty(true);
+        if (target?.kind === "editSection" && target.sectionKey === key) setTarget(null);
+        setConfirm(null);
+      },
     });
   }
 
   function deleteQuestion(id: string) {
-    if (!confirm("Delete this question?")) return;
-    setQuestions((prev) => prev.filter((q) => q.id !== id));
+    setConfirm({
+      title: "Delete question",
+      message: `Delete question ${id}? This cannot be undone.`,
+      confirmLabel: "Delete question",
+      danger: true,
+      onConfirm: () => {
+        setQuestions((prev) => prev.filter((q) => q.id !== id));
+        setDirty(true);
+        if (target?.kind === "editQuestion" && target.questionId === id) setTarget(null);
+        setConfirm(null);
+      },
+    });
   }
 
   async function onSave() {
@@ -136,6 +210,7 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setMsg("Saved. Preview rubrics will reflect this on next load.");
+      setDirty(false);
     } catch (e) {
       setMsg(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
@@ -143,151 +218,354 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
     }
   }
 
-  async function onReset() {
-    if (!confirm("Reset Project Review rubric to defaults? This deletes any saved edits.")) return;
-    setSaving(true);
-    setMsg(null);
-    try {
-      const res = await fetch("/api/usecases/cmgc-pde/rubric", { method: "DELETE" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const def = defaultCmgcRubric();
-      setQuestions(def.questions.map((q) => ({ ...q })));
-      setWeights({ ...def.weights });
-      setMsg("Reset to defaults.");
-    } catch (e) {
-      setMsg(`Reset failed: ${e instanceof Error ? e.message : String(e)}`);
-    } finally {
-      setSaving(false);
+  function onReset() {
+    setConfirm({
+      title: "Reset rubric",
+      message: "Reset Project Review rubric to defaults? This deletes any saved edits.",
+      confirmLabel: "Reset to defaults",
+      danger: true,
+      onConfirm: async () => {
+        setConfirm(null);
+        setSaving(true);
+        setMsg(null);
+        try {
+          const res = await fetch("/api/usecases/cmgc-pde/rubric", { method: "DELETE" });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const def = defaultCmgcRubric();
+          setQuestions(def.questions.map((q) => ({ ...q })));
+          setWeights({ ...def.weights });
+          const names: Record<string, string> = {};
+          for (const q of def.questions) {
+            const m = q.section.match(/^([A-Z]):\s*(.+)$/);
+            if (m && m[1] && m[2]) names[m[1]] = m[2];
+          }
+          setSectionNames(names);
+          setMsg("Reset to defaults.");
+          setDirty(false);
+          setTarget(null);
+        } catch (e) {
+          setMsg(`Reset failed: ${e instanceof Error ? e.message : String(e)}`);
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
+  }
+
+  function onSelectChange(name: string, value: string) {
+    if (name === "section" && target?.kind === "addQuestion") {
+      const sec = sectionsMap.get(value);
+      if (sec) {
+        setTarget({
+          kind: "addQuestion",
+          sectionKey: sec.key,
+          sectionLabel: sectionLabel(sec.key, sec.name),
+        });
+      }
     }
   }
 
   const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
   const weightOk = Math.abs(totalWeight - 1) < 0.005;
 
-  const editorTitle = (() => {
-    if (!editor) return "";
-    if (editor.kind === "addSection") return "New section";
-    if (editor.kind === "editSection") return `Edit section ${editor.sectionKey}`;
-    if (editor.kind === "addQuestion") return `New question in ${editor.sectionLabel}`;
-    if (editor.kind === "editQuestion") return "Edit question";
-    return "";
-  })();
+  const compose = target ? buildCompose(target, sectionsMap, weights, questions) : null;
+  const selects = target ? buildSelects(target, sections) : undefined;
 
-  const editorFields: EditorField[] = (() => {
-    if (!editor) return [];
-    if (editor.kind === "addSection") return [];
-    if (editor.kind === "editSection") {
-      return [
-        { name: "name", label: "Section name", type: "text", required: true },
-        { name: "weight", label: "Weight (0–1)", type: "text", required: true },
-      ];
-    }
-    return [
-      { name: "question", label: "Question", type: "textarea", required: true },
-      { name: "option_a", label: "Option A", type: "textarea", required: true },
-      { name: "option_b", label: "Option B", type: "textarea", required: true },
-      { name: "option_c", label: "Option C", type: "textarea", required: true },
-    ];
-  })();
-
-  const editorInitial: Record<string, string> = ((): Record<string, string> => {
-    if (!editor) return {};
-    if (editor.kind === "editSection") {
-      const sec = sectionsMap.get(editor.sectionKey);
-      return { name: sec?.name ?? "", weight: String(weights[editor.sectionKey] ?? 0) };
-    }
-    if (editor.kind === "editQuestion") {
-      const q = questions.find((x) => x.id === editor.questionId);
-      return {
-        question: q?.question ?? "",
-        option_a: q?.option_a ?? "",
-        option_b: q?.option_b ?? "",
-        option_c: q?.option_c ?? "",
-      };
-    }
-    return { question: "", option_a: "", option_b: "", option_c: "" };
-  })();
-
-  return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-border bg-card p-4 text-xs">
-        <span className="font-semibold uppercase tracking-wider text-muted-foreground">Section weights sum:</span>{" "}
-        <span className={weightOk ? "text-foreground" : "text-destructive"}>
-          {totalWeight.toFixed(2)} {weightOk ? "(ok)" : "(must equal 1.00)"}
+  const sectionWeightsBar = (
+    <div
+      aria-label="Section weights"
+      className="flex items-center overflow-hidden border border-[var(--color-line)] bg-[var(--color-paper)]"
+    >
+      <div className="shrink-0 border-r border-[var(--color-line)] bg-[var(--color-cream)] px-5 py-3.5 font-mono text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-ink)]">
+        Section Weights
+      </div>
+      <div className="flex h-12 flex-1">
+        {sections.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center font-mono text-[10.5px] text-[var(--color-ink-faint)]">
+            No sections yet
+          </div>
+        ) : (
+          sections.map((s, i) => {
+            const isLast = i === sections.length - 1;
+            const isDominant = s.key === dominantKey;
+            return (
+              <div
+                key={s.key}
+                style={{ flex: Math.max(1, Math.round((weights[s.key] ?? 0) * 100)) }}
+                className={`flex flex-col items-center justify-center transition-colors hover:bg-[var(--color-cream-soft)] ${
+                  isLast ? "" : "border-r border-[var(--color-line-soft)]"
+                }`}
+              >
+                <span
+                  className={`font-mono text-[11px] font-semibold leading-none tracking-[0.08em] ${
+                    isDominant ? "text-[var(--color-govdoc-primary)]" : "text-[var(--color-ink)]"
+                  }`}
+                >
+                  {s.key}
+                </span>
+                <span
+                  className={`mt-0.5 font-mono text-[9.5px] leading-none tracking-[0.08em] ${
+                    isDominant
+                      ? "font-medium text-[var(--color-govdoc-deep)]"
+                      : "text-[var(--color-ink-mute)]"
+                  }`}
+                >
+                  {Math.round((weights[s.key] ?? 0) * 100)}%
+                </span>
+              </div>
+            );
+          })
+        )}
+      </div>
+      <div className="shrink-0 border-l border-[var(--color-line)] px-4 py-3.5 font-mono text-[10.5px] tracking-[0.08em]">
+        <span className="text-[var(--color-ink-faint)]">Σ</span>{" "}
+        <span className={weightOk ? "text-[var(--color-ink)]" : "text-destructive"}>
+          {totalWeight.toFixed(2)}
         </span>
       </div>
+    </div>
+  );
 
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={() => setEditor({ kind: "addSection" })}
-          className="rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-foreground transition hover:bg-muted"
-        >
-          + Add section
-        </button>
+  return (
+    <div className="space-y-6 pb-2">
+      <div className="flex items-center justify-end">
+        <CreateNewMenu
+          options={[
+            { value: "section", label: "Section" },
+            { value: "question", label: "Question", disabled: sections.length === 0 },
+          ]}
+          onPick={(v) => openCreate(v as "section" | "question")}
+        />
       </div>
 
-      <div className="flex flex-col border border-[var(--color-line)] bg-[var(--color-paper)]">
-        {sections.map((s, i) => (
-          <EditableSection
-            key={s.key}
-            sectionKey={s.key}
-            title={s.name}
-            items={s.qs.map((q) => ({ id: q.id, text: q.question, raw: q }))}
-            countLabel="question"
-            defaultOpen={i === 0}
-            renderRow={(it) => questionRow(it.raw)}
-            onAdd={() => setEditor({ kind: "addQuestion", sectionLabel: sectionLabel(s.key, s.name) })}
-            onEditItem={(id) => setEditor({ kind: "editQuestion", questionId: id })}
-            onDeleteItem={(id) => deleteQuestion(id)}
-            sectionActions={
-              <>
+      <RubricShell intro={sectionWeightsBar}>
+        {sections.length === 0 ? (
+          <div className="border border-dashed border-[var(--color-line)] bg-[var(--color-cream-soft)] px-6 py-12 text-center">
+            <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
+              Empty rubric
+            </p>
+            <p className="mt-2 text-[13px] text-[var(--color-ink-mute)]">
+              No sections yet. Use “Create new ▾ → Section” to add the first one.
+            </p>
+          </div>
+        ) : (
+          sections.map((s, i) => (
+            <RubricSection
+              key={s.key}
+              sectionKey={s.key}
+              title={s.name}
+              count={s.qs.length}
+              countLabel="question"
+              defaultOpen={i === 0}
+            >
+              <div className="mb-3 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setEditor({ kind: "editSection", sectionKey: s.key })}
-                  className="rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-foreground transition hover:bg-muted"
+                  onClick={() => setTarget({ kind: "editSection", sectionKey: s.key })}
+                  className={chip()}
                 >
                   Edit section
                 </button>
                 <button
                   type="button"
                   onClick={() => deleteSection(s.key)}
-                  className="rounded-md border border-destructive/40 px-2.5 py-1 text-[11px] font-medium text-destructive transition hover:bg-destructive/5"
+                  className={chipDanger()}
                 >
                   Delete section
                 </button>
-              </>
-            }
-          />
-        ))}
-      </div>
-
-      {editor && (
-        <RubricEditorCard
-          mode={editor.kind.startsWith("edit") ? "edit" : "create"}
-          title={editorTitle}
-          fields={editorFields}
-          initialValues={editorInitial}
-          onSave={applyEditor}
-          onCancel={() => setEditor(null)}
-        />
-      )}
+              </div>
+              {s.qs.length === 0 ? (
+                <p className="border border-dashed border-[var(--color-line)] bg-[var(--color-cream-soft)] px-4 py-6 text-center text-[12.5px] text-[var(--color-ink-mute)]">
+                  No questions yet. Use “Create new ▾ → Question” and pick this section.
+                </p>
+              ) : (
+                <ol className="flex list-none flex-col gap-4">
+                  {s.qs.map((q) => (
+                    <li
+                      key={q.id}
+                      className="border-b border-[var(--color-line-soft)] py-3 last:border-b-0"
+                    >
+                      <div className="grid grid-cols-[auto_1fr_auto] items-baseline gap-3.5 text-[13.5px] leading-[1.5] text-[var(--color-ink-soft)]">
+                        <span className="font-mono text-[10.5px] tracking-[0.08em] text-[var(--color-ink-faint)]">
+                          {q.id}
+                        </span>
+                        <span className="font-medium">{q.question}</span>
+                        <span className="flex shrink-0 gap-1">
+                          <button
+                            type="button"
+                            aria-label={`Edit ${q.id}`}
+                            onClick={() => setTarget({ kind: "editQuestion", questionId: q.id })}
+                            className={chip()}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Delete ${q.id}`}
+                            onClick={() => deleteQuestion(q.id)}
+                            className={chipDanger()}
+                          >
+                            Delete
+                          </button>
+                        </span>
+                      </div>
+                      <dl className="mt-2.5 ml-[42px] flex flex-col gap-1.5">
+                        <RatingRow letter="A" text={q.option_a} />
+                        <RatingRow letter="B" text={q.option_b} />
+                        <RatingRow letter="C" text={q.option_c} />
+                      </dl>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </RubricSection>
+          ))
+        )}
+      </RubricShell>
 
       <SaveBar
         saving={saving}
         msg={msg}
+        dirty={dirty}
         onSave={onSave}
         onReset={onReset}
         downloadHref="/api/usecases/cmgc-pde/rubric/download"
         downloadLabel="Download .xlsx"
       />
+
+      {target && compose && (
+        <RubricEditorCard
+          mode={compose.mode}
+          title={compose.title}
+          selects={selects}
+          onSelectChange={onSelectChange}
+          fields={compose.fields}
+          initialValues={compose.initial}
+          saveLabel={compose.saveLabel}
+          onSave={applyEditor}
+          onCancel={() => setTarget(null)}
+        />
+      )}
+
+      {confirm && <ConfirmDialog request={confirm} onCancel={() => setConfirm(null)} />}
     </div>
   );
+}
+
+function RatingRow({ letter, text }: { letter: "A" | "B" | "C"; text: string }) {
+  return (
+    <div className="grid grid-cols-[24px_1fr] items-baseline gap-2.5">
+      <span className="font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--color-ink-faint)]">
+        {letter}.
+      </span>
+      <span className="text-[12.5px] leading-[1.5] text-[var(--color-ink-soft)]">{text || "—"}</span>
+    </div>
+  );
+}
+
+function chip() {
+  return "rounded-md border border-border px-2.5 py-1 text-[11px] font-medium text-foreground transition hover:bg-muted";
+}
+
+function chipDanger() {
+  return "rounded-md border border-destructive/30 px-2.5 py-1 text-[11px] font-medium text-destructive/80 transition hover:bg-destructive/5 hover:text-destructive";
+}
+
+function buildSelects(
+  target: ComposeTarget,
+  sections: { key: string; name: string; qs: RubricQuestion[] }[],
+): EditorSelect[] | undefined {
+  if (target.kind === "addQuestion") {
+    return [
+      {
+        name: "section",
+        label: "Section",
+        value: target.sectionKey,
+        options: sections.map((s) => ({ value: s.key, label: `${s.key}: ${s.name}` })),
+      },
+    ];
+  }
+  return undefined;
+}
+
+function buildCompose(
+  target: ComposeTarget,
+  sectionsMap: Map<string, { key: string; name: string; qs: RubricQuestion[] }>,
+  weights: CmgcRubricData["weights"],
+  questions: RubricQuestion[],
+): {
+  mode: "create" | "edit";
+  title: string;
+  saveLabel: string;
+  fields: EditorField[];
+  initial: Record<string, string>;
+} {
+  if (target.kind === "addSection") {
+    return {
+      mode: "create",
+      title: "Section",
+      saveLabel: "Add section",
+      fields: [
+        { name: "name", label: "Section name", type: "text", required: true },
+        { name: "weight", label: "Weight (0–1)", type: "text", required: true },
+      ],
+      initial: { name: "", weight: "" },
+    };
+  }
+  if (target.kind === "editSection") {
+    const sec = sectionsMap.get(target.sectionKey);
+    return {
+      mode: "edit",
+      title: `Section ${target.sectionKey}: ${sec?.name ?? ""}`,
+      saveLabel: "Save section",
+      fields: [
+        { name: "name", label: "Section name", type: "text", required: true },
+        { name: "weight", label: "Weight (0–1)", type: "text", required: true },
+      ],
+      initial: {
+        name: sec?.name ?? "",
+        weight: String((weights as Record<string, number>)[target.sectionKey] ?? 0),
+      },
+    };
+  }
+  if (target.kind === "addQuestion") {
+    return {
+      mode: "create",
+      title: "Question",
+      saveLabel: "Add question",
+      fields: [
+        { name: "question", label: "Question", type: "textarea", required: true },
+        { name: "option_a", label: "Option A (best rating)", type: "textarea", required: true },
+        { name: "option_b", label: "Option B (middle rating)", type: "textarea", required: true },
+        { name: "option_c", label: "Option C (lowest rating)", type: "textarea", required: true },
+      ],
+      initial: { question: "", option_a: "", option_b: "", option_c: "" },
+    };
+  }
+  const q = questions.find((x) => x.id === target.questionId);
+  return {
+    mode: "edit",
+    title: `Question ${q?.id ?? ""}`,
+    saveLabel: "Save question",
+    fields: [
+      { name: "question", label: "Question", type: "textarea", required: true },
+      { name: "option_a", label: "Option A (best rating)", type: "textarea", required: true },
+      { name: "option_b", label: "Option B (middle rating)", type: "textarea", required: true },
+      { name: "option_c", label: "Option C (lowest rating)", type: "textarea", required: true },
+    ],
+    initial: {
+      question: q?.question ?? "",
+      option_a: q?.option_a ?? "",
+      option_b: q?.option_b ?? "",
+      option_c: q?.option_c ?? "",
+    },
+  };
 }
 
 function SaveBar({
   saving,
   msg,
+  dirty,
   onSave,
   onReset,
   downloadHref,
@@ -295,16 +573,25 @@ function SaveBar({
 }: {
   saving: boolean;
   msg: string | null;
+  dirty: boolean;
   onSave: () => void;
   onReset: () => void;
   downloadHref: string;
   downloadLabel: string;
 }) {
+  const status = msg ?? (dirty ? "You have unsaved changes." : "No unsaved changes.");
   return (
-    <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/95 p-4 backdrop-blur shadow-md">
-      <span className="text-xs text-muted-foreground">{msg ?? "Edits are kept on this server only and are ephemeral on Cloud Run."}</span>
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
+      <span
+        className={`text-xs ${dirty && !msg ? "font-medium text-foreground" : "text-muted-foreground"}`}
+      >
+        {status}
+      </span>
       <div className="flex gap-2">
-        <a href={downloadHref} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted">
+        <a
+          href={downloadHref}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+        >
           {downloadLabel}
         </a>
         <button
@@ -318,10 +605,10 @@ function SaveBar({
         <button
           type="button"
           onClick={onSave}
-          disabled={saving}
+          disabled={saving || !dirty}
           className="rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)] disabled:opacity-50"
         >
-          {saving ? "Saving…" : "Save"}
+          {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
         </button>
       </div>
     </div>

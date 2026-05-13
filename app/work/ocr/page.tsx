@@ -7,7 +7,7 @@ export default function Page() {
       title="OCR & Extract"
       blurb="Pull text and structure from scanned PDFs."
       icon={ScanText}
-      backHref="/landing"
+      backHref="/workspace"
     />
   );
 }

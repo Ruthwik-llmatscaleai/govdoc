@@ -18,8 +18,8 @@ describe("ComingSoon", () => {
   });
 
   it("renders a back-to-dashboard link when backHref is provided", () => {
-    render(<ComingSoon title="OCR" blurb="..." backHref="/landing" />);
+    render(<ComingSoon title="OCR" blurb="..." backHref="/workspace" />);
     const link = screen.getByRole("link", { name: /back to dashboard/i });
-    expect(link).toHaveAttribute("href", "/landing");
+    expect(link).toHaveAttribute("href", "/workspace");
   });
 });

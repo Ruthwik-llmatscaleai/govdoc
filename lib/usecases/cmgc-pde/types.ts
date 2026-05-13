@@ -82,39 +82,8 @@ export type MultiMethodResult = {
   override_status: OverrideStatus[];
 };
 
-export type ValidationComparison = {
-  question_id: string;
-  question_text: string;
-  ai_rating: Rating;
-  user_rating: Rating;
-  severity: "match" | "minor_mismatch" | "major_mismatch";
-  ai_evidence: string;
-  ai_confidence: number;
-  has_evidence: boolean;
-};
-
-export type ValidationResult = {
-  comparisons: ValidationComparison[];
-  mismatches: ValidationComparison[];
-  summary: {
-    total_compared: number;
-    matches: number;
-    minor_mismatches: number;
-    major_mismatches: number;
-    agreement_rate: number;
-  };
-  deviation_impact: {
-    ai_method: string;
-    user_method: string;
-    recommendation_changed: boolean;
-    ai_score: number;
-    user_score: number;
-  };
-};
-
 export type CmgcRunResult = {
   evaluation: CmgcEvaluation;
   recommendation: RecommendationResult;
   multi_method: MultiMethodResult;
-  validation: ValidationResult | null;
 };

@@ -91,22 +91,6 @@ export async function buildEvaluationDocx(result: CmgcRunResult, projectName: st
     }
   }
 
-  // Validation (when present)
-  if (result.validation) {
-    children.push(
-      new Paragraph({
-        heading: HeadingLevel.HEADING_2,
-        children: [new TextRun("Validation Against District Ratings")],
-      }),
-    );
-    children.push(new Paragraph(`Agreement rate: ${result.validation.summary.agreement_rate}%`));
-    children.push(
-      new Paragraph(
-        `Recommendation changed: ${result.validation.deviation_impact.recommendation_changed ? "Yes" : "No"}`,
-      ),
-    );
-  }
-
   const doc = new Document({ sections: [{ children }] });
   return Packer.toBuffer(doc);
 }

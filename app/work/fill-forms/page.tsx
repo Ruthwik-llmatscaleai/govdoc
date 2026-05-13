@@ -7,7 +7,7 @@ export default function Page() {
       title="Fill Forms"
       blurb="Auto-fill recurring forms from source data."
       icon={ClipboardList}
-      backHref="/landing"
+      backHref="/workspace"
     />
   );
 }

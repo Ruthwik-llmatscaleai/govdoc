@@ -7,7 +7,7 @@ export default function Page() {
       title="Detect Risk"
       blurb="Surface compliance and policy red flags."
       icon={AlertTriangle}
-      backHref="/landing"
+      backHref="/workspace"
     />
   );
 }

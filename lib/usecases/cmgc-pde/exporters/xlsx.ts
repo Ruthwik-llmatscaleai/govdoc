@@ -97,34 +97,6 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
     ];
   });
 
-  // Sheet 5: Validation
-  const val = wb.addWorksheet("Validation");
-  if (result.validation) {
-    val.getRow(1).values = ["Question ID", "AI Rating", "User Rating", "Severity", "AI Confidence", "Evidence"];
-    val.getRow(1).font = { bold: true };
-    result.validation.comparisons.forEach((c, i) => {
-      val.getRow(i + 2).values = [
-        c.question_id,
-        c.ai_rating,
-        c.user_rating,
-        c.severity,
-        c.ai_confidence,
-        c.ai_evidence,
-      ];
-    });
-    const offset = result.validation.comparisons.length + 4;
-    val.getCell(`A${offset}`).value = "Deviation Impact";
-    val.getCell(`A${offset}`).font = { bold: true };
-    val.getCell(`A${offset + 1}`).value = "AI Method:";
-    val.getCell(`B${offset + 1}`).value = result.validation.deviation_impact.ai_method;
-    val.getCell(`A${offset + 2}`).value = "User Method:";
-    val.getCell(`B${offset + 2}`).value = result.validation.deviation_impact.user_method;
-    val.getCell(`A${offset + 3}`).value = "Recommendation Changed:";
-    val.getCell(`B${offset + 3}`).value = result.validation.deviation_impact.recommendation_changed ? "Yes" : "No";
-  } else {
-    val.getCell("A1").value = "Validation skipped — no district ratings provided";
-  }
-
   // Set reasonable column widths
   for (const ws of wb.worksheets) {
     ws.columns.forEach((col) => {

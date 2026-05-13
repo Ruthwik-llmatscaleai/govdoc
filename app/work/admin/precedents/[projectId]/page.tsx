@@ -48,14 +48,14 @@ export default function Page({ params }: { params: Promise<{ projectId: string }
     <main className="mx-auto max-w-5xl px-4 py-8 space-y-6">
       <WorkBreadcrumbs
         crumbs={[
-          { label: "Landing", href: "/landing" },
+          { label: "Workspace", href: "/workspace" },
           { label: "Admin" },
           { label: `Precedents · ${projectId}` },
         ]}
       />
       <WorkPageHeader
         title={`Institutional Memory — ${projectId}`}
-        eyebrow="CUCP Admin"
+        eyebrow="Precedents Admin"
       />
       {error ? (
         <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm text-destructive">

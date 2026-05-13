@@ -28,9 +28,9 @@ describe("use case registry", () => {
     expect(USE_CASES_BY_TILE.inbox).toEqual([]);
   });
 
-  it("cmgcPde has a 4-step pipeline", () => {
-    expect(USE_CASES.cmgcPde.pipeline).toHaveLength(4);
-    expect(USE_CASES.cmgcPde.pipeline.map((s) => s.id)).toEqual(["extract", "evaluate", "score", "validate"]);
+  it("cmgcPde has a 3-step pipeline", () => {
+    expect(USE_CASES.cmgcPde.pipeline).toHaveLength(3);
+    expect(USE_CASES.cmgcPde.pipeline.map((s) => s.id)).toEqual(["extract", "evaluate", "score"]);
   });
 
   it("cmgcPde has 2 exporters (xlsx, docx)", () => {
@@ -39,10 +39,10 @@ describe("use case registry", () => {
     expect(ids).toContain("docx");
   });
 
-  it("cmgcPde has 4 inputs", () => {
-    expect(USE_CASES.cmgcPde.inputs).toHaveLength(4);
+  it("cmgcPde has 2 inputs", () => {
+    expect(USE_CASES.cmgcPde.inputs).toHaveLength(2);
     const inputIds = USE_CASES.cmgcPde.inputs.map((i) => i.id);
-    expect(inputIds).toEqual(["factSheet", "projectName", "districtRatings", "model"]);
+    expect(inputIds).toEqual(["factSheet", "model"]);
   });
 
   it("registers cucpReevals", () => {

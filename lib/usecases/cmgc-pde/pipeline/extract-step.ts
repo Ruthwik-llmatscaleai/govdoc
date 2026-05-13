@@ -19,7 +19,9 @@ export const extractStep: PipelineStep<FormData> = {
     })));
     yield { type: "progress", stage: "extract", pct: 50, message: "Parsing text" } satisfies StepEvent;
     const narrative = await extractMultiDocContext(buffers);
-    const projectName = (formData.get("projectName") as string | null) ?? "";
+    const submitted = (formData.get("projectName") as string | null) ?? "";
+    const firstName = entries[0]?.name ?? "";
+    const projectName = submitted.trim() || firstName.replace(/\.[^./\\]+$/, "");
     yield { type: "stage-done", stage: "extract", data: {
       narrative,
       projectName,

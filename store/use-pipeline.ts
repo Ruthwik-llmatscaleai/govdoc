@@ -46,6 +46,7 @@ export const usePipelineStore = create<Store>((set, get) => ({
       switch (ev.type) {
         case "run-started": {
           run.runId = ev.runId;
+          if (ev.projectId) run.projectId = ev.projectId;
           break;
         }
         case "progress": {

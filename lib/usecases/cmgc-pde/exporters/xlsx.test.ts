@@ -4,12 +4,12 @@ import { buildEvaluationXlsx, xlsxExporter } from "./xlsx";
 import { mockRunResult } from "../scoring/fixtures";
 
 describe("buildEvaluationXlsx", () => {
-  it("produces a workbook with 5 named sheets in order", async () => {
+  it("produces a workbook with 4 named sheets in order", async () => {
     const buf = await buildEvaluationXlsx(mockRunResult(), "Test Project");
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(buf as any);
     expect(wb.worksheets.map((w) => w.name)).toEqual(
-      ["Dashboard", "Rubric", "Scoring", "Multi-Method", "Validation"],
+      ["Dashboard", "Rubric", "Scoring", "Multi-Method"],
     );
   });
 
@@ -45,14 +45,6 @@ describe("buildEvaluationXlsx", () => {
     let count = 0;
     mm.eachRow((row) => { if (row.getCell(1).value !== null && row.getCell(1).value !== undefined) count++; });
     expect(count).toBeGreaterThanOrEqual(7);
-  });
-
-  it("Validation sheet shows skip message when validation is null", async () => {
-    const buf = await buildEvaluationXlsx(mockRunResult(), "Test Project");
-    const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(buf as any);
-    const val = wb.getWorksheet("Validation")!;
-    expect(String(val.getCell("A1").value)).toContain("Validation skipped");
   });
 
   it("Dashboard section weights match the canonical rubric", async () => {

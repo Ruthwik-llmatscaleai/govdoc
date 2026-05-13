@@ -4,8 +4,6 @@ import { cn } from "@/lib/utils";
 import { StepBar } from "@/components/work/shared/step-bar";
 import { OverrideCard } from "./override-card";
 import type { OverrideCardQuestion } from "./override-card";
-import { ValidationAudit } from "./validation-audit";
-import type { ValidationResult } from "@/lib/usecases/cmgc-pde/types";
 import type { Rating } from "@/lib/usecases/cmgc-pde/rubric";
 
 export type HiflOverrideEntry = {
@@ -15,11 +13,10 @@ export type HiflOverrideEntry = {
   reason: string;
 };
 
-type Step = "review" | "validate" | "export";
+type Step = "review" | "export";
 
 const STEPS = [
   { id: "review", label: "Review & Override" },
-  { id: "validate", label: "Validation Audit" },
   { id: "export", label: "Export" },
 ] as const;
 
@@ -29,32 +26,24 @@ const MISSING_CONFIDENCE_THRESHOLD = 0.7;
 
 export function HiflWizard({
   questions,
-  validation,
   recommendationLabel,
-  aiRecommendationLabel,
-  recommendationShifted,
   overrides,
   onSaveOverride,
   onRemoveOverride,
 }: {
   questions: readonly OverrideCardQuestion[];
-  validation: ValidationResult | null;
   recommendationLabel: string;
-  aiRecommendationLabel: string;
-  recommendationShifted: boolean;
   overrides: readonly HiflOverrideEntry[];
   onSaveOverride: (entry: HiflOverrideEntry) => void;
   onRemoveOverride: (questionId: string) => void;
 }): React.JSX.Element {
   const [currentStep, setCurrentStep] = useState<Step>("review");
   const [acknowledgedNoChanges, setAcknowledgedNoChanges] = useState(false);
-  const [validateApproved, setValidateApproved] = useState(false);
   const [filter, setFilter] = useState<"all" | "missing">("all");
   const [selectedQuestionId, setSelectedQuestionId] = useState<string>(
     questions[0]?.question_id ?? "",
   );
 
-  // Filtered list based on "all" vs "missing" radio
   const filteredQuestions =
     filter === "missing"
       ? questions.filter(
@@ -64,7 +53,6 @@ export function HiflWizard({
         )
       : questions;
 
-  // Ensure selectedQuestionId is always in the filtered list
   const effectiveSelectedId =
     filteredQuestions.some((q) => q.question_id === selectedQuestionId)
       ? selectedQuestionId
@@ -72,19 +60,13 @@ export function HiflWizard({
 
   const selectedQuestion = filteredQuestions.find((q) => q.question_id === effectiveSelectedId);
 
-  // Gate logic
   const reviewApproved = overrides.length > 0 || acknowledgedNoChanges;
   const nextDisabled = !reviewApproved;
 
   const approvedIds: string[] = [];
   if (reviewApproved) approvedIds.push("review");
-  if (validateApproved) approvedIds.push("validate");
   if (currentStep === "export") approvedIds.push("export");
 
-  // Override reasons for ValidationAudit
-  const overrideReasons = Object.fromEntries(overrides.map((o) => [o.question_id, o.reason]));
-
-  // Existing override map for OverrideCard (so it can pre-fill the saved values)
   const existingOverrideMap = Object.fromEntries(
     overrides.map((o) => [o.question_id, { newRating: o.newValue, reason: o.reason }]),
   );
@@ -109,7 +91,6 @@ export function HiflWizard({
       {/* ── Step 1: Review & Override ── */}
       {currentStep === "review" && (
         <div className="space-y-4">
-          {/* Question filter */}
           <fieldset className="flex items-center gap-4">
             <legend className="text-sm font-medium text-muted-foreground mr-2">Show:</legend>
             <label className="flex items-center gap-1 text-sm cursor-pointer">
@@ -135,7 +116,6 @@ export function HiflWizard({
             </label>
           </fieldset>
 
-          {/* Question selector */}
           {filteredQuestions.length > 0 ? (
             <div className="space-y-1">
               <label htmlFor="hifl-question-select" className="block text-sm font-medium">
@@ -163,8 +143,6 @@ export function HiflWizard({
             <p className="text-sm text-muted-foreground">No questions match this filter.</p>
           )}
 
-          {/* Selected question override card.
-              key forces remount when the question changes so internal form state resets cleanly. */}
           {selectedQuestion && (
             <OverrideCard
               key={selectedQuestion.question_id}
@@ -176,7 +154,6 @@ export function HiflWizard({
             />
           )}
 
-          {/* Pending Corrections */}
           <div className="rounded-md border border-border bg-muted/20 p-4 space-y-2">
             <h3 className="text-sm font-semibold">Pending Corrections</h3>
             {overrides.length === 0 ? (
@@ -208,7 +185,6 @@ export function HiflWizard({
             )}
           </div>
 
-          {/* Footer */}
           <div className="flex items-center justify-between gap-3 pt-2">
             <button
               type="button"
@@ -226,24 +202,32 @@ export function HiflWizard({
             <button
               type="button"
               disabled={nextDisabled}
-              onClick={() => setCurrentStep("validate")}
+              onClick={() => setCurrentStep("export")}
               className={cn(
                 "rounded-md px-4 py-2 text-sm font-medium transition-colors",
                 "bg-primary text-primary-foreground hover:bg-primary/90",
                 "disabled:cursor-not-allowed disabled:opacity-50",
               )}
             >
-              Next → Validation
+              Approve &amp; Export
             </button>
           </div>
         </div>
       )}
 
-      {/* ── Step 2: Validation Audit ── */}
-      {currentStep === "validate" && (
+      {/* ── Step 2: Export ── */}
+      {currentStep === "export" && (
         <div className="space-y-4">
-          <ValidationAudit validation={validation} overrideReasons={overrideReasons} />
-          <div className="flex items-center justify-between gap-3 pt-2">
+          <div className="rounded-md border border-emerald-300 bg-emerald-50 p-6 space-y-2 text-emerald-900">
+            <p className="text-lg font-semibold">✅ Review complete</p>
+            <p>
+              <span className="font-medium">Final recommendation:</span> {recommendationLabel}
+            </p>
+            <p className="text-sm text-emerald-800">
+              Your overrides are recorded. Use the Export buttons above to download.
+            </p>
+          </div>
+          <div className="flex items-center justify-start gap-3 pt-2">
             <button
               type="button"
               onClick={() => setCurrentStep("review")}
@@ -254,38 +238,7 @@ export function HiflWizard({
             >
               ← Back
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setValidateApproved(true);
-                setCurrentStep("export");
-              }}
-              className={cn(
-                "rounded-md px-4 py-2 text-sm font-medium transition-colors",
-                "bg-primary text-primary-foreground hover:bg-primary/90",
-              )}
-            >
-              Approve & Export
-            </button>
           </div>
-        </div>
-      )}
-
-      {/* ── Step 3: Export ── */}
-      {currentStep === "export" && (
-        <div className="rounded-md border border-emerald-300 bg-emerald-50 p-6 space-y-2 text-emerald-900">
-          <p className="text-lg font-semibold">✅ Review complete</p>
-          <p>
-            <span className="font-medium">Final recommendation:</span> {recommendationLabel}
-            {recommendationShifted && (
-              <span className="ml-2 text-sm italic">
-                (shifted from {aiRecommendationLabel})
-              </span>
-            )}
-          </p>
-          <p className="text-sm text-emerald-800">
-            Your overrides are recorded. Use the Export buttons above to download.
-          </p>
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { RUBRIC_QUESTIONS, type Rating } from "../rubric";
+import { RUBRIC_QUESTIONS } from "../rubric";
 
 const PERSONA = `You are a Senior Alternative Contracting Expert at Caltrans Headquarters, Office of Innovative Design and Delivery (OIDD). You have 20+ years of experience evaluating project delivery method nominations across California. Your role is to objectively evaluate a district's nomination fact sheet against the 25-question delivery selection rubric.
 
@@ -110,25 +110,11 @@ function buildRubricText(): string {
   return lines.join("\n");
 }
 
-export function buildSystemPrompt(
-  kbText: string,
-  existingRatings?: Record<string, Rating>,
-): string {
+export function buildSystemPrompt(kbText: string): string {
   const kbSection = `DELIVERY METHOD COMPARISON KNOWLEDGE BASE:
 Use the following reference to understand how each delivery method performs across different project factors (Project Requirements, Delivery Schedule, Complexity & Innovation, Level of Design, Cost, Risk Characteristics, Site Conditions, Utilities, Environmental, ROW, Third-Party Involvement):
 
 ${kbText}`;
-
-  let existingRatingsBlock = "";
-  if (existingRatings && Object.keys(existingRatings).length > 0) {
-    const ratingsStr = Object.entries(existingRatings)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}=${v}`)
-      .join(", ");
-    existingRatingsBlock = `DISTRICT PRE-FILLED RATINGS:
-The district has pre-filled these ratings: ${ratingsStr}
-Evaluate independently based on the evidence. After your independent evaluation, if your rating differs from the district's, note the disagreement inside missing_info_reasoning.`;
-  }
 
   const parts = [
     PERSONA,
@@ -138,9 +124,8 @@ Evaluate independently based on the evidence. After your independent evaluation,
     BASELINE_NORMS,
     FEW_SHOT,
     EXCLUSION,
-    existingRatingsBlock,
     OUTPUT_SCHEMA,
-  ].filter(Boolean);
+  ];
 
   return parts.join("\n\n");
 }

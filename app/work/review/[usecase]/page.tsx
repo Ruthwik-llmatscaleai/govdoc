@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   ArrowLeft,
-  Building2,
+  BadgeCheck,
   CheckCircle2,
   Download,
-  FileCheck2,
+  HardHat,
   Loader2,
   MapPin,
   RotateCcw,
@@ -42,21 +42,19 @@ import { RowResultTabs } from "@/components/work/row/result-tabs";
 import { composeCmgcResult } from "@/lib/usecases/cmgc-pde/compose-result";
 import type { Level1Data, Level2Data, Level3Data } from "@/lib/usecases/cucp-reevals/types";
 import type { RowRunResult } from "@/lib/usecases/row-appraisal/types";
-import { USE_CASE_TONE } from "@/components/work/use-case-tone";
-import type { UseCaseId } from "@/lib/usecases/types";
 
 type RouteParams = { usecase: string };
 
 const USECASE_ICON: Record<string, LucideIcon> = {
-  "cmgc-pde": Building2,
-  "cucp-reevals": FileCheck2,
+  "cmgc-pde": HardHat,
+  "cucp-reevals": BadgeCheck,
   "row-appraisal": MapPin,
 };
 
 const USECASE_EYEBROW: Record<string, string> = {
-  "cmgc-pde": "Procurement & Contract · CMGC",
-  "cucp-reevals": "Certification & Eligibility · CUCP",
-  "row-appraisal": "Real Property & Appraisal · ROW",
+  "cmgc-pde": "Procurement & Contract",
+  "cucp-reevals": "Certification & Eligibility",
+  "row-appraisal": "Real Property & Appraisal",
 };
 
 const HOW_IT_WORKS: Record<string, string[]> = {
@@ -89,13 +87,13 @@ export default function UseCasePage({ params }: { params: Promise<RouteParams> }
       <div className="space-y-4">
         <WorkBreadcrumbs
           crumbs={[
-            { label: "Landing", href: "/landing" },
+            { label: "Workspace", href: "/workspace" },
             { label: "Review Documents", href: "/work/review" },
             { label: "Unknown" },
           ]}
         />
-        <div className="rounded-2xl border border-border bg-card p-8 text-center">
-          <p className="text-sm text-muted-foreground">Unknown use case.</p>
+        <div className="border border-[var(--color-line)] bg-[var(--color-paper)] p-8 text-center">
+          <p className="text-[13px] text-[var(--color-ink-mute)]">Unknown use case.</p>
           <button
             type="button"
             onClick={() => router.push("/work/review")}
@@ -112,12 +110,11 @@ export default function UseCasePage({ params }: { params: Promise<RouteParams> }
   const eyebrow = USECASE_EYEBROW[usecase];
   const steps = HOW_IT_WORKS[usecase] ?? [];
 
-  const tone = USE_CASE_TONE[usecase as UseCaseId];
   const headerBlock = (
     <>
       <WorkBreadcrumbs
         crumbs={[
-          { label: "Landing", href: "/landing" },
+          { label: "Workspace", href: "/workspace" },
           { label: "Review Documents", href: "/work/review" },
           { label: uc.label },
         ]}
@@ -127,7 +124,6 @@ export default function UseCasePage({ params }: { params: Promise<RouteParams> }
         eyebrow={eyebrow}
         title={uc.label}
         blurb={uc.blurb}
-        tone={tone}
       />
     </>
   );
@@ -159,8 +155,8 @@ export default function UseCasePage({ params }: { params: Promise<RouteParams> }
   return (
     <div className="space-y-6">
       {headerBlock}
-      <div className="rounded-2xl border border-border bg-card p-8 text-sm text-muted-foreground">
-        Use case <code className="rounded bg-muted px-1 py-0.5">{usecase}</code> not yet implemented.
+      <div className="border border-[var(--color-line)] bg-[var(--color-paper)] p-8 text-[13px] text-[var(--color-ink-mute)]">
+        Use case <code className="bg-[var(--color-cream-soft)] px-1 py-0.5 font-mono text-[12px]">{usecase}</code> not yet implemented.
       </div>
     </div>
   );
@@ -221,14 +217,14 @@ function ViewPerspectiveToggle({
     { id: "hifl",     label: "HIFL",          sub: "Human-in-the-Feedback Loop overrides" },
   ];
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+    <div className="flex items-center gap-3 border border-[var(--color-line)] bg-[var(--color-paper)] p-3">
+      <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
         View perspective
       </span>
       <div
         role="radiogroup"
         aria-label="View perspective"
-        className="inline-flex rounded-full border border-border bg-muted/30 p-1"
+        className="inline-flex border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-0.5"
         onKeyDown={(e) => {
           const dir =
             e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 :
@@ -251,10 +247,10 @@ function ViewPerspectiveToggle({
               aria-checked={active}
               tabIndex={active ? 0 : -1}
               onClick={() => onChange(o.id)}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+              className={`px-3.5 py-1.5 font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-govdoc-primary)]/40 ${
                 active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-[var(--color-govdoc-primary)] text-white"
+                  : "text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
               }`}
             >
               {o.label}
@@ -320,11 +316,7 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
     }
     const wizardOverrides = Array.from(overrideMap.values());
 
-    const recommendationShifted = result.validation?.deviation_impact?.recommendation_changed ?? false;
-    const aiRecommendationLabel = result.recommendation.recommended_method ?? "—";
-    const recommendationLabel = recommendationShifted
-      ? (result.validation?.deviation_impact?.user_method ?? aiRecommendationLabel)
-      : aiRecommendationLabel;
+    const recommendationLabel = result.recommendation.recommended_method ?? "—";
 
     return (
       <div className="space-y-6">
@@ -343,10 +335,7 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
         ) : (
           <HiflWizard
             questions={result.evaluation.ratings.map(toOverrideCardQuestion)}
-            validation={result.validation}
             recommendationLabel={recommendationLabel}
-            aiRecommendationLabel={aiRecommendationLabel}
-            recommendationShifted={recommendationShifted}
             overrides={wizardOverrides}
             onSaveOverride={(entry) =>
               pushOverride({
@@ -504,12 +493,12 @@ function RunningPanel({
           return (
             <li
               key={stage.id}
-              className={`flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm ${
+              className={`flex items-center justify-between border px-3 py-2.5 text-sm ${
                 error
                   ? "border-destructive/30 bg-destructive/5"
                   : done
                     ? "border-emerald-500/30 bg-emerald-500/5"
-                    : "border-border bg-muted/30"
+                    : "border-[var(--color-line)] bg-[var(--color-cream-soft)]"
               }`}
             >
               <div className="flex items-center gap-2.5">
@@ -552,7 +541,7 @@ function ErrorPanel({
     "Unknown error";
   return (
     <WorkCard>
-      <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+      <div className="flex items-start gap-3 border border-destructive/30 bg-destructive/5 p-4">
         <AlertTriangle className="size-5 shrink-0 text-destructive" />
         <div className="flex-1 space-y-1">
           <h3 className="text-sm font-semibold text-destructive">
@@ -584,7 +573,7 @@ function DoneActionsBar({
   reset: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-3.5">
+    <div className="flex flex-wrap items-center justify-between gap-3 border border-emerald-500/30 bg-emerald-500/5 px-5 py-3.5">
       <div className="flex items-center gap-2.5">
         <CheckCircle2 className="size-5 text-emerald-600" />
         <div className="space-y-0.5">

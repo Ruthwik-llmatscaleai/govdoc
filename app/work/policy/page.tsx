@@ -7,7 +7,7 @@ export default function Page() {
       title="Policy & Standards"
       blurb="Reference current standards and procedures."
       icon={BookOpenCheck}
-      backHref="/landing"
+      backHref="/workspace"
     />
   );
 }

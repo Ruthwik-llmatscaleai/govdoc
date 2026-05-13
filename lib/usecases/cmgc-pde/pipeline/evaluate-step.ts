@@ -7,7 +7,7 @@ import { DELIVERY_METHOD_KB_TEXT } from "../delivery-method-kb";
 export const evaluateStep: PipelineStep<FormData> = {
   id: "evaluate",
   label: "Evaluate against rubric",
-  async *run(formData, ctx) {
+  async *run(_formData, ctx) {
     const prior = (ctx.prior.extract ?? {}) as { narrative?: string };
     const narrative = prior.narrative ?? "";
     if (!narrative) {
@@ -16,13 +16,8 @@ export const evaluateStep: PipelineStep<FormData> = {
     }
     const provider: LlmProvider = "openai";
     const model = "gpt-4o";
-    const districtRaw = formData.get("districtRatings") as string | null;
-    let districtRatings: Record<string, "A"|"B"|"C"> | undefined;
-    if (districtRaw) {
-      try { districtRatings = JSON.parse(districtRaw); } catch { districtRatings = undefined; }
-    }
 
-    const systemPrompt = buildSystemPrompt(DELIVERY_METHOD_KB_TEXT, districtRatings);
+    const systemPrompt = buildSystemPrompt(DELIVERY_METHOD_KB_TEXT);
     const userMessage = buildUserMessage(narrative);
     const messages = [
       { role: "system" as const, content: systemPrompt },

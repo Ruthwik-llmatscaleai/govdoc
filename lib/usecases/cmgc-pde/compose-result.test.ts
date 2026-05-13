@@ -21,7 +21,6 @@ describe("composeCmgcResult", () => {
         recommendation: { recommended_method: "CM/GC" },
         multi_method: { method_scores: [], borderline_comparison: null, override_status: [] },
       },
-      validate: null,
       extract: { projectName: "Hwy 99" },
     });
     expect(out.kind).toBe("ok");
@@ -49,7 +48,6 @@ describe("composeCmgcResult", () => {
         recommendation: { recommended_method: "DBB" },
         multi_method: { method_scores: [], borderline_comparison: null, override_status: [] },
       },
-      validate: null,
     });
     expect(out.kind).toBe("ok");
     if (out.kind !== "ok") return;
@@ -60,7 +58,6 @@ describe("composeCmgcResult", () => {
     const out = composeCmgcResult({
       evaluate: { ratings: [{ selected_rating: "B" }] },
       score: { recommendation: "x", multi_method: [] },
-      validate: null,
     });
     expect(out.kind).toBe("debug");
     if (out.kind !== "debug") return;

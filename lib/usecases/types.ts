@@ -15,7 +15,7 @@ export type HumanInput = {
 };
 
 export type StepEvent =
-  | { type: "run-started"; runId: string }
+  | { type: "run-started"; runId: string; projectId?: string }
   | { type: "progress"; stage: string; pct: number; message?: string }
   | { type: "partial"; stage: string; data: unknown }
   | { type: "stage-done"; stage: string; data: unknown }
