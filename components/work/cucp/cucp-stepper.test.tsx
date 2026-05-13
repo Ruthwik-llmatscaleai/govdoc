@@ -47,6 +47,7 @@ const baseProps = {
   classifications,
   criteria,
   isReRunning: false,
+  runningLevel: null,
   onComplete: () => {},
 };
 
@@ -232,9 +233,18 @@ describe("CucpStepper", () => {
     const { rerender } = render(<CucpStepper {...baseProps} />);
     await screen.findByText(/L1: 1 persistent \+ 0 staged/i);
     await advanceL1();
-    rerender(<CucpStepper {...baseProps} isReRunning={true} />);
+    rerender(<CucpStepper {...baseProps} isReRunning={true} runningLevel={2} />);
     const approveBtn = screen.getByRole("button", { name: /Approve & Continue/i });
     expect(approveBtn).toBeDisabled();
+  });
+
+  it("shows a re-evaluating banner naming the running level", async () => {
+    const { rerender } = render(<CucpStepper {...baseProps} />);
+    await screen.findByText(/L1: 1 persistent \+ 0 staged/i);
+    await advanceL1();
+    rerender(<CucpStepper {...baseProps} isReRunning={true} runningLevel={2} />);
+    const banner = screen.getByRole("status");
+    expect(banner.textContent || "").toMatch(/Re-evaluating Level 2/i);
   });
 
   it("Back from Step 3 returns to Step 2", async () => {

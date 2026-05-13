@@ -34,6 +34,35 @@ const SECONDARY_BTN_CLASS = cn(
   "transition-colors hover:bg-muted",
 );
 
+const RUNNING_LEVEL_LABEL: Record<1 | 2 | 3, string> = {
+  1: "Level 1 — Facts (W5)",
+  2: "Level 2 — Legal Categories",
+  3: "Level 3 — Criteria",
+};
+
+function ReEvaluatingBanner({ level }: { level: 1 | 2 | 3 }): React.JSX.Element {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex items-start gap-3 rounded-md border border-primary/30 bg-primary/5 px-4 py-3"
+    >
+      <span
+        aria-hidden="true"
+        className="mt-0.5 inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"
+      />
+      <div className="min-w-0">
+        <div className="text-sm font-medium text-foreground">
+          Re-evaluating {RUNNING_LEVEL_LABEL[level]}…
+        </div>
+        <div className="text-xs text-muted-foreground">
+          GovDoc is re-running this pass with your latest input. The table will update when it finishes.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function CucpStepper({
   runId,
   projectId,
@@ -41,6 +70,7 @@ export function CucpStepper({
   classifications,
   criteria,
   isReRunning,
+  runningLevel,
   onComplete,
 }: {
   runId: string;
@@ -49,6 +79,7 @@ export function CucpStepper({
   classifications: readonly L2Row[];
   criteria: readonly Criterion[];
   isReRunning: boolean;
+  runningLevel: 1 | 2 | 3 | null;
   onComplete: () => void;
 }): React.JSX.Element {
   const [step, setStep] = useState<StepId>("l1");
@@ -210,6 +241,7 @@ export function CucpStepper({
 
       {step === "l1" && (
         <div className="space-y-3">
+          {isReRunning && runningLevel !== null && <ReEvaluatingBanner level={runningLevel} />}
           <L1FactsTable facts={facts} />
           <L1OverrideForm
             facts={facts}
@@ -235,6 +267,7 @@ export function CucpStepper({
 
       {step === "l2" && (
         <div className="space-y-3">
+          {isReRunning && runningLevel !== null && <ReEvaluatingBanner level={runningLevel} />}
           <L2ClassificationsTable
             rows={classifications}
             onSaveOverride={postOverrideL2}
@@ -262,6 +295,7 @@ export function CucpStepper({
 
       {step === "l3" && (
         <div className="space-y-3">
+          {isReRunning && runningLevel !== null && <ReEvaluatingBanner level={runningLevel} />}
           <RequestInfoBanner show={requestInfoSet} />
           <L3CriteriaTable criteria={criteria} />
           <L3OverrideForm

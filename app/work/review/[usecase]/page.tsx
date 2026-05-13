@@ -391,9 +391,13 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
     // at run start with no matching `stage-done`, so a generic
     // `some(s.status === "running")` check would stay true forever and permanently
     // disable Approve & Continue.
-    const isReRunning = (["level1", "level2", "level3"] as const).some(
+    const runningStage = (["level1", "level2", "level3"] as const).find(
       (id) => current.stages[id]?.status === "running",
     );
+    const isReRunning = runningStage !== undefined;
+    const runningLevel: 1 | 2 | 3 | null = runningStage
+      ? (Number(runningStage.slice("level".length)) as 1 | 2 | 3)
+      : null;
 
     return (
       <div className="space-y-6">
@@ -408,6 +412,7 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
             classifications={classifications}
             criteria={criteria}
             isReRunning={isReRunning}
+            runningLevel={runningLevel}
             onComplete={() => setOverridesSubmitted(true)}
           />
         </WorkCard>
