@@ -43,6 +43,7 @@ AGENTS.md
 .cursorrules
 .aider*
 .continue/
+.claude/
 
 # Internal planning docs (superpowers workflow plan artifacts, not for the repo)
 docs/superpowers/
