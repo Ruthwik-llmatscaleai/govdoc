@@ -12,7 +12,7 @@ import {
 const ROLE_OPTIONS = [
   {
     value: "district",
-    label: "Preview",
+    label: "Review project",
     description: "Read-only review of the AI-generated recommendation.",
   },
   {

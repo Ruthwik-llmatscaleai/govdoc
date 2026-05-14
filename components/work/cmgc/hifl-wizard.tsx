@@ -110,9 +110,9 @@ export function HiflWizard({
 
       {currentStep === "review" && previewTable && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-foreground">Review project</h3>
+          <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
           <p className="text-xs text-muted-foreground">
-            What the AI scored for this project. Updates immediately as you save corrections — edited rows show &ldquo;(edited)&rdquo; next to the AI Rating.
+            Updates immediately as you save corrections. Edited rows show &ldquo;(edited)&rdquo; next to the AI Rating.
           </p>
           {previewTable}
         </div>

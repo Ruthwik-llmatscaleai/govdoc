@@ -16,7 +16,7 @@ describe("InputsForm", () => {
 
   it("renders the Reviewer role radios with friendly labels", () => {
     render(<InputsForm />);
-    expect(screen.getByLabelText(/^Preview$/)).toBeDefined();
+    expect(screen.getByLabelText(/^Review project$/)).toBeDefined();
     expect(screen.getByLabelText(/Human-in-the-Feedback Loop/i)).toBeDefined();
   });
 
@@ -29,8 +29,8 @@ describe("InputsForm", () => {
     Object.defineProperty(factInput, "files", { value: [file], writable: false });
     fireEvent.change(factInput);
 
-    // Select Preview role so the form is submittable
-    fireEvent.click(screen.getByLabelText(/^Preview$/));
+    // Select Review project role so the form is submittable
+    fireEvent.click(screen.getByLabelText(/^Review project$/));
 
     const form = factInput.closest("form")!;
     fireEvent.submit(form);

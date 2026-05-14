@@ -89,7 +89,7 @@ describe("HiflWizard", () => {
       />
     );
     expect(screen.getByTestId("live-preview")).toBeTruthy();
-    expect(screen.getByText(/Review project/i)).toBeTruthy();
+    expect(screen.getByText(/Live preview/i)).toBeTruthy();
   });
 
   it("Back from Export now reads 'Back to Review'", () => {
@@ -134,7 +134,7 @@ describe("HiflWizard", () => {
     expect(optionTexts.some((t) => t.includes("A1"))).toBe(false);
   });
 
-  it("renders Review project section ABOVE the StepBar, Show filter, Select-question dropdown, and override card", () => {
+  it("renders Live preview section ABOVE the StepBar, Show filter, Select-question dropdown, and override card", () => {
     render(
       <HiflWizard
         questions={[makeQuestion("A1")]}
@@ -146,12 +146,12 @@ describe("HiflWizard", () => {
       />,
     );
     const preview = screen.getByTestId("preview");
-    const reviewProjectHeader = screen.getByRole("heading", { name: /Review project/i });
+    const livePreviewHeader = screen.getByRole("heading", { name: /Live preview/i });
     const stepBarReview = screen.getByRole("button", { name: /Review & Override/i });
     const filter = screen.getByText(/^Show:$/i);
     const dropdown = screen.getByLabelText(/Select question/i);
     const card = screen.getByLabelText(/Your Rating Override/i);
-    expect(reviewProjectHeader).toBeInTheDocument();
+    expect(livePreviewHeader).toBeInTheDocument();
     // DOCUMENT_POSITION_FOLLOWING (4) means the second node follows the first.
     expect(preview.compareDocumentPosition(stepBarReview) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(preview.compareDocumentPosition(filter) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
