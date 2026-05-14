@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { Tabs } from "@base-ui/react/tabs";
 import { CmgcRubricEdit } from "./cmgc-rubric-edit";
 import { CucpRubricEdit } from "./cucp-rubric-edit";
@@ -8,6 +9,8 @@ import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
 import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-data";
 import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-data";
 import type { RubricsManifestEntry } from "@/lib/usecases/rubrics-store";
+
+type TabValue = "cmgc-pde" | "row-appraisal" | "cucp-reevals";
 
 type Props = {
   cmgc: CmgcRubricData;
@@ -64,8 +67,16 @@ export function EditRubricTabs({
   const cucpCount = cucp.l2.length + cucp.l3.length;
   const rowCount = Object.keys(row).length;
 
+  // Controlled value + per-panel conditional render so the inactive editor
+  // unmounts on tab switch. That throws away the leaving editor's local
+  // draft state (questions/weights/etc.) — same effect as a page leave.
+  const [active, setActive] = useState<TabValue>("cmgc-pde");
+
   return (
-    <Tabs.Root defaultValue="cmgc-pde">
+    <Tabs.Root
+      value={active}
+      onValueChange={(v) => setActive(v as TabValue)}
+    >
       <Tabs.List className="mb-6 flex items-stretch gap-0 border-b border-[var(--color-line)]">
         <TabButton value="cmgc-pde" label="Project Review" count={cmgcCount} />
         <TabButton value="row-appraisal" label="Appraisal Review" count={rowCount} />
@@ -73,28 +84,34 @@ export function EditRubricTabs({
       </Tabs.List>
 
       <Tabs.Panel value="cmgc-pde" className="space-y-6">
-        <EditTabContent
-          usecaseId="cmgc-pde"
-          initialRubrics={cmgcRubrics}
-          initialData={cmgc}
-          EditComponent={CmgcRubricEdit}
-        />
+        {active === "cmgc-pde" && (
+          <EditTabContent
+            usecaseId="cmgc-pde"
+            initialRubrics={cmgcRubrics}
+            initialData={cmgc}
+            EditComponent={CmgcRubricEdit}
+          />
+        )}
       </Tabs.Panel>
       <Tabs.Panel value="row-appraisal" className="space-y-6">
-        <EditTabContent
-          usecaseId="row-appraisal"
-          initialRubrics={rowRubrics}
-          initialData={row}
-          EditComponent={RowRubricEdit}
-        />
+        {active === "row-appraisal" && (
+          <EditTabContent
+            usecaseId="row-appraisal"
+            initialRubrics={rowRubrics}
+            initialData={row}
+            EditComponent={RowRubricEdit}
+          />
+        )}
       </Tabs.Panel>
       <Tabs.Panel value="cucp-reevals" className="space-y-6">
-        <EditTabContent
-          usecaseId="cucp-reevals"
-          initialRubrics={cucpRubrics}
-          initialData={cucp}
-          EditComponent={CucpRubricEdit}
-        />
+        {active === "cucp-reevals" && (
+          <EditTabContent
+            usecaseId="cucp-reevals"
+            initialRubrics={cucpRubrics}
+            initialData={cucp}
+            EditComponent={CucpRubricEdit}
+          />
+        )}
       </Tabs.Panel>
     </Tabs.Root>
   );
