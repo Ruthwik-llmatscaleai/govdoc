@@ -510,13 +510,13 @@ function RunningPanel({
                 error
                   ? "border-destructive/30 bg-destructive/5"
                   : done
-                    ? "border-[var(--color-line)] bg-[var(--color-accent-soft)]"
+                    ? "border-emerald-500/30 bg-emerald-500/5"
                     : "border-[var(--color-line)] bg-[var(--color-cream-soft)]"
               }`}
             >
               <div className="flex items-center gap-2.5">
                 {done ? (
-                  <CheckCircle2 className="size-4 text-[var(--color-govdoc-primary)]" />
+                  <CheckCircle2 className="size-4 text-emerald-600" />
                 ) : error ? (
                   <AlertTriangle className="size-4 text-destructive" />
                 ) : (
