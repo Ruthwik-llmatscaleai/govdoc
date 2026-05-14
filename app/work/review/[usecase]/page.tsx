@@ -27,6 +27,8 @@ import {
 } from "@/components/work/form-fields";
 import { InputsForm as CmgcInputsForm } from "@/components/work/cmgc/inputs-form";
 import { ScoreTable } from "@/components/work/cmgc/score-table";
+import { CmgcRubricView } from "@/components/work/rubric/cmgc-rubric-view";
+import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
 import { RecommendationCard } from "@/components/work/cmgc/recommendation-card";
 import { MethodRanking } from "@/components/work/cmgc/method-ranking";
 import { HiflWizard, type HiflOverrideEntry } from "@/components/work/cmgc/hifl-wizard";
@@ -312,7 +314,21 @@ function CmgcHiflSection({
   pushOverride: ReturnType<typeof useOverridesStore.getState>["push"];
 }) {
   const [approved, setApproved] = useState(false);
+  const [rubric, setRubric] = useState<CmgcRubricData | null>(null);
   const r = result as NonNullable<Extract<ReturnType<typeof composeCmgcResult>, { kind: "ok" }>["value"]>;
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/usecases/cmgc-pde/rubric")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: CmgcRubricData | null) => {
+        if (alive && data) setRubric(data);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <>
@@ -330,6 +346,7 @@ function CmgcHiflSection({
           })),
         )}
         previewTable={<ScoreTable ratings={r.evaluation.ratings} />}
+        rubricPreview={rubric ? <CmgcRubricView data={rubric} /> : null}
         onApprove={() => setApproved(true)}
         onSaveOverride={(entry) =>
           pushOverride({

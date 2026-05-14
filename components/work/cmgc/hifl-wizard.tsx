@@ -31,6 +31,7 @@ export function HiflWizard({
   overrides,
   markdownReport,
   previewTable,
+  rubricPreview,
   onApprove,
   onSaveOverride,
   onRemoveOverride,
@@ -40,6 +41,7 @@ export function HiflWizard({
   overrides: readonly HiflOverrideEntry[];
   markdownReport?: string;
   previewTable?: React.ReactNode;
+  rubricPreview?: React.ReactNode;
   onApprove?: () => void;
   onSaveOverride: (entry: HiflOverrideEntry) => void;
   onRemoveOverride: (questionId: string) => void;
@@ -83,11 +85,34 @@ export function HiflWizard({
 
   return (
     <div className="space-y-4">
+      {currentStep === "review" && rubricPreview && (
+        <details className="group rounded-md border border-[var(--color-line)] bg-[var(--color-paper)]">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 text-sm font-medium text-[var(--color-ink)] hover:bg-[var(--color-cream-soft)]">
+            <span>Preview rubric</span>
+            <span
+              aria-hidden="true"
+              className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)] group-open:hidden"
+            >
+              Show
+            </span>
+            <span
+              aria-hidden="true"
+              className="hidden font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)] group-open:inline"
+            >
+              Hide
+            </span>
+          </summary>
+          <div className="border-t border-[var(--color-line)] px-4 py-4">
+            {rubricPreview}
+          </div>
+        </details>
+      )}
+
       {currentStep === "review" && previewTable && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
+          <h3 className="text-sm font-semibold text-foreground">Review project</h3>
           <p className="text-xs text-muted-foreground">
-            Updates immediately as you save corrections. Edited rows show &ldquo;(edited)&rdquo; next to the AI Rating.
+            What the AI scored for this project. Updates immediately as you save corrections — edited rows show &ldquo;(edited)&rdquo; next to the AI Rating.
           </p>
           {previewTable}
         </div>
