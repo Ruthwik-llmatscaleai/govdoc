@@ -486,13 +486,13 @@ function RunningPanel({
                 error
                   ? "border-destructive/30 bg-destructive/5"
                   : done
-                    ? "border-emerald-500/30 bg-emerald-500/5"
+                    ? "border-[var(--color-line)] bg-[var(--color-accent-soft)]"
                     : "border-[var(--color-line)] bg-[var(--color-cream-soft)]"
               }`}
             >
               <div className="flex items-center gap-2.5">
                 {done ? (
-                  <CheckCircle2 className="size-4 text-emerald-600" />
+                  <CheckCircle2 className="size-4 text-[var(--color-govdoc-primary)]" />
                 ) : error ? (
                   <AlertTriangle className="size-4 text-destructive" />
                 ) : (
@@ -556,9 +556,9 @@ function DoneSummaryBar({
   reset: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border border-emerald-500/30 bg-emerald-500/5 px-5 py-3.5">
+    <div className="flex flex-wrap items-center justify-between gap-3 border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-5 py-3.5">
       <div className="flex items-center gap-2.5">
-        <CheckCircle2 className="size-5 text-emerald-600" />
+        <CheckCircle2 className="size-5 text-[var(--color-govdoc-primary)]" />
         <div className="space-y-0.5">
           <div className="text-sm font-semibold text-foreground">
             {ucLabel} complete
