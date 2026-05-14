@@ -123,6 +123,16 @@ export function HiflWizard({
             </label>
           </fieldset>
 
+          {previewTable && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
+              <p className="text-xs text-muted-foreground">
+                Updates immediately as you save corrections. The Effective column reflects your overrides.
+              </p>
+              {previewTable}
+            </div>
+          )}
+
           {filteredQuestions.length > 0 ? (
             <div className="space-y-1">
               <label htmlFor="hifl-question-select" className="block text-sm font-medium">
@@ -150,16 +160,6 @@ export function HiflWizard({
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">No questions match this filter.</p>
-          )}
-
-          {previewTable && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
-              <p className="text-xs text-muted-foreground">
-                Updates immediately as you save corrections. The Effective column reflects your overrides.
-              </p>
-              {previewTable}
-            </div>
           )}
 
           {selectedQuestion && (
