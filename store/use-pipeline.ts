@@ -12,6 +12,8 @@ type StageState = {
   error?: string;
 };
 
+export type ReviewerRole = "district" | "hifl";
+
 type PipelineRun = {
   runId: string;
   useCaseId: string;
@@ -20,6 +22,7 @@ type PipelineRun = {
   stages: Record<string, StageState>;
   pendingInput?: HumanInput;
   result?: unknown;
+  role?: ReviewerRole;
 };
 
 type Store = {
@@ -88,7 +91,15 @@ export const usePipelineStore = create<Store>((set, get) => ({
   start: async (useCaseId, formData) => {
     const projectIdRaw = formData.get("projectId");
     const projectId = typeof projectIdRaw === "string" ? projectIdRaw.trim() : "_default";
-    set({ current: { runId: "", useCaseId, projectId, status: "running", stages: {} } });
+    // Reviewer role is a UI gate (not consumed by the pipeline); strip from
+    // FormData before POST so the server payload stays unchanged.
+    const roleRaw = formData.get("role");
+    const role: ReviewerRole | undefined =
+      roleRaw === "district" || roleRaw === "hifl" ? roleRaw : undefined;
+    formData.delete("role");
+    set({
+      current: { runId: "", useCaseId, projectId, status: "running", stages: {}, ...(role ? { role } : {}) },
+    });
     const res = await fetch(`/api/usecases/${useCaseId}/run`, { method: "POST", body: formData });
     if (!res.ok || !res.body) {
       get().applyEvent({ type: "error", stage: "init", message: await res.text() });

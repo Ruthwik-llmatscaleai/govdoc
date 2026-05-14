@@ -6,7 +6,21 @@ import {
   Field,
   FilePicker,
   PrimaryButton,
+  RadioGroup,
 } from "@/components/work/form-fields";
+
+const ROLE_OPTIONS = [
+  {
+    value: "district",
+    label: "Preview",
+    description: "Read-only review of the AI-generated recommendation.",
+  },
+  {
+    value: "hifl",
+    label: "Human-in-the-Feedback Loop",
+    description: "Step through flagged questions and record corrections before export.",
+  },
+];
 
 export function InputsForm() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -17,6 +31,10 @@ export function InputsForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
+      <Field htmlFor="role-district" label="Reviewer role" required hint="Locked to this run. To use the other role, start a new evaluation.">
+        <RadioGroup name="role" options={ROLE_OPTIONS} required legend="Reviewer role" />
+      </Field>
+
       <Field
         htmlFor="factSheet"
         label="Project nomination fact sheet (DOCX or PDF)"

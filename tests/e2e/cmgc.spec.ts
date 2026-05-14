@@ -18,6 +18,8 @@ test.describe("CMGC happy path", () => {
     await page.click("text=Review Documents");
     await page.click("text=CMGC");
     await page.setInputFiles('input[name="factSheet"]', "tests/fixtures/cmgc/synthetic-narrative.docx");
+    // Reviewer role is required at upload time.
+    await page.click('input[name="role"][value="district"]');
     await page.click('button:has-text("Run evaluation")');
 
     // Wait for the done view (composite score appears in the recommendation card)

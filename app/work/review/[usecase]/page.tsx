@@ -206,66 +206,6 @@ function IdleLayout({
   );
 }
 
-function ViewPerspectiveToggle({
-  value,
-  onChange,
-}: {
-  value: "district" | "hifl";
-  onChange: (v: "district" | "hifl") => void;
-}) {
-  const opts: { id: "district" | "hifl"; label: string; sub: string }[] = [
-    { id: "district", label: "District Team", sub: "Read-only summary" },
-    { id: "hifl",     label: "HIFL",          sub: "Human-in-the-Feedback Loop overrides" },
-  ];
-  return (
-    <div className="flex items-center gap-3 border border-[var(--color-line)] bg-[var(--color-paper)] p-3">
-      <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
-        View perspective
-      </span>
-      <div
-        role="radiogroup"
-        aria-label="View perspective"
-        className="inline-flex border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-0.5"
-        onKeyDown={(e) => {
-          const dir =
-            e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 :
-            e.key === "ArrowLeft"  || e.key === "ArrowUp"   ? -1 :
-            0;
-          if (!dir) return;
-          e.preventDefault();
-          const idx = opts.findIndex((o) => o.id === value);
-          const next = opts[(idx + dir + opts.length) % opts.length];
-          if (next) onChange(next.id);
-        }}
-      >
-        {opts.map((o) => {
-          const active = value === o.id;
-          return (
-            <button
-              key={o.id}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              tabIndex={active ? 0 : -1}
-              onClick={() => onChange(o.id)}
-              className={`px-3.5 py-1.5 font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-govdoc-primary)]/40 ${
-                active
-                  ? "bg-[var(--color-govdoc-primary)] text-white"
-                  : "text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
-              }`}
-            >
-              {o.label}
-            </button>
-          );
-        })}
-      </div>
-      <span className="text-xs text-muted-foreground">
-        {opts.find((o) => o.id === value)?.sub}
-      </span>
-    </div>
-  );
-}
-
 const RUBRIC_BY_ID = new Map(RUBRIC_QUESTIONS.map((q) => [q.id, q]));
 
 function toOverrideCardQuestion(r: { question_id: string; question_text: string; selected_rating: string; confidence: number; source_reasoning: string }): OverrideCardQuestion {
@@ -285,7 +225,6 @@ function toOverrideCardQuestion(r: { question_id: string; question_text: string;
 }
 
 function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
-  const [pdeView, setPdeView] = useState<"district" | "hifl">("district");
   const overrideHistory = useOverridesStore((s) => s.history);
   const pushOverride = useOverridesStore((s) => s.push);
 
@@ -318,6 +257,9 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
     const wizardOverrides = Array.from(overrideMap.values());
 
     const recommendationLabel = result.recommendation.recommended_method ?? "—";
+    // Role is locked at upload. If no role was supplied (legacy run), fall back
+    // to the read-only district view so HIFL controls never leak.
+    const role = current.role ?? "district";
 
     return (
       <div className="space-y-6">
@@ -330,8 +272,7 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
         />
         <RecommendationCard recommendation={result.recommendation} />
         <MethodRanking multiMethod={result.multi_method} />
-        <ViewPerspectiveToggle value={pdeView} onChange={setPdeView} />
-        {pdeView === "district" ? (
+        {role === "district" ? (
           <ScoreTable ratings={result.evaluation.ratings} />
         ) : (
           <HiflWizard
@@ -347,7 +288,7 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
                 reason: o.reason,
               })),
             )}
-            onPreviewDistrict={() => setPdeView("district")}
+            previewTable={<ScoreTable ratings={result.evaluation.ratings} />}
             onSaveOverride={(entry) =>
               pushOverride({
                 category: entry.question_id,

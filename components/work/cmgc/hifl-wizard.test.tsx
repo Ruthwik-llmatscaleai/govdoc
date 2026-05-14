@@ -92,19 +92,15 @@ describe("HiflWizard", () => {
     expect(screen.getByText(/Project Delivery Evaluation/i)).toBeTruthy();
   });
 
-  it("offers a 'Switch to District view' button when onPreviewDistrict is provided", () => {
-    const onPreview = vi.fn();
+  it("renders the live preview table inside the Review step when provided", () => {
     render(
       <HiflWizard
         {...baseProps}
-        onPreviewDistrict={onPreview}
-        overrides={[{ question_id: "A1", oldValue: "B", newValue: "A", reason: "needs deeper study yes" }]}
+        previewTable={<div data-testid="live-preview">live-preview-content</div>}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /Approve & Export/i }));
-    const switchBtn = screen.getByRole("button", { name: /Switch to District view/i });
-    fireEvent.click(switchBtn);
-    expect(onPreview).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("live-preview")).toBeTruthy();
+    expect(screen.getByText(/Live preview/i)).toBeTruthy();
   });
 
   it("Back from Export now reads 'Back to Review'", () => {

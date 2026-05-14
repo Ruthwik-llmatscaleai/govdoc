@@ -213,3 +213,44 @@ export const PROVIDER_OPTIONS = [
   { value: "anthropic", label: "Anthropic" },
   { value: "groq", label: "Groq" },
 ];
+
+export function RadioGroup({
+  name,
+  options,
+  defaultValue,
+  required,
+  legend,
+}: {
+  name: string;
+  options: { value: string; label: string; description?: string }[];
+  defaultValue?: string;
+  required?: boolean;
+  legend?: string;
+}) {
+  return (
+    <fieldset role="radiogroup" aria-label={legend ?? name} className="space-y-2">
+      {options.map((o) => (
+        <label
+          key={o.value}
+          className="flex cursor-pointer items-start gap-3 rounded-lg border border-input bg-muted/30 p-3 text-sm transition-colors hover:border-primary/40 hover:bg-muted/50 has-checked:border-primary has-checked:bg-card"
+        >
+          <input
+            type="radio"
+            name={name}
+            value={o.value}
+            defaultChecked={defaultValue === o.value}
+            required={required}
+            aria-label={o.label}
+            className="mt-0.5 size-4 accent-primary"
+          />
+          <span className="flex-1">
+            <span className="block font-medium text-foreground">{o.label}</span>
+            {o.description && (
+              <span className="mt-0.5 block text-xs text-muted-foreground">{o.description}</span>
+            )}
+          </span>
+        </label>
+      ))}
+    </fieldset>
+  );
+}

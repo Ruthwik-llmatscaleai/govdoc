@@ -30,17 +30,17 @@ export function HiflWizard({
   recommendationLabel,
   overrides,
   markdownReport,
+  previewTable,
   onSaveOverride,
   onRemoveOverride,
-  onPreviewDistrict,
 }: {
   questions: readonly OverrideCardQuestion[];
   recommendationLabel: string;
   overrides: readonly HiflOverrideEntry[];
   markdownReport?: string;
+  previewTable?: React.ReactNode;
   onSaveOverride: (entry: HiflOverrideEntry) => void;
   onRemoveOverride: (questionId: string) => void;
-  onPreviewDistrict?: () => void;
 }): React.JSX.Element {
   const [currentStep, setCurrentStep] = useState<Step>("review");
   const [acknowledgedNoChanges, setAcknowledgedNoChanges] = useState(false);
@@ -159,6 +159,16 @@ export function HiflWizard({
             />
           )}
 
+          {previewTable && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
+              <p className="text-xs text-muted-foreground">
+                Updates immediately as you save corrections. The Effective column reflects your overrides.
+              </p>
+              {previewTable}
+            </div>
+          )}
+
           <div className="rounded-md border border-border bg-muted/20 p-4 space-y-2">
             <h3 className="text-sm font-semibold">Pending Corrections</h3>
             {overrides.length === 0 ? (
@@ -238,7 +248,7 @@ export function HiflWizard({
             <ReportView markdown={markdownReport} />
           )}
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+          <div className="flex flex-wrap items-center justify-start gap-3 pt-2">
             <button
               type="button"
               onClick={() => setCurrentStep("review")}
@@ -249,18 +259,6 @@ export function HiflWizard({
             >
               ← Back to Review
             </button>
-            {onPreviewDistrict && (
-              <button
-                type="button"
-                onClick={onPreviewDistrict}
-                className={cn(
-                  "rounded-md px-4 py-2 text-sm font-medium transition-colors",
-                  "border border-border hover:bg-muted",
-                )}
-              >
-                Switch to District view →
-              </button>
-            )}
           </div>
         </div>
       )}
