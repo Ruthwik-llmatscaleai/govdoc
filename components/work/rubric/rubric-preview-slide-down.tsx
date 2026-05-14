@@ -57,10 +57,10 @@ export function RubricPreviewSlideDown({ usecaseId }: { usecaseId: UseCaseId }) 
 function renderView(usecaseId: UseCaseId, data: Data): React.JSX.Element {
   switch (usecaseId) {
     case "cmgc-pde":
-      return <CmgcRubricView data={data as CmgcRubricData} />;
+      return <CmgcRubricView data={data as CmgcRubricData} compact />;
     case "cucp-reevals":
-      return <CucpRubricView data={data as CucpRubricData} />;
+      return <CucpRubricView data={data as CucpRubricData} compact />;
     case "row-appraisal":
-      return <RowRubricView data={data as RowRubricData} />;
+      return <RowRubricView data={data as RowRubricData} compact />;
   }
 }

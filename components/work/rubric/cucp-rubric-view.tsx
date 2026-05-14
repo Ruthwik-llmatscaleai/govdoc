@@ -8,7 +8,7 @@ import { RubricSection } from "./shared/rubric-section";
 const DESCRIPTION =
   "Narrative Review — three Mandatory Eligibility Requirements followed by four Scored Evaluation Criteria. Each criterion is judged YES or NO.";
 
-export function CucpRubricView({ data }: { data?: CucpRubricData }) {
+export function CucpRubricView({ data, compact = false }: { data?: CucpRubricData; compact?: boolean }) {
   const { l3 } = data ?? defaultCucpRubric();
   const mandatory = l3.filter((c) => c.s_no <= 3);
   const evaluation = l3.filter((c) => c.s_no >= 4);
@@ -20,6 +20,7 @@ export function CucpRubricView({ data }: { data?: CucpRubricData }) {
         count={mandatory.length}
         countLabel="criterion"
         defaultOpen
+        compact={compact}
       >
         <ol className="flex list-none flex-col">
           {mandatory.map((c) => (
@@ -32,6 +33,7 @@ export function CucpRubricView({ data }: { data?: CucpRubricData }) {
         title="Scored Evaluation Criteria"
         count={evaluation.length}
         countLabel="criterion"
+        compact={compact}
       >
         <ol className="flex list-none flex-col">
           {evaluation.map((c, i) => (

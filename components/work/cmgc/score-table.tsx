@@ -18,9 +18,9 @@ export function ScoreTable({ ratings }: Props) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
+    <div className="overflow-x-auto rounded-md border border-[var(--color-line)]">
       <table className="min-w-full text-sm">
-        <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
+        <thead className="bg-[var(--color-cream-soft)] text-[11px] uppercase tracking-wider text-[var(--color-ink-faint)]">
           <tr>
             <th className="text-left p-2">ID</th>
             <th className="text-left p-2">Question</th>

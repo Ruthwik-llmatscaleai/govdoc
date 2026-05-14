@@ -286,7 +286,10 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
         <MethodRanking multiMethod={result.multi_method} />
         {role === "district" ? (
           <>
-            <ScoreTable ratings={result.evaluation.ratings} />
+            <div className="space-y-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-5">
+              <h3 className="text-sm font-semibold text-foreground">Project rubric scores</h3>
+              <ScoreTable ratings={result.evaluation.ratings} />
+            </div>
             <DownloadFooterBar useCaseId="cmgc-pde" exporters={exporters} result={result} />
           </>
         ) : (
@@ -353,7 +356,7 @@ function CmgcHiflSection({
           })),
         )}
         previewTable={<ScoreTable ratings={r.evaluation.ratings} />}
-        rubricPreview={rubric ? <CmgcRubricView data={rubric} /> : null}
+        rubricPreview={rubric ? <CmgcRubricView data={rubric} compact /> : null}
         onApprove={() => setApproved(true)}
         onSaveOverride={(entry) =>
           pushOverride({
