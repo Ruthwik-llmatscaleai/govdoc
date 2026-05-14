@@ -27,8 +27,12 @@ describe("PreviewRubricTabs", () => {
   it("defaults to Project Review and switches to Narrative Review on click", async () => {
     const user = userEvent.setup();
     renderTabs();
-    expect(screen.getByText(/Section weights/i)).toBeInTheDocument();
+    // Project Review description renders on first paint.
+    expect(screen.getByText(/Project Review rubric/i)).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: /Narrative Review/i }));
-    expect(screen.getByRole("button", { name: /Level 2/i })).toBeInTheDocument();
+    // After switching, the Narrative Review's two top-level sections are visible.
+    expect(
+      screen.getByRole("button", { name: /Mandatory Eligibility Requirements/i }),
+    ).toBeInTheDocument();
   });
 });

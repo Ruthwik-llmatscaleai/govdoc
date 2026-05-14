@@ -55,7 +55,7 @@ export function RubricEditorCard({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 py-[5vh]"
       onClick={onCancel}
     >
       <div
@@ -63,9 +63,9 @@ export function RubricEditorCard({
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg space-y-4 rounded-2xl border border-border bg-card p-5 shadow-xl"
+        className="my-auto flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl border border-border bg-card shadow-xl"
       >
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
           <h3 className="text-sm font-semibold tracking-tight text-foreground">
             <span className="mr-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               {mode === "edit" ? "Edit" : "Create"}
@@ -73,66 +73,68 @@ export function RubricEditorCard({
             {title}
           </h3>
         </div>
-        {selects && selects.length > 0 && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {selects.map((s) => (
-              <label key={s.name} className="block">
+        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+          {selects && selects.length > 0 && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {selects.map((s) => (
+                <label key={s.name} className="block">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {s.label}
+                  </span>
+                  <select
+                    aria-label={s.label}
+                    value={s.value}
+                    onChange={(e) => onSelectChange?.(s.name, e.target.value)}
+                    className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                  >
+                    {s.options.map((o) => (
+                      <option key={o.value} value={o.value} disabled={o.disabled}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+          )}
+          <div className="space-y-3">
+            {fields.map((f) => (
+              <label key={f.name} className="block">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  {s.label}
+                  {f.label}
+                  {f.required && <span className="ml-1 text-destructive">*</span>}
                 </span>
-                <select
-                  aria-label={s.label}
-                  value={s.value}
-                  onChange={(e) => onSelectChange?.(s.name, e.target.value)}
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
-                >
-                  {s.options.map((o) => (
-                    <option key={o.value} value={o.value} disabled={o.disabled}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                {f.type === "textarea" ? (
+                  <textarea
+                    aria-label={f.label}
+                    value={values[f.name] ?? ""}
+                    placeholder={f.placeholder}
+                    onChange={(e) =>
+                      setValues((prev) => ({ ...prev, [f.name]: e.target.value }))
+                    }
+                    rows={4}
+                    className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                  />
+                ) : (
+                  <input
+                    aria-label={f.label}
+                    type="text"
+                    value={values[f.name] ?? ""}
+                    placeholder={f.placeholder}
+                    onChange={(e) =>
+                      setValues((prev) => ({ ...prev, [f.name]: e.target.value }))
+                    }
+                    className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                  />
+                )}
+                {errors[f.name] && (
+                  <span className="mt-1 block text-[11px] text-destructive">{errors[f.name]}</span>
+                )}
               </label>
             ))}
           </div>
-        )}
-        <div className="space-y-3">
-          {fields.map((f) => (
-            <label key={f.name} className="block">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                {f.label}
-                {f.required && <span className="ml-1 text-destructive">*</span>}
-              </span>
-              {f.type === "textarea" ? (
-                <textarea
-                  aria-label={f.label}
-                  value={values[f.name] ?? ""}
-                  placeholder={f.placeholder}
-                  onChange={(e) =>
-                    setValues((prev) => ({ ...prev, [f.name]: e.target.value }))
-                  }
-                  rows={4}
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
-                />
-              ) : (
-                <input
-                  aria-label={f.label}
-                  type="text"
-                  value={values[f.name] ?? ""}
-                  placeholder={f.placeholder}
-                  onChange={(e) =>
-                    setValues((prev) => ({ ...prev, [f.name]: e.target.value }))
-                  }
-                  className="mt-1 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
-                />
-              )}
-              {errors[f.name] && (
-                <span className="mt-1 block text-[11px] text-destructive">{errors[f.name]}</span>
-              )}
-            </label>
-          ))}
         </div>
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 border-t border-border px-5 py-3">
           <button
             type="button"
             onClick={onCancel}

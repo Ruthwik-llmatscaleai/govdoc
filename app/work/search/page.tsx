@@ -5,7 +5,7 @@ import { WorkBreadcrumbs, WorkPageHeader } from "@/components/work/page-shell";
 const TOOLS = [
   {
     num: "01",
-    title: "Preview",
+    title: "Review",
     accent: "Rubrics",
     blurb: "Browse the production rubric. Read-only.",
     tag: "Read-only · Versioned",

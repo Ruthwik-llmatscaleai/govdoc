@@ -28,7 +28,7 @@ export default async function EditRubricsPage() {
         icon={Edit3}
         eyebrow="Rubric"
         title="Edit rubrics"
-        blurb="Adjust questions, options, and weights. Saved edits show up immediately in Preview Rubrics. Note: edits are kept on the server filesystem and are ephemeral on Cloud Run (lost on container restart)."
+        blurb="Adjust questions, options, and weights. Saved edits show up immediately in Review Rubrics. Note: edits are kept on the server filesystem and are ephemeral on Cloud Run (lost on container restart)."
       />
 
       <EditRubricTabs cmgc={cmgc} cucp={cucp} row={row} />

@@ -20,7 +20,7 @@ export default async function PreviewRubricsPage() {
           { label: "Workspace", href: "/workspace" },
           { label: "Search & Ask", href: "/work/search" },
           { label: "Rubric Tools", href: "/work/search" },
-          { label: "Preview Rubrics" },
+          { label: "Review Rubrics" },
         ]}
       />
 
@@ -53,7 +53,7 @@ export default async function PreviewRubricsPage() {
               fontVariationSettings: '"opsz" 96',
             }}
           >
-            Evaluation{" "}
+            Review{" "}
             <em
               className="text-[var(--color-govdoc-primary)]"
               style={{ fontStyle: "italic", fontWeight: 300 }}

@@ -78,4 +78,23 @@ describe("RubricEditorCard", () => {
     await user.click(screen.getByRole("button", { name: /Cancel/i }));
     expect(onCancel).toHaveBeenCalled();
   });
+
+  it("constrains the dialog height and scrolls the body region so long forms remain navigable", () => {
+    const { container } = render(
+      <RubricEditorCard
+        mode="create"
+        title="Tall form"
+        fields={fields}
+        initialValues={{ name: "", description: "" }}
+        onSave={() => {}}
+        onCancel={() => {}}
+      />,
+    );
+    const dialog = container.querySelector('[role="dialog"]') as HTMLElement;
+    expect(dialog.className).toMatch(/max-h-\[90vh\]/);
+    expect(dialog.className).toMatch(/flex(-col)?/);
+    // Body region must scroll, not the whole dialog.
+    const body = dialog.querySelector(".overflow-y-auto") as HTMLElement;
+    expect(body).not.toBeNull();
+  });
 });
