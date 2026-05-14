@@ -422,6 +422,7 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
 
     return (
       <div className="space-y-6">
+        <RubricPreviewSlideDown usecaseId="cucp-reevals" />
         <WorkCard
           title="Reviewer override"
           description="GovDoc has completed the three review passes. Walk through Facts → Legal Categories → Criteria and apply any corrections before generating the final report."
@@ -456,7 +457,9 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
     return (
       <div className="space-y-6">
         <DoneSummaryBar ucLabel={ucLabel} reset={reset} />
-        <ReportView markdown={report?.markdown_report ?? "_No report generated._"} />
+        <div className="rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-5">
+          <ReportView markdown={report?.markdown_report ?? "_No report generated._"} />
+        </div>
         <DownloadFooterBar useCaseId="cucp-reevals" exporters={exporters} result={result} />
       </div>
     );
