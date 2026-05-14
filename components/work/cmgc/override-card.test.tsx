@@ -40,26 +40,20 @@ describe("OverrideCard", () => {
     expect(select.options).toHaveLength(3);
   });
 
-  it("disables Save until rating changed AND reason ≥ 15 chars", () => {
+  it("disables Save only when the reason is empty", () => {
     const onSave = vi.fn();
     render(<OverrideCard question={makeQuestion()} onSave={onSave} />);
     const save = screen.getByRole("button", { name: /Save Override/i });
+
+    // Empty reason — disabled
     expect(save).toBeDisabled();
 
-    // Change rating only — still disabled (no reason)
-    fireEvent.change(screen.getByLabelText(/Your Rating Override/i), { target: { value: "A" } });
-    expect(save).toBeDisabled();
-
-    // Type 14 chars — still disabled
-    fireEvent.change(screen.getByLabelText(/Why are you changing/i), { target: { value: "12345678901234" } });
-    expect(save).toBeDisabled();
-
-    // Type 15 chars — enabled
-    fireEvent.change(screen.getByLabelText(/Why are you changing/i), { target: { value: "needs full study" } }); // 16 chars
+    // Any non-empty reason enables Save, even with the AI's original rating still selected
+    fireEvent.change(screen.getByLabelText(/Why are you changing/i), { target: { value: "ok" } });
     expect(save).toBeEnabled();
 
-    // Same rating + valid reason — disabled (rating must change)
-    fireEvent.change(screen.getByLabelText(/Your Rating Override/i), { target: { value: "B" } });
+    // Whitespace-only reason — disabled (we trim before checking)
+    fireEvent.change(screen.getByLabelText(/Why are you changing/i), { target: { value: "   " } });
     expect(save).toBeDisabled();
   });
 

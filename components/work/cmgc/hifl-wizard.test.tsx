@@ -29,25 +29,14 @@ describe("HiflWizard", () => {
     expect(screen.getByRole("button", { name: /Save & Continue/i })).toBeTruthy();
   });
 
-  it("disables Save & Continue when no overrides AND no acknowledgment", () => {
+  it("Save & Continue is always enabled (with or without overrides)", () => {
     render(<HiflWizard {...baseProps} />);
-    expect(screen.getByRole("button", { name: /Save & Continue/i })).toBeDisabled();
-  });
-
-  it("enables Save & Continue when 'no changes needed' is clicked", () => {
-    render(<HiflWizard {...baseProps} />);
-    fireEvent.click(screen.getByRole("button", { name: /reviewed all flagged questions/i }));
     expect(screen.getByRole("button", { name: /Save & Continue/i })).toBeEnabled();
   });
 
-  it("enables Save & Continue when there is at least one override", () => {
-    render(
-      <HiflWizard
-        {...baseProps}
-        overrides={[{ question_id: "A1", oldValue: "B", newValue: "A", reason: "needs deeper study yes" }]}
-      />
-    );
-    expect(screen.getByRole("button", { name: /Save & Continue/i })).toBeEnabled();
+  it("does not render the legacy 'no changes needed' acknowledge button", () => {
+    render(<HiflWizard {...baseProps} />);
+    expect(screen.queryByRole("button", { name: /no changes needed/i })).toBeNull();
   });
 
   it("Back from Export returns to Review with overrides preserved", () => {

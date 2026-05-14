@@ -45,7 +45,6 @@ export function HiflWizard({
   onRemoveOverride: (questionId: string) => void;
 }): React.JSX.Element {
   const [currentStep, setCurrentStep] = useState<Step>("review");
-  const [acknowledgedNoChanges, setAcknowledgedNoChanges] = useState(false);
   const [filter, setFilter] = useState<"all" | "missing">("all");
   const [selectedQuestionId, setSelectedQuestionId] = useState<string>(
     questions[0]?.question_id ?? "",
@@ -67,11 +66,7 @@ export function HiflWizard({
 
   const selectedQuestion = filteredQuestions.find((q) => q.question_id === effectiveSelectedId);
 
-  const reviewApproved = overrides.length > 0 || acknowledgedNoChanges;
-  const nextDisabled = !reviewApproved;
-
-  const approvedIds: string[] = [];
-  if (reviewApproved) approvedIds.push("review");
+  const approvedIds: string[] = ["review"];
   if (currentStep === "export") approvedIds.push("export");
 
   const existingOverrideMap = Object.fromEntries(
@@ -102,7 +97,7 @@ export function HiflWizard({
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
               <p className="text-xs text-muted-foreground">
-                Updates immediately as you save corrections. Edited rows show "(edited)" next to the AI Rating.
+                Updates immediately as you save corrections. Edited rows show &ldquo;(edited)&rdquo; next to the AI Rating.
               </p>
               {previewTable}
             </div>
@@ -204,23 +199,9 @@ export function HiflWizard({
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-3 pt-2">
+          <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
-              onClick={() => setAcknowledgedNoChanges(true)}
-              className={cn(
-                "rounded-md px-3 py-2 text-sm transition-colors",
-                "border border-border hover:bg-muted",
-                acknowledgedNoChanges && "bg-muted text-muted-foreground cursor-default",
-              )}
-            >
-              {acknowledgedNoChanges
-                ? "Acknowledged — no changes needed"
-                : "I've reviewed all flagged questions, no changes needed"}
-            </button>
-            <button
-              type="button"
-              disabled={nextDisabled}
               onClick={() => {
                 setCurrentStep("export");
                 onApprove?.();
@@ -228,7 +209,6 @@ export function HiflWizard({
               className={cn(
                 "rounded-md px-4 py-2 text-sm font-medium transition-colors",
                 "bg-primary text-primary-foreground hover:bg-primary/90",
-                "disabled:cursor-not-allowed disabled:opacity-50",
               )}
             >
               Save &amp; Continue →

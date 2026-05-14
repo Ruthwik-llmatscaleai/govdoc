@@ -33,7 +33,7 @@ export function OverrideCard({
   const [showEvidence, setShowEvidence] = useState(false);
 
   const trimmedReason = reason.trim();
-  const saveDisabled = newRating === question.ai_rating || trimmedReason.length < 15;
+  const saveDisabled = trimmedReason.length === 0;
 
   const confidenceLabel =
     question.confidence != null
@@ -138,7 +138,7 @@ export function OverrideCard({
           )}
         />
         <p className="text-xs text-muted-foreground">
-          {trimmedReason.length} / 15 chars
+          {trimmedReason.length} chars
         </p>
       </div>
 
