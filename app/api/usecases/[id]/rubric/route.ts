@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/mock-session";
-import { saveRubric, deleteRubric } from "@/lib/usecases/rubric-store";
+import {
+  saveRubric as multiSaveRubric,
+  resetRubricContent,
+  getDefaultRubricId,
+  listRubrics,
+} from "@/lib/usecases/rubrics-store";
 import { loadCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-merged";
 import { loadCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-merged";
 import { loadRowRubric } from "@/lib/usecases/row-appraisal/rubric-merged";
@@ -16,11 +21,25 @@ function getCookie(req: Request, name: string): string | undefined {
   return undefined;
 }
 
-async function loadFor(id: string): Promise<unknown> {
-  if (id === "cmgc-pde") return loadCmgcRubric();
-  if (id === "cucp-reevals") return loadCucpRubric();
-  if (id === "row-appraisal") return loadRowRubric();
+async function loadFor(id: string, rubricId: string | undefined): Promise<unknown> {
+  if (id === "cmgc-pde") return loadCmgcRubric(rubricId);
+  if (id === "cucp-reevals") return loadCucpRubric(rubricId);
+  if (id === "row-appraisal") return loadRowRubric(rubricId);
   throw new Error(`Unknown id: ${id}`);
+}
+
+async function resolveRubricId(
+  usecaseId: string,
+  fromQuery: string | null,
+): Promise<{ rubricId: string } | { error: NextResponse }> {
+  if (!fromQuery) return { rubricId: await getDefaultRubricId(usecaseId) };
+  const list = await listRubrics(usecaseId);
+  if (!list.some((r) => r.id === fromQuery)) {
+    return {
+      error: NextResponse.json({ error: `Unknown rubric: ${fromQuery}` }, { status: 404 }),
+    };
+  }
+  return { rubricId: fromQuery };
 }
 
 export async function GET(
@@ -33,7 +52,10 @@ export async function GET(
   if (!KNOWN_IDS.has(id)) {
     return NextResponse.json({ error: "Unknown rubric use case" }, { status: 404 });
   }
-  const data = await loadFor(id);
+  const url = new URL(req.url);
+  const resolved = await resolveRubricId(id, url.searchParams.get("rubric"));
+  if ("error" in resolved) return resolved.error;
+  const data = await loadFor(id, resolved.rubricId);
   return NextResponse.json(data);
 }
 
@@ -53,9 +75,11 @@ export async function POST(
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  await saveRubric(id, body);
-  // Re-load with validation (rejects malformed payloads by falling back to defaults)
-  const verified = await loadFor(id);
+  const url = new URL(req.url);
+  const resolved = await resolveRubricId(id, url.searchParams.get("rubric"));
+  if ("error" in resolved) return resolved.error;
+  await multiSaveRubric(id, resolved.rubricId, body);
+  const verified = await loadFor(id, resolved.rubricId);
   return NextResponse.json({ ok: true, rubric: verified });
 }
 
@@ -69,7 +93,10 @@ export async function DELETE(
   if (!KNOWN_IDS.has(id)) {
     return NextResponse.json({ error: "Unknown rubric use case" }, { status: 404 });
   }
-  await deleteRubric(id);
-  const data = await loadFor(id);
+  const url = new URL(req.url);
+  const resolved = await resolveRubricId(id, url.searchParams.get("rubric"));
+  if ("error" in resolved) return resolved.error;
+  await resetRubricContent(id, resolved.rubricId);
+  const data = await loadFor(id, resolved.rubricId);
   return NextResponse.json({ ok: true, rubric: data });
 }

@@ -1,5 +1,5 @@
 import type { CucpL2Category, CucpL3Criterion } from "./rubric";
-import { loadSavedRubric } from "../rubric-store";
+import { loadRubric } from "../rubrics-store";
 import { defaultCucpRubric, type CucpRubricData } from "./rubric-data";
 export type { CucpRubricData } from "./rubric-data";
 export { defaultCucpRubric } from "./rubric-data";
@@ -24,8 +24,8 @@ function isValidL3(x: unknown): x is CucpL3Criterion {
   );
 }
 
-export async function loadCucpRubric(): Promise<CucpRubricData> {
-  const saved = await loadSavedRubric("cucp-reevals");
+export async function loadCucpRubric(rubricId?: string): Promise<CucpRubricData> {
+  const saved = await loadRubric("cucp-reevals", rubricId);
   if (!saved || typeof saved !== "object") return defaultCucpRubric();
   const obj = saved as { l2?: unknown; l3?: unknown };
   if (!Array.isArray(obj.l2) || !obj.l2.every(isValidL2)) return defaultCucpRubric();

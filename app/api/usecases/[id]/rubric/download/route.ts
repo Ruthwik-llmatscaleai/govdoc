@@ -31,14 +31,16 @@ export async function GET(
   if (!KNOWN_IDS.has(id)) {
     return NextResponse.json({ error: "Unknown rubric use case" }, { status: 404 });
   }
+  const url = new URL(req.url);
+  const rubricId = url.searchParams.get("rubric") ?? undefined;
 
   let buf: Buffer;
   if (id === "cmgc-pde") {
-    buf = await buildCmgcRubricXlsx(await loadCmgcRubric());
+    buf = await buildCmgcRubricXlsx(await loadCmgcRubric(rubricId));
   } else if (id === "cucp-reevals") {
-    buf = await buildCucpRubricXlsx(await loadCucpRubric());
+    buf = await buildCucpRubricXlsx(await loadCucpRubric(rubricId));
   } else {
-    buf = await buildRowRubricXlsx(await loadRowRubric());
+    buf = await buildRowRubricXlsx(await loadRowRubric(rubricId));
   }
 
   return new NextResponse(new Uint8Array(buf), {

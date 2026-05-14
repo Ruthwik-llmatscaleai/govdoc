@@ -1,5 +1,5 @@
 import type { RubricQuestion } from "./rubric";
-import { loadSavedRubric } from "../rubric-store";
+import { loadRubric } from "../rubrics-store";
 import { defaultCmgcRubric, type CmgcRubricData } from "./rubric-data";
 export type { CmgcRubricData } from "./rubric-data";
 export { defaultCmgcRubric } from "./rubric-data";
@@ -25,8 +25,8 @@ function isValidWeights(w: unknown): w is CmgcRubricData["weights"] {
   );
 }
 
-export async function loadCmgcRubric(): Promise<CmgcRubricData> {
-  const saved = await loadSavedRubric("cmgc-pde");
+export async function loadCmgcRubric(rubricId?: string): Promise<CmgcRubricData> {
+  const saved = await loadRubric("cmgc-pde", rubricId);
   if (!saved || typeof saved !== "object") return defaultCmgcRubric();
   const obj = saved as { questions?: unknown; weights?: unknown };
   if (!Array.isArray(obj.questions) || !obj.questions.every(isValidQuestion)) {
