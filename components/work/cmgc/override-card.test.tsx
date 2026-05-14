@@ -104,4 +104,17 @@ describe("OverrideCard", () => {
     expect((screen.getByLabelText(/Your Rating Override/i) as HTMLSelectElement).value).toBe("C");
     expect((screen.getByLabelText(/Why are you changing/i) as HTMLTextAreaElement).value).toBe("previously typed reason here");
   });
+
+  it("renders an (edited) badge in the header when the override differs from the AI rating", () => {
+    render(
+      <OverrideCard
+        question={makeQuestion({
+          ai_rating: "A",
+          existing: { newRating: "C", reason: "Reviewer override applied." },
+        })}
+        onSave={() => {}}
+      />,
+    );
+    expect(screen.getByText(/edited/i)).toBeInTheDocument();
+  });
 });

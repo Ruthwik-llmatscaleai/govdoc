@@ -62,6 +62,15 @@ export function OverrideCard({
         <span className="shrink-0 text-sm text-muted-foreground">
           AI Rating:{" "}
           <span className="font-semibold text-foreground">{question.ai_rating}</span>
+          {question.existing && question.existing.newRating !== question.ai_rating && (
+            <>
+              {" → "}
+              <span className="font-semibold text-foreground">{question.existing.newRating}</span>
+              <span className="ml-1 text-[11px] italic text-muted-foreground">
+                (edited)
+              </span>
+            </>
+          )}
         </span>
       </div>
 
