@@ -12,7 +12,7 @@ export function RubricShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {description && (
         <p className="max-w-[68ch] text-[13px] leading-[1.55] text-[var(--color-ink-mute)]">
           {description}

@@ -140,17 +140,6 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
   }
 
   const categories = Object.entries(schema);
-  const intro = (
-    <div className="flex items-center justify-end">
-      <button
-        type="button"
-        onClick={() => setTarget({ kind: "addCategory" })}
-        className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)]"
-      >
-        Create category
-      </button>
-    </div>
-  );
 
   const compose = target ? buildCompose(target) : null;
 
@@ -158,7 +147,6 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
     <div className="space-y-6 pb-2">
       <RubricShell
         description="Appraisal Review — 34 categories, each rated on a 1–5 scale against the descriptors below. Per-category scores combine into the overall evaluation."
-        intro={intro}
       >
         {categories.length === 0 ? (
           <div className="border border-dashed border-[var(--color-line)] bg-[var(--color-cream-soft)] px-6 py-12 text-center">
@@ -216,6 +204,16 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
           })
         )}
       </RubricShell>
+
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => setTarget({ kind: "addCategory" })}
+          className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)]"
+        >
+          Create category
+        </button>
+      </div>
 
       <SaveBar
         saving={saving}

@@ -283,16 +283,6 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
 
   return (
     <div className="space-y-6 pb-2">
-      <div className="flex items-center justify-end">
-        <CreateNewMenu
-          options={[
-            { value: "section", label: "Section" },
-            { value: "question", label: "Question", disabled: sections.length === 0 },
-          ]}
-          onPick={(v) => openCreate(v as "section" | "question")}
-        />
-      </div>
-
       <RubricShell
         description="Project Review rubric — six sections, each scored on a 3-tier A/B/C scale. Section weights combine into a weighted composite recommendation across eight delivery methods."
         intro={weightWarning}
@@ -380,6 +370,16 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
           ))
         )}
       </RubricShell>
+
+      <div className="flex items-center justify-end">
+        <CreateNewMenu
+          options={[
+            { value: "section", label: "Section" },
+            { value: "question", label: "Question", disabled: sections.length === 0 },
+          ]}
+          onPick={(v) => openCreate(v as "section" | "question")}
+        />
+      </div>
 
       <SaveBar
         saving={saving}

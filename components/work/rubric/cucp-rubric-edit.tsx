@@ -129,25 +129,12 @@ export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
     });
   }
 
-  const intro = (
-    <div className="flex items-center justify-end">
-      <button
-        type="button"
-        onClick={() => setTarget({ kind: "addL3" })}
-        className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)]"
-      >
-        Create criterion
-      </button>
-    </div>
-  );
-
   const compose = target ? buildCompose(target, l3) : null;
 
   return (
     <div className="space-y-6 pb-2">
       <RubricShell
         description="Narrative Review — three Mandatory Eligibility Requirements followed by four Scored Evaluation Criteria. Each criterion is judged YES or NO."
-        intro={intro}
       >
         {l3.length === 0 ? (
           <RubricSection
@@ -200,6 +187,16 @@ export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
           </>
         )}
       </RubricShell>
+
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => setTarget({ kind: "addL3" })}
+          className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)]"
+        >
+          Create criterion
+        </button>
+      </div>
 
       <SaveBar
         saving={saving}
