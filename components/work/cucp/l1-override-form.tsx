@@ -17,7 +17,7 @@ type Props = {
 };
 
 const SELECT_CLASS =
-  "h-9 rounded-lg border border-input bg-muted/30 px-2 text-sm transition-colors focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15 disabled:opacity-50 disabled:cursor-not-allowed";
+  "h-9 rounded-md border border-[var(--color-line)] bg-[var(--color-paper)] px-2.5 text-sm text-[var(--color-ink)] transition-colors hover:bg-[var(--color-cream-soft)] focus:border-[var(--color-govdoc-primary)] focus:bg-[var(--color-paper)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-soft)] disabled:opacity-50 disabled:cursor-not-allowed";
 
 const TEXTAREA_CLASS =
   "mt-1 block w-full rounded-lg border border-input bg-muted/30 p-2 text-sm transition-colors focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15 resize-none";
