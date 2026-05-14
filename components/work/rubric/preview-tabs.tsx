@@ -3,14 +3,19 @@ import { Tabs } from "@base-ui/react/tabs";
 import { CmgcRubricView } from "./cmgc-rubric-view";
 import { CucpRubricView } from "./cucp-rubric-view";
 import { RowRubricView } from "./row-rubric-view";
+import { PreviewTabContent } from "./preview-tab-content";
 import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
 import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-data";
 import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-data";
+import type { RubricsManifestEntry } from "@/lib/usecases/rubrics-store";
 
 type Props = {
   cmgc: CmgcRubricData;
   cucp: CucpRubricData;
   row: RowRubricData;
+  cmgcRubrics: readonly RubricsManifestEntry[];
+  cucpRubrics: readonly RubricsManifestEntry[];
+  rowRubrics: readonly RubricsManifestEntry[];
 };
 
 const TAB_BASE =
@@ -47,7 +52,14 @@ function TabButton({
   );
 }
 
-export function PreviewRubricTabs({ cmgc, cucp, row }: Props) {
+export function PreviewRubricTabs({
+  cmgc,
+  cucp,
+  row,
+  cmgcRubrics,
+  cucpRubrics,
+  rowRubrics,
+}: Props) {
   const cmgcCount = cmgc.questions.length;
   const cucpCount = cucp.l2.length + cucp.l3.length;
   const rowCount = Object.keys(row).length;
@@ -61,13 +73,28 @@ export function PreviewRubricTabs({ cmgc, cucp, row }: Props) {
       </Tabs.List>
 
       <Tabs.Panel value="cmgc-pde" className="space-y-6">
-        <CmgcRubricView data={cmgc} />
+        <PreviewTabContent
+          usecaseId="cmgc-pde"
+          rubrics={cmgcRubrics}
+          initialData={cmgc}
+          View={CmgcRubricView}
+        />
       </Tabs.Panel>
       <Tabs.Panel value="row-appraisal" className="space-y-6">
-        <RowRubricView data={row} />
+        <PreviewTabContent
+          usecaseId="row-appraisal"
+          rubrics={rowRubrics}
+          initialData={row}
+          View={RowRubricView}
+        />
       </Tabs.Panel>
       <Tabs.Panel value="cucp-reevals" className="space-y-6">
-        <CucpRubricView data={cucp} />
+        <PreviewTabContent
+          usecaseId="cucp-reevals"
+          rubrics={cucpRubrics}
+          initialData={cucp}
+          View={CucpRubricView}
+        />
       </Tabs.Panel>
     </Tabs.Root>
   );

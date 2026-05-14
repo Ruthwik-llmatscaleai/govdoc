@@ -3,14 +3,19 @@ import { Tabs } from "@base-ui/react/tabs";
 import { CmgcRubricEdit } from "./cmgc-rubric-edit";
 import { CucpRubricEdit } from "./cucp-rubric-edit";
 import { RowRubricEdit } from "./row-rubric-edit";
+import { EditTabContent } from "./edit-tab-content";
 import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
 import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-data";
 import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-data";
+import type { RubricsManifestEntry } from "@/lib/usecases/rubrics-store";
 
 type Props = {
   cmgc: CmgcRubricData;
   cucp: CucpRubricData;
   row: RowRubricData;
+  cmgcRubrics: readonly RubricsManifestEntry[];
+  cucpRubrics: readonly RubricsManifestEntry[];
+  rowRubrics: readonly RubricsManifestEntry[];
 };
 
 const TAB_BASE =
@@ -47,7 +52,14 @@ function TabButton({
   );
 }
 
-export function EditRubricTabs({ cmgc, cucp, row }: Props) {
+export function EditRubricTabs({
+  cmgc,
+  cucp,
+  row,
+  cmgcRubrics,
+  cucpRubrics,
+  rowRubrics,
+}: Props) {
   const cmgcCount = cmgc.questions.length;
   const cucpCount = cucp.l2.length + cucp.l3.length;
   const rowCount = Object.keys(row).length;
@@ -61,13 +73,28 @@ export function EditRubricTabs({ cmgc, cucp, row }: Props) {
       </Tabs.List>
 
       <Tabs.Panel value="cmgc-pde" className="space-y-6">
-        <CmgcRubricEdit initial={cmgc} />
+        <EditTabContent
+          usecaseId="cmgc-pde"
+          initialRubrics={cmgcRubrics}
+          initialData={cmgc}
+          EditComponent={CmgcRubricEdit}
+        />
       </Tabs.Panel>
       <Tabs.Panel value="row-appraisal" className="space-y-6">
-        <RowRubricEdit initial={row} />
+        <EditTabContent
+          usecaseId="row-appraisal"
+          initialRubrics={rowRubrics}
+          initialData={row}
+          EditComponent={RowRubricEdit}
+        />
       </Tabs.Panel>
       <Tabs.Panel value="cucp-reevals" className="space-y-6">
-        <CucpRubricEdit initial={cucp} />
+        <EditTabContent
+          usecaseId="cucp-reevals"
+          initialRubrics={cucpRubrics}
+          initialData={cucp}
+          EditComponent={CucpRubricEdit}
+        />
       </Tabs.Panel>
     </Tabs.Root>
   );

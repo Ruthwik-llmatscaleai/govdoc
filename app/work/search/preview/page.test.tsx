@@ -7,12 +7,23 @@ import { defaultCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-merged";
 import { defaultRowRubric } from "@/lib/usecases/row-appraisal/rubric-merged";
 
 describe("PreviewRubricTabs", () => {
+  const defaultManifest = [
+    {
+      id: "default",
+      label: "Default",
+      isDefault: true,
+      createdAt: "2026-05-14T00:00:00.000Z",
+    },
+  ];
   function renderTabs() {
     return render(
       <PreviewRubricTabs
         cmgc={defaultCmgcRubric()}
         cucp={defaultCucpRubric()}
         row={defaultRowRubric()}
+        cmgcRubrics={defaultManifest}
+        cucpRubrics={defaultManifest}
+        rowRubrics={defaultManifest}
       />,
     );
   }
