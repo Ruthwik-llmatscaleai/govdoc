@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -81,6 +81,18 @@ export default function UseCasePage({ params }: { params: Promise<RouteParams> }
   const router = useRouter();
   const current = usePipelineStore((s) => s.current);
   const reset = usePipelineStore((s) => s.reset);
+
+  // Discard the in-flight / done pipeline run and any HIFL overrides when
+  // the user leaves this page or navigates to a different use-case. Without
+  // this, zustand keeps `current` and `overrides.history` alive across
+  // route changes, so a re-visit shows the previous run's "done" view
+  // instead of a fresh upload form.
+  useEffect(() => {
+    return () => {
+      reset();
+      useOverridesStore.getState().clear();
+    };
+  }, [usecase, reset]);
 
   const uc = getUseCaseMetadata(usecase);
   if (!uc) {
@@ -244,7 +256,6 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
     }
     const result = out.value;
 
-    // Latest override per question_id wins
     const overrideMap = new Map<string, HiflOverrideEntry>();
     for (const e of overrideHistory) {
       overrideMap.set(e.category, {
@@ -257,64 +268,95 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
     const wizardOverrides = Array.from(overrideMap.values());
 
     const recommendationLabel = result.recommendation.recommended_method ?? "—";
-    // Role is locked at upload. If no role was supplied (legacy run), fall back
-    // to the read-only district view so HIFL controls never leak.
     const role = current.role ?? "district";
 
     return (
       <div className="space-y-6">
-        <DoneActionsBar
-          ucLabel={ucLabel}
-          useCaseId="cmgc-pde"
-          exporters={exporters}
-          result={result}
-          reset={reset}
-        />
+        <DoneSummaryBar ucLabel={ucLabel} reset={reset} />
         <RecommendationCard recommendation={result.recommendation} />
         <MethodRanking multiMethod={result.multi_method} />
         {role === "district" ? (
-          <ScoreTable ratings={result.evaluation.ratings} />
+          <>
+            <ScoreTable ratings={result.evaluation.ratings} />
+            <DownloadFooterBar useCaseId="cmgc-pde" exporters={exporters} result={result} />
+          </>
         ) : (
-          <HiflWizard
-            questions={result.evaluation.ratings.map(toOverrideCardQuestion)}
+          <CmgcHiflSection
+            exporters={exporters}
+            result={result}
             recommendationLabel={recommendationLabel}
-            overrides={wizardOverrides}
-            markdownReport={composeCmgcReport(
-              result,
-              wizardOverrides.map((o) => ({
-                question_id: o.question_id,
-                oldValue: o.oldValue,
-                newValue: o.newValue,
-                reason: o.reason,
-              })),
-            )}
-            previewTable={<ScoreTable ratings={result.evaluation.ratings} />}
-            onSaveOverride={(entry) =>
-              pushOverride({
-                category: entry.question_id,
-                oldValue: entry.oldValue,
-                newValue: entry.newValue,
-                reason: entry.reason,
-              })
-            }
-            onRemoveOverride={(qid) => {
-              const remaining = overrideHistory.filter((e) => e.category !== qid);
-              useOverridesStore.getState().clear();
-              for (const e of remaining) {
-                pushOverride({
-                  category: e.category,
-                  oldValue: e.oldValue,
-                  newValue: e.newValue,
-                  reason: e.reason,
-                });
-              }
-            }}
+            wizardOverrides={wizardOverrides}
+            overrideHistory={overrideHistory}
+            pushOverride={pushOverride}
           />
         )}
       </div>
     );
   }
   return null;
+}
+
+function CmgcHiflSection({
+  exporters,
+  result,
+  recommendationLabel,
+  wizardOverrides,
+  overrideHistory,
+  pushOverride,
+}: {
+  exporters: { id: string; label: string }[];
+  result: unknown;
+  recommendationLabel: string;
+  wizardOverrides: HiflOverrideEntry[];
+  overrideHistory: ReturnType<typeof useOverridesStore.getState>["history"];
+  pushOverride: ReturnType<typeof useOverridesStore.getState>["push"];
+}) {
+  const [approved, setApproved] = useState(false);
+  const r = result as NonNullable<Extract<ReturnType<typeof composeCmgcResult>, { kind: "ok" }>["value"]>;
+
+  return (
+    <>
+      <HiflWizard
+        questions={r.evaluation.ratings.map(toOverrideCardQuestion)}
+        recommendationLabel={recommendationLabel}
+        overrides={wizardOverrides}
+        markdownReport={composeCmgcReport(
+          r,
+          wizardOverrides.map((o) => ({
+            question_id: o.question_id,
+            oldValue: o.oldValue,
+            newValue: o.newValue,
+            reason: o.reason,
+          })),
+        )}
+        previewTable={<ScoreTable ratings={r.evaluation.ratings} />}
+        onApprove={() => setApproved(true)}
+        onSaveOverride={(entry) =>
+          pushOverride({
+            category: entry.question_id,
+            oldValue: entry.oldValue,
+            newValue: entry.newValue,
+            reason: entry.reason,
+          })
+        }
+        onRemoveOverride={(qid) => {
+          const remaining = overrideHistory.filter((e) => e.category !== qid);
+          useOverridesStore.getState().clear();
+          for (const e of remaining) {
+            pushOverride({
+              category: e.category,
+              oldValue: e.oldValue,
+              newValue: e.newValue,
+              reason: e.reason,
+            });
+          }
+        }}
+      />
+      {approved && (
+        <DownloadFooterBar useCaseId="cmgc-pde" exporters={exporters} result={r} />
+      )}
+    </>
+  );
 }
 
 function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
@@ -386,14 +428,9 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
     const report = result.report as { markdown_report?: string } | undefined;
     return (
       <div className="space-y-6">
-        <DoneActionsBar
-          ucLabel={ucLabel}
-          useCaseId="cucp-reevals"
-          exporters={exporters}
-          result={result}
-          reset={reset}
-        />
+        <DoneSummaryBar ucLabel={ucLabel} reset={reset} />
         <ReportView markdown={report?.markdown_report ?? "_No report generated._"} />
+        <DownloadFooterBar useCaseId="cucp-reevals" exporters={exporters} result={result} />
       </div>
     );
   }
@@ -417,14 +454,9 @@ function RowView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
       return <DebugRawResult raw={current.result} reset={reset} expected={["consolidate.evaluation_results"]} />;
     return (
       <div className="space-y-6">
-        <DoneActionsBar
-          ucLabel={ucLabel}
-          useCaseId="row-appraisal"
-          exporters={exporters}
-          result={rowResult}
-          reset={reset}
-        />
+        <DoneSummaryBar ucLabel={ucLabel} reset={reset} />
         <RowResultTabs results={rowResult.evaluation_results} />
+        <DownloadFooterBar useCaseId="row-appraisal" exporters={exporters} result={rowResult} />
       </div>
     );
   }
@@ -516,17 +548,11 @@ function ErrorPanel({
   );
 }
 
-function DoneActionsBar({
+function DoneSummaryBar({
   ucLabel,
-  useCaseId,
-  exporters,
-  result,
   reset,
 }: {
   ucLabel: string;
-  useCaseId: string;
-  exporters: { id: string; label: string }[];
-  result: unknown;
   reset: () => void;
 }) {
   return (
@@ -538,23 +564,39 @@ function DoneActionsBar({
             {ucLabel} complete
           </div>
           <div className="text-xs text-muted-foreground">
-            Review the results below and export when ready.
+            Review the results below. Download options appear at the bottom once you finish reviewing.
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        {exporters.map((e) => (
-          <SecondaryButton
-            key={e.id}
-            onClick={() => downloadExport(useCaseId, e.id, e.label, result)}
-          >
-            <Download className="size-4" /> {e.label}
-          </SecondaryButton>
-        ))}
-        <PrimaryButton type="button" onClick={reset}>
-          <RotateCcw className="size-4" /> Run again
-        </PrimaryButton>
-      </div>
+      <PrimaryButton type="button" onClick={reset}>
+        <RotateCcw className="size-4" /> Run again
+      </PrimaryButton>
+    </div>
+  );
+}
+
+function DownloadFooterBar({
+  useCaseId,
+  exporters,
+  result,
+}: {
+  useCaseId: string;
+  exporters: { id: string; label: string }[];
+  result: unknown;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4">
+      <span className="mr-auto text-xs text-muted-foreground">
+        Download the finalized evaluation:
+      </span>
+      {exporters.map((e) => (
+        <SecondaryButton
+          key={e.id}
+          onClick={() => downloadExport(useCaseId, e.id, e.label, result)}
+        >
+          <Download className="size-4" /> {e.label}
+        </SecondaryButton>
+      ))}
     </div>
   );
 }

@@ -31,6 +31,7 @@ export function HiflWizard({
   overrides,
   markdownReport,
   previewTable,
+  onApprove,
   onSaveOverride,
   onRemoveOverride,
 }: {
@@ -39,6 +40,7 @@ export function HiflWizard({
   overrides: readonly HiflOverrideEntry[];
   markdownReport?: string;
   previewTable?: React.ReactNode;
+  onApprove?: () => void;
   onSaveOverride: (entry: HiflOverrideEntry) => void;
   onRemoveOverride: (questionId: string) => void;
 }): React.JSX.Element {
@@ -219,7 +221,10 @@ export function HiflWizard({
             <button
               type="button"
               disabled={nextDisabled}
-              onClick={() => setCurrentStep("export")}
+              onClick={() => {
+                setCurrentStep("export");
+                onApprove?.();
+              }}
               className={cn(
                 "rounded-md px-4 py-2 text-sm font-medium transition-colors",
                 "bg-primary text-primary-foreground hover:bg-primary/90",
