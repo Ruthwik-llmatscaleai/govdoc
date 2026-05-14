@@ -26,7 +26,7 @@ export function ScoreTable({ ratings }: Props) {
             <th className="text-left p-2">Question</th>
             <th className="text-left p-2">AI Rating</th>
             <th className="text-left p-2">Confidence</th>
-            <th className="text-left p-2">Source Excerpt</th>
+            <th className="text-left p-2">Source</th>
           </tr>
         </thead>
         <tbody>

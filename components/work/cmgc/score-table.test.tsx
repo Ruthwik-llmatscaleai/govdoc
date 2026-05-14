@@ -51,9 +51,9 @@ describe("ScoreTable", () => {
     expect(screen.getByText(/edited/i)).toBeInTheDocument();
   });
 
-  it("labels the source column 'Source Excerpt'", () => {
+  it("labels the source column 'Source'", () => {
     render(<ScoreTable ratings={mockRatings()} />);
-    expect(screen.getByText(/Source Excerpt/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Source$/i)).toBeInTheDocument();
   });
 
   it("does not render a separate Effective column header", () => {
