@@ -28,7 +28,9 @@ import {
 import { InputsForm as CmgcInputsForm } from "@/components/work/cmgc/inputs-form";
 import { ScoreTable } from "@/components/work/cmgc/score-table";
 import { CmgcRubricView } from "@/components/work/rubric/cmgc-rubric-view";
+import { RubricPreviewSlideDown } from "@/components/work/rubric/rubric-preview-slide-down";
 import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
+import type { UseCaseId } from "@/lib/usecases/types";
 import { RecommendationCard } from "@/components/work/cmgc/recommendation-card";
 import { MethodRanking } from "@/components/work/cmgc/method-ranking";
 import { HiflWizard, type HiflOverrideEntry } from "@/components/work/cmgc/hifl-wizard";
@@ -204,16 +206,21 @@ function HowItWorks({ steps }: { steps: string[] }) {
 }
 
 function IdleLayout({
+  usecaseId,
   steps,
   inputs,
 }: {
+  usecaseId: UseCaseId;
   steps: string[];
   inputs: React.ReactNode;
 }) {
   return (
     <div className="grid gap-6 md:grid-cols-[1fr_320px]">
       <WorkCard title="Inputs" description="Provide the documents to evaluate.">
-        {inputs}
+        <div className="space-y-4">
+          <RubricPreviewSlideDown usecaseId={usecaseId} />
+          {inputs}
+        </div>
       </WorkCard>
       <HowItWorks steps={steps} />
     </div>
@@ -243,7 +250,7 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
   const pushOverride = useOverridesStore((s) => s.push);
 
   if (!current || (current.status === "idle" && Object.keys(current.stages).length === 0)) {
-    return <IdleLayout steps={steps} inputs={<CmgcInputsForm />} />;
+    return <IdleLayout usecaseId="cmgc-pde" steps={steps} inputs={<CmgcInputsForm />} />;
   }
   if (current.status === "running" || current.status === "needs-input") {
     return <RunningPanel current={current} reset={reset} />;
@@ -380,7 +387,7 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
   const [overridesSubmitted, setOverridesSubmitted] = useState(false);
 
   if (!current || (current.status === "idle" && Object.keys(current.stages).length === 0)) {
-    return <IdleLayout steps={steps} inputs={<CucpInputsForm />} />;
+    return <IdleLayout usecaseId="cucp-reevals" steps={steps} inputs={<CucpInputsForm />} />;
   }
 
   if (current.status === "needs-input" && !overridesSubmitted) {
@@ -456,7 +463,7 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
 
 function RowView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
   if (!current || (current.status === "idle" && Object.keys(current.stages).length === 0)) {
-    return <IdleLayout steps={steps} inputs={<RowInputsForm />} />;
+    return <IdleLayout usecaseId="row-appraisal" steps={steps} inputs={<RowInputsForm />} />;
   }
   if (current.status === "running" || current.status === "needs-input") {
     return <RunningPanel current={current} reset={reset} />;
