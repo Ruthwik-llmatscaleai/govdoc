@@ -83,6 +83,16 @@ export function HiflWizard({
 
   return (
     <div className="space-y-4">
+      {currentStep === "review" && previewTable && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
+          <p className="text-xs text-muted-foreground">
+            Updates immediately as you save corrections. Edited rows show &ldquo;(edited)&rdquo; next to the AI Rating.
+          </p>
+          {previewTable}
+        </div>
+      )}
+
       <StepBar
         steps={STEPS}
         currentId={currentStep}
@@ -93,16 +103,6 @@ export function HiflWizard({
       {/* ── Step 1: Review & Override ── */}
       {currentStep === "review" && (
         <div className="space-y-4">
-          {previewTable && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
-              <p className="text-xs text-muted-foreground">
-                Updates immediately as you save corrections. Edited rows show &ldquo;(edited)&rdquo; next to the AI Rating.
-              </p>
-              {previewTable}
-            </div>
-          )}
-
           <fieldset className="flex items-center gap-4">
             <legend className="text-sm font-medium text-muted-foreground mr-2">Show:</legend>
             <label className="flex items-center gap-1 text-sm cursor-pointer">
