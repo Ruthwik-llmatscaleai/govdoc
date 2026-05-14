@@ -40,9 +40,9 @@ export async function buildEvaluationDocx(result: RowRunResult): Promise<Buffer>
         children: [
           new Paragraph({
             heading: HeadingLevel.TITLE,
-            children: [new TextRun(`ROW Appraisal Evaluation — ${result.pdf_filename}`)],
+            children: [new TextRun(`Appraisal Review`)],
           }),
-          new Paragraph(`Evaluation date: ${result.evaluation_date}`),
+          new Paragraph(`Evaluated: ${result.evaluation_date}`),
           table,
         ],
       },

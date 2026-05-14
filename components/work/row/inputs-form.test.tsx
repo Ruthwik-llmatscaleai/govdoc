@@ -14,12 +14,12 @@ describe("ROW InputsForm", () => {
     expect(screen.getByRole("button", { name: /run evaluation/i })).toBeDefined();
   });
 
-  it("lists all supported filenames", () => {
+  it("does not surface any parcel/EA filenames in the upload UI", () => {
     render(<InputsForm />);
-    expect(screen.getByText("Appraisal_EA2F590_Parcel_36668.pdf")).toBeDefined();
-    expect(screen.getByText("Appraisal_EA_2F590_Parcel_36674 (1).pdf")).toBeDefined();
-    expect(screen.getByText("Appraisal_EA_0J910,_Parcel_38355.pdf")).toBeDefined();
-    expect(screen.getByText("37857_-_Lee_Appraisal.pdf")).toBeDefined();
+    expect(screen.queryByText(/Parcel_/i)).toBeNull();
+    expect(screen.queryByText(/EA_?[0-9]/i)).toBeNull();
+    expect(screen.queryByText(/Lee_Appraisal/i)).toBeNull();
+    expect(screen.getByText(/bundled OCR for four sample appraisals/i)).toBeDefined();
   });
 
   it("calls usePipelineStore.start with row-appraisal on submit", async () => {
