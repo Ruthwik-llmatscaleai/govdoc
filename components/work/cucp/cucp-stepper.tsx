@@ -8,6 +8,7 @@ import {
   type L2Row,
   type L2OverridePayload,
 } from "./l2-classifications-table";
+import { L2OverrideForm } from "./l2-override-form";
 import { L3CriteriaTable } from "./l3-criteria-table";
 import { L3OverrideForm, type L3OverridePayload } from "./l3-override-form";
 import { L1OverrideForm } from "./l1-override-form";
@@ -211,6 +212,36 @@ export function CucpStepper({
 
   return (
     <div className="space-y-4">
+      {step === "l1" && (
+        <div className="space-y-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-5">
+          <h3 className="text-sm font-semibold text-foreground">Live preview — Facts (W5)</h3>
+          <p className="text-xs text-muted-foreground">
+            What the AI extracted from the narrative. Re-runs after each approved correction.
+          </p>
+          <L1FactsTable facts={facts} />
+        </div>
+      )}
+
+      {step === "l2" && (
+        <div className="space-y-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-5">
+          <h3 className="text-sm font-semibold text-foreground">Live preview — Legal Categories</h3>
+          <p className="text-xs text-muted-foreground">
+            How the AI classified each fact under 49 CFR §26.67. Updates after each approved correction.
+          </p>
+          <L2ClassificationsTable rows={classifications} />
+        </div>
+      )}
+
+      {step === "l3" && (
+        <div className="space-y-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-5">
+          <h3 className="text-sm font-semibold text-foreground">Live preview — Criteria (Pass / Fail)</h3>
+          <p className="text-xs text-muted-foreground">
+            The AI&rsquo;s evidentiary verdict on each criterion. Updates after each approved correction.
+          </p>
+          <L3CriteriaTable criteria={criteria} />
+        </div>
+      )}
+
       <StepBar
         steps={STEPS}
         currentId={step}
@@ -242,7 +273,6 @@ export function CucpStepper({
       {step === "l1" && (
         <div className="space-y-3">
           {isReRunning && runningLevel !== null && <ReEvaluatingBanner level={runningLevel} />}
-          <L1FactsTable facts={facts} />
           <L1OverrideForm
             facts={facts}
             onSubmitOverride={postOverrideL1}
@@ -268,7 +298,7 @@ export function CucpStepper({
       {step === "l2" && (
         <div className="space-y-3">
           {isReRunning && runningLevel !== null && <ReEvaluatingBanner level={runningLevel} />}
-          <L2ClassificationsTable
+          <L2OverrideForm
             rows={classifications}
             onSaveOverride={postOverrideL2}
             disabled={isReRunning}
@@ -297,7 +327,6 @@ export function CucpStepper({
         <div className="space-y-3">
           {isReRunning && runningLevel !== null && <ReEvaluatingBanner level={runningLevel} />}
           <RequestInfoBanner show={requestInfoSet} />
-          <L3CriteriaTable criteria={criteria} />
           <L3OverrideForm
             criteria={l3FormCriteria}
             onSave={postOverrideL3}
