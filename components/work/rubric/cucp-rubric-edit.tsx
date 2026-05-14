@@ -130,18 +130,7 @@ export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
   }
 
   const intro = (
-    <header className="flex items-start justify-between gap-4">
-      <div className="space-y-1">
-        <h3
-          className="text-[17px] font-medium leading-[1.2] tracking-[-0.012em] text-[var(--color-ink)]"
-          style={{ fontFamily: "var(--font-display)", fontVariationSettings: '"opsz" 48' }}
-        >
-          Rubric for Evaluating Social and Economic Disadvantage (SED) Narrative (PN); and Personal Net Worth (PNW) (§26.67)
-        </h3>
-        <p className="text-[12.5px] leading-[1.5] text-[var(--color-ink-mute)]">
-          Apply Mandatory Eligibility Requirements first. If any are marked NO, stop — the firm is not eligible. If all are marked YES, evaluate the scored criteria below.
-        </p>
-      </div>
+    <div className="flex items-center justify-end">
       <button
         type="button"
         onClick={() => setTarget({ kind: "addL3" })}
@@ -149,57 +138,67 @@ export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
       >
         Create criterion
       </button>
-    </header>
+    </div>
   );
 
   const compose = target ? buildCompose(target, l3) : null;
 
   return (
     <div className="space-y-6 pb-2">
-      <RubricShell intro={intro}>
-        <RubricSection
-          title="SED Rubric — Mandatory & Scored Criteria (§26.67)"
-          count={l3.length}
-          countLabel="criterion"
-          defaultOpen
-        >
-          {l3.length === 0 ? (
+      <RubricShell
+        description="Narrative Review — three Mandatory Eligibility Requirements followed by four Scored Evaluation Criteria. Each criterion is judged YES or NO."
+        intro={intro}
+      >
+        {l3.length === 0 ? (
+          <RubricSection
+            title="SED Criteria"
+            count={0}
+            countLabel="criterion"
+            defaultOpen
+          >
             <p className="border border-dashed border-[var(--color-line)] bg-[var(--color-cream-soft)] px-4 py-6 text-center text-[12.5px] text-[var(--color-ink-mute)]">
               No criteria yet. Click “Create criterion” to add the first one.
             </p>
-          ) : (
-            <div className="space-y-7">
-              <section className="space-y-3">
-                <SectionHeading>Mandatory Eligibility Requirements</SectionHeading>
-                <ol className="flex list-none flex-col">
-                  {mandatory.map((c) => (
-                    <CriterionItem
-                      key={c.s_no}
-                      criterion={c}
-                      onEdit={() => setTarget({ kind: "editL3", sNo: c.s_no })}
-                      onDelete={() => deleteL3(c.s_no)}
-                    />
-                  ))}
-                </ol>
-              </section>
+          </RubricSection>
+        ) : (
+          <>
+            <RubricSection
+              title="Mandatory Eligibility Requirements"
+              count={mandatory.length}
+              countLabel="criterion"
+              defaultOpen
+            >
+              <ol className="flex list-none flex-col">
+                {mandatory.map((c) => (
+                  <CriterionItem
+                    key={c.s_no}
+                    criterion={c}
+                    onEdit={() => setTarget({ kind: "editL3", sNo: c.s_no })}
+                    onDelete={() => deleteL3(c.s_no)}
+                  />
+                ))}
+              </ol>
+            </RubricSection>
 
-              <section className="space-y-3">
-                <SectionHeading>Scored Evaluation Criteria</SectionHeading>
-                <ol className="flex list-none flex-col">
-                  {evaluation.map((c, i) => (
-                    <CriterionItem
-                      key={c.s_no}
-                      criterion={c}
-                      displayNumber={i + 1}
-                      onEdit={() => setTarget({ kind: "editL3", sNo: c.s_no })}
-                      onDelete={() => deleteL3(c.s_no)}
-                    />
-                  ))}
-                </ol>
-              </section>
-            </div>
-          )}
-        </RubricSection>
+            <RubricSection
+              title="Scored Evaluation Criteria"
+              count={evaluation.length}
+              countLabel="criterion"
+            >
+              <ol className="flex list-none flex-col">
+                {evaluation.map((c, i) => (
+                  <CriterionItem
+                    key={c.s_no}
+                    criterion={c}
+                    displayNumber={i + 1}
+                    onEdit={() => setTarget({ kind: "editL3", sNo: c.s_no })}
+                    onDelete={() => deleteL3(c.s_no)}
+                  />
+                ))}
+              </ol>
+            </RubricSection>
+          </>
+        )}
       </RubricShell>
 
       <SaveBar
@@ -226,14 +225,6 @@ export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
 
       {confirm && <ConfirmDialog request={confirm} onCancel={() => setConfirm(null)} />}
     </div>
-  );
-}
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h4 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
-      {children}
-    </h4>
   );
 }
 

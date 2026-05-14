@@ -8,6 +8,10 @@ export type RubricSectionProps = {
   count: number;
   countLabel?: string; // e.g. "questions", "criteria", "tiers"; default "items"
   defaultOpen?: boolean;
+  // Optional weight as a 0-1 fraction. Rendered as a small "· NN%" suffix in
+  // the section header chip. Only CMGC sections have weights today; CUCP/ROW
+  // omit this and the chip falls back to just the count label.
+  weight?: number;
   children: React.ReactNode;
 };
 
@@ -17,10 +21,13 @@ export function RubricSection({
   count,
   countLabel = "item",
   defaultOpen = false,
+  weight,
   children,
 }: RubricSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
-  const label = `${count} ${countLabel}${count === 1 ? "" : "s"}`;
+  const countLine = `${count} ${countLabel}${count === 1 ? "" : "s"}`;
+  const label =
+    typeof weight === "number" ? `${countLine} · ${Math.round(weight * 100)}%` : countLine;
   return (
     <div className="border-b border-[var(--color-line-soft)] last:border-b-0">
       <button

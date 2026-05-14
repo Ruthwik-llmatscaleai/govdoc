@@ -141,10 +141,7 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
 
   const categories = Object.entries(schema);
   const intro = (
-    <div className="flex items-center justify-between gap-3">
-      <p className="text-[12.5px] leading-[1.5] text-[var(--color-ink-mute)]">
-        {categories.length} categories. Each is rated on a 1–5 scale; tier descriptions are edited inline.
-      </p>
+    <div className="flex items-center justify-end">
       <button
         type="button"
         onClick={() => setTarget({ kind: "addCategory" })}
@@ -159,7 +156,10 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
 
   return (
     <div className="space-y-6 pb-2">
-      <RubricShell intro={intro}>
+      <RubricShell
+        description="Appraisal Review — 34 categories, each rated on a 1–5 scale against the descriptors below. Per-category scores combine into the overall evaluation."
+        intro={intro}
+      >
         {categories.length === 0 ? (
           <div className="border border-dashed border-[var(--color-line)] bg-[var(--color-cream-soft)] px-6 py-12 text-center">
             <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">

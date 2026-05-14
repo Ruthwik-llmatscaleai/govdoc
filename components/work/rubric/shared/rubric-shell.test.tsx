@@ -21,4 +21,14 @@ describe("RubricShell", () => {
     );
     expect(screen.getByTestId("body")).toBeInTheDocument();
   });
+
+  it("renders the description above any custom intro", () => {
+    render(
+      <RubricShell description="A short summary line." intro={<div data-testid="intro">intro</div>}>
+        <div />
+      </RubricShell>,
+    );
+    expect(screen.getByText(/A short summary line/i)).toBeInTheDocument();
+    expect(screen.getByTestId("intro")).toBeInTheDocument();
+  });
 });

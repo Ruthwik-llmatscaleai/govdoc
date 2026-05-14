@@ -6,19 +6,27 @@ import { RubricShell } from "./shared/rubric-shell";
 import { RubricSection } from "./shared/rubric-section";
 
 const SECTION_KEYS = ["A", "B", "C", "D", "E", "F"] as const;
+type SectionKey = (typeof SECTION_KEYS)[number];
 
-function splitSection(label: string): { key: string; name: string } {
-  const m = label.match(/^([A-Z]):\s*(.+)$/);
-  if (m && m[1] && m[2]) return { key: m[1], name: m[2] };
-  return { key: label.charAt(0), name: label };
+// Strip the "A: " / "B: " prefix that lives in the data model so section
+// headers read as names only — matches ROW's category-name convention and
+// CUCP's named groupings. Data IDs (A1, A2, B1…) on each question are
+// unaffected; they stay as the canonical identifiers.
+function sectionNameOnly(label: string): string {
+  const m = label.match(/^[A-Z]:\s*(.+)$/);
+  return m?.[1] ?? label;
 }
+
+const DESCRIPTION =
+  "Project Review rubric — six sections, each scored on a 3-tier A/B/C scale. Section weights combine into a weighted composite recommendation across eight delivery methods.";
 
 export function CmgcRubricView({ data }: { data?: CmgcRubricData }) {
   const { questions, weights } = data ?? defaultCmgcRubric();
 
-  const bySection = new Map<string, { name: string; qs: RubricQuestion[] }>();
+  const bySection = new Map<SectionKey, { name: string; qs: RubricQuestion[] }>();
   for (const q of questions) {
-    const { key, name } = splitSection(q.section);
+    const key = (q.section.match(/^([A-Z]):/)?.[1] ?? q.section.charAt(0)) as SectionKey;
+    const name = sectionNameOnly(q.section);
     const cur = bySection.get(key) ?? { name, qs: [] };
     cur.qs.push(q);
     bySection.set(key, cur);
@@ -30,69 +38,23 @@ export function CmgcRubricView({ data }: { data?: CmgcRubricData }) {
     weight: weights[k],
   }));
 
-  const dominantKey = sections.reduce(
-    (acc, s) => (s.weight > (acc?.weight ?? -1) ? s : acc),
-    sections[0],
-  )?.key;
-
-  const intro = (
-    <div
-      aria-label="Section weights"
-      className="flex items-center overflow-hidden border border-[var(--color-line)] bg-[var(--color-paper)]"
-    >
-      <div className="shrink-0 border-r border-[var(--color-line)] bg-[var(--color-cream)] px-5 py-3.5 font-mono text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-ink)]">
-        Section Weights
-      </div>
-      <div className="flex h-12 flex-1">
-        {sections.map((s, i) => {
-          const isLast = i === sections.length - 1;
-          const isDominant = s.key === dominantKey;
-          return (
-            <div
-              key={s.key}
-              style={{ flex: Math.round(s.weight * 100) }}
-              className={`flex flex-col items-center justify-center transition-colors hover:bg-[var(--color-cream-soft)] ${
-                isLast ? "" : "border-r border-[var(--color-line-soft)]"
-              }`}
-            >
-              <span
-                className={`font-mono text-[11px] font-semibold leading-none tracking-[0.08em] ${
-                  isDominant ? "text-[var(--color-govdoc-primary)]" : "text-[var(--color-ink)]"
-                }`}
-              >
-                {s.key}
-              </span>
-              <span
-                className={`mt-0.5 font-mono text-[9.5px] leading-none tracking-[0.08em] ${
-                  isDominant ? "font-medium text-[var(--color-govdoc-deep)]" : "text-[var(--color-ink-mute)]"
-                }`}
-              >
-                {Math.round(s.weight * 100)}%
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-
   return (
-    <RubricShell intro={intro}>
+    <RubricShell description={DESCRIPTION}>
       {sections.map((s, i) => (
         <RubricSection
           key={s.key}
-          sectionKey={s.key}
           title={s.name}
           count={s.qs.length}
           countLabel="question"
+          weight={s.weight}
           defaultOpen={i === 0}
         >
           <ol className="flex list-none flex-col gap-4">
-            {s.qs.map((q) => (
+            {s.qs.map((q, qi) => (
               <li key={q.id} className="border-b border-[var(--color-line-soft)] py-3 last:border-b-0">
                 <div className="grid grid-cols-[auto_1fr] items-baseline gap-3.5 text-[13.5px] leading-[1.5] text-[var(--color-ink-soft)]">
-                  <span className="font-mono text-[10.5px] tracking-[0.08em] text-[var(--color-ink-faint)]">
-                    {q.id}
+                  <span className="font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--color-ink-faint)]">
+                    {qi + 1}.
                   </span>
                   <span className="font-medium">{q.question}</span>
                 </div>

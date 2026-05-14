@@ -21,7 +21,6 @@ export function InputsForm() {
         htmlFor="narrative"
         label="Personal Narrative Statement (PDF)"
         required
-        hint="The applicant's personal narrative under 49 CFR §26.67. Used for fact extraction and W-5 audit. The uploaded filename becomes the project ID — institutional memory corrections are scoped to it."
       >
         <FilePicker id="narrative" name="narrative" accept=".pdf" required />
       </Field>

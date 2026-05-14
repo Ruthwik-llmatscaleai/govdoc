@@ -72,10 +72,6 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
     sectionsMap.set(key, cur);
   }
   const sections = Array.from(sectionsMap.values());
-  const dominantKey = sections.reduce(
-    (acc, s) => (s && weights[s.key] > (acc ? weights[acc.key] : -1) ? s : acc),
-    sections[0],
-  )?.key;
 
   function openCreate(kind: "section" | "question") {
     if (kind === "section") {
@@ -271,60 +267,19 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
   const compose = target ? buildCompose(target, sectionsMap, weights, questions) : null;
   const selects = target ? buildSelects(target, sections) : undefined;
 
-  const sectionWeightsBar = (
+  // Per-section weights now surface as a subtle chip in the section header
+  // (RubricSection's `weight` prop). The Σ validity check is the only thing
+  // worth keeping at the page level — and only when it actually fails, so
+  // the editor stays uncluttered in the common case. Editing a single
+  // section's weight is still done through the existing "Edit section" form.
+  const weightWarning = !weightOk && sections.length > 0 ? (
     <div
-      aria-label="Section weights"
-      className="flex items-center overflow-hidden border border-[var(--color-line)] bg-[var(--color-paper)]"
+      role="alert"
+      className="rounded-md border border-l-4 border-destructive/30 border-l-destructive bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive"
     >
-      <div className="shrink-0 border-r border-[var(--color-line)] bg-[var(--color-cream)] px-5 py-3.5 font-mono text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-ink)]">
-        Section Weights
-      </div>
-      <div className="flex h-12 flex-1">
-        {sections.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center font-mono text-[10.5px] text-[var(--color-ink-faint)]">
-            No sections yet
-          </div>
-        ) : (
-          sections.map((s, i) => {
-            const isLast = i === sections.length - 1;
-            const isDominant = s.key === dominantKey;
-            return (
-              <div
-                key={s.key}
-                style={{ flex: Math.max(1, Math.round((weights[s.key] ?? 0) * 100)) }}
-                className={`flex flex-col items-center justify-center transition-colors hover:bg-[var(--color-cream-soft)] ${
-                  isLast ? "" : "border-r border-[var(--color-line-soft)]"
-                }`}
-              >
-                <span
-                  className={`font-mono text-[11px] font-semibold leading-none tracking-[0.08em] ${
-                    isDominant ? "text-[var(--color-govdoc-primary)]" : "text-[var(--color-ink)]"
-                  }`}
-                >
-                  {s.key}
-                </span>
-                <span
-                  className={`mt-0.5 font-mono text-[9.5px] leading-none tracking-[0.08em] ${
-                    isDominant
-                      ? "font-medium text-[var(--color-govdoc-deep)]"
-                      : "text-[var(--color-ink-mute)]"
-                  }`}
-                >
-                  {Math.round((weights[s.key] ?? 0) * 100)}%
-                </span>
-              </div>
-            );
-          })
-        )}
-      </div>
-      <div className="shrink-0 border-l border-[var(--color-line)] px-4 py-3.5 font-mono text-[10.5px] tracking-[0.08em]">
-        <span className="text-[var(--color-ink-faint)]">Σ</span>{" "}
-        <span className={weightOk ? "text-[var(--color-ink)]" : "text-destructive"}>
-          {totalWeight.toFixed(2)}
-        </span>
-      </div>
+      Section weights total {totalWeight.toFixed(2)} — must equal 1.00 before saving.
     </div>
-  );
+  ) : null;
 
   return (
     <div className="space-y-6 pb-2">
@@ -338,7 +293,10 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
         />
       </div>
 
-      <RubricShell intro={sectionWeightsBar}>
+      <RubricShell
+        description="Project Review rubric — six sections, each scored on a 3-tier A/B/C scale. Section weights combine into a weighted composite recommendation across eight delivery methods."
+        intro={weightWarning}
+      >
         {sections.length === 0 ? (
           <div className="border border-dashed border-[var(--color-line)] bg-[var(--color-cream-soft)] px-6 py-12 text-center">
             <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
@@ -352,10 +310,10 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
           sections.map((s, i) => (
             <RubricSection
               key={s.key}
-              sectionKey={s.key}
               title={s.name}
               count={s.qs.length}
               countLabel="question"
+              weight={weights[s.key]}
               defaultOpen={i === 0}
             >
               <div className="mb-3 flex items-center justify-end gap-2">
@@ -380,14 +338,14 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
                 </p>
               ) : (
                 <ol className="flex list-none flex-col gap-4">
-                  {s.qs.map((q) => (
+                  {s.qs.map((q, qi) => (
                     <li
                       key={q.id}
                       className="border-b border-[var(--color-line-soft)] py-3 last:border-b-0"
                     >
                       <div className="grid grid-cols-[auto_1fr_auto] items-baseline gap-3.5 text-[13.5px] leading-[1.5] text-[var(--color-ink-soft)]">
-                        <span className="font-mono text-[10.5px] tracking-[0.08em] text-[var(--color-ink-faint)]">
-                          {q.id}
+                        <span className="font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--color-ink-faint)]">
+                          {qi + 1}.
                         </span>
                         <span className="font-medium">{q.question}</span>
                         <span className="flex shrink-0 gap-1">
@@ -481,7 +439,7 @@ function buildSelects(
         name: "section",
         label: "Section",
         value: target.sectionKey,
-        options: sections.map((s) => ({ value: s.key, label: `${s.key}: ${s.name}` })),
+        options: sections.map((s) => ({ value: s.key, label: s.name })),
       },
     ];
   }

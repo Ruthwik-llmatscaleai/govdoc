@@ -5,48 +5,41 @@ import type { CucpL3Criterion } from "@/lib/usecases/cucp-reevals/rubric";
 import { RubricShell } from "./shared/rubric-shell";
 import { RubricSection } from "./shared/rubric-section";
 
+const DESCRIPTION =
+  "Narrative Review — three Mandatory Eligibility Requirements followed by four Scored Evaluation Criteria. Each criterion is judged YES or NO.";
+
 export function CucpRubricView({ data }: { data?: CucpRubricData }) {
   const { l3 } = data ?? defaultCucpRubric();
   const mandatory = l3.filter((c) => c.s_no <= 3);
   const evaluation = l3.filter((c) => c.s_no >= 4);
 
   return (
-    <RubricShell>
+    <RubricShell description={DESCRIPTION}>
       <RubricSection
-        title="SED Rubric — Mandatory & Scored Criteria (§26.67)"
-        count={l3.length}
+        title="Mandatory Eligibility Requirements"
+        count={mandatory.length}
         countLabel="criterion"
         defaultOpen
       >
-        <div className="space-y-7">
-          <section className="space-y-3">
-            <SectionHeading>Mandatory Eligibility Requirements</SectionHeading>
-            <ol className="flex list-none flex-col">
-              {mandatory.map((c) => (
-                <CriterionItem key={c.s_no} criterion={c} />
-              ))}
-            </ol>
-          </section>
+        <ol className="flex list-none flex-col">
+          {mandatory.map((c) => (
+            <CriterionItem key={c.s_no} criterion={c} />
+          ))}
+        </ol>
+      </RubricSection>
 
-          <section className="space-y-3">
-            <SectionHeading>Scored Evaluation Criteria</SectionHeading>
-            <ol className="flex list-none flex-col">
-              {evaluation.map((c, i) => (
-                <CriterionItem key={c.s_no} criterion={c} displayNumber={i + 1} />
-              ))}
-            </ol>
-          </section>
-        </div>
+      <RubricSection
+        title="Scored Evaluation Criteria"
+        count={evaluation.length}
+        countLabel="criterion"
+      >
+        <ol className="flex list-none flex-col">
+          {evaluation.map((c, i) => (
+            <CriterionItem key={c.s_no} criterion={c} displayNumber={i + 1} />
+          ))}
+        </ol>
       </RubricSection>
     </RubricShell>
-  );
-}
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h4 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
-      {children}
-    </h4>
   );
 }
 
