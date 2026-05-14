@@ -96,9 +96,10 @@ export function OverrideCard({
           value={newRating}
           onChange={(e) => setNewRating(e.target.value as Rating)}
           className={cn(
-            "h-9 w-full rounded-lg border border-input bg-muted/30 px-2 text-sm",
-            "transition-colors focus:border-primary/40 focus:bg-background",
-            "focus:outline-none focus:ring-2 focus:ring-primary/15",
+            "h-9 max-w-xs rounded-md border border-[var(--color-line)] bg-[var(--color-paper)] px-2.5 text-sm text-[var(--color-ink)]",
+            "transition-colors hover:bg-[var(--color-cream-soft)]",
+            "focus:border-[var(--color-govdoc-primary)] focus:bg-[var(--color-paper)]",
+            "focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-soft)]",
           )}
         >
           <option value="A">A — {question.options.A}</option>
