@@ -43,7 +43,7 @@ describe("ScoreTable", () => {
     expect(screen.queryByRole("button", { name: /clear all overrides/i })).toBeNull();
   });
 
-  it("renders 'edited' indicator on the Effective cell when an override exists", () => {
+  it("renders 'edited' indicator on the AI Rating cell when an override exists", () => {
     useOverridesStore
       .getState()
       .push({ category: "A1", oldValue: "A", newValue: "C", reason: "Reviewer correction." });
@@ -54,6 +54,11 @@ describe("ScoreTable", () => {
   it("labels the source column 'Source Excerpt'", () => {
     render(<ScoreTable ratings={mockRatings()} />);
     expect(screen.getByText(/Source Excerpt/i)).toBeInTheDocument();
+  });
+
+  it("does not render a separate Effective column header", () => {
+    render(<ScoreTable ratings={mockRatings()} />);
+    expect(screen.queryByText(/^Effective$/i)).toBeNull();
   });
 });
 
@@ -85,7 +90,7 @@ describe("ScoreTable defensive rendering", () => {
   it("renders an em-dash for undefined selected_rating", () => {
     const broken = makeRating({ selected_rating: undefined as unknown as CmgcRating["selected_rating"] });
     render(<ScoreTable ratings={[broken]} />);
-    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(2); // AI Rating cell AND Effective cell
+    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders an em-dash for empty-string selected_rating (missing-info case)", () => {
@@ -95,7 +100,7 @@ describe("ScoreTable defensive rendering", () => {
       confidence: 0.0,
     });
     render(<ScoreTable ratings={[missing]} />);
-    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders an em-dash for undefined confidence", () => {

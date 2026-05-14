@@ -145,7 +145,7 @@ describe("HiflWizard", () => {
     expect(optionTexts.some((t) => t.includes("A1"))).toBe(false);
   });
 
-  it("renders live preview ABOVE the Select-question dropdown AND the override card", () => {
+  it("renders live preview ABOVE the Show filter, Select-question dropdown, and override card", () => {
     render(
       <HiflWizard
         questions={[makeQuestion("A1")]}
@@ -157,9 +157,11 @@ describe("HiflWizard", () => {
       />,
     );
     const preview = screen.getByTestId("preview");
+    const filter = screen.getByText(/^Show:$/i);
     const dropdown = screen.getByLabelText(/Select question/i);
     const card = screen.getByLabelText(/Your Rating Override/i);
     // DOCUMENT_POSITION_FOLLOWING (4) means the second node follows the first.
+    expect(preview.compareDocumentPosition(filter) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(preview.compareDocumentPosition(dropdown) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(preview.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });

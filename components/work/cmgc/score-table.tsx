@@ -25,7 +25,6 @@ export function ScoreTable({ ratings }: Props) {
             <th className="text-left p-2">ID</th>
             <th className="text-left p-2">Question</th>
             <th className="text-left p-2">AI Rating</th>
-            <th className="text-left p-2">Effective</th>
             <th className="text-left p-2">Confidence</th>
             <th className="text-left p-2">Source Excerpt</th>
           </tr>
@@ -35,16 +34,14 @@ export function ScoreTable({ ratings }: Props) {
             // Use `||` rather than `??` so that empty-string ratings (legitimate
             // when narrative info is missing) collapse to "—" alongside null/undefined.
             const override = overrideMap[r.question_id];
-            const aiDisplay = r.selected_rating || "—";
-            const effectiveDisplay = override || aiDisplay;
+            const display = override || r.selected_rating || "—";
             const isEdited = override != null && override !== r.selected_rating;
             return (
               <tr key={r.question_id} className="border-t align-top">
                 <td className="p-2 font-mono">{r.question_id ?? "—"}</td>
                 <td className="p-2">{r.question_text ?? "—"}</td>
-                <td className="p-2">{aiDisplay}</td>
                 <td className="p-2">
-                  <span className="font-medium">{effectiveDisplay}</span>
+                  <span className="font-medium">{display}</span>
                   {isEdited && (
                     <span className="ml-2 text-[11px] italic text-muted-foreground">
                       (edited)

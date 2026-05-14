@@ -98,6 +98,16 @@ export function HiflWizard({
       {/* ── Step 1: Review & Override ── */}
       {currentStep === "review" && (
         <div className="space-y-4">
+          {previewTable && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
+              <p className="text-xs text-muted-foreground">
+                Updates immediately as you save corrections. Edited rows show "(edited)" next to the AI Rating.
+              </p>
+              {previewTable}
+            </div>
+          )}
+
           <fieldset className="flex items-center gap-4">
             <legend className="text-sm font-medium text-muted-foreground mr-2">Show:</legend>
             <label className="flex items-center gap-1 text-sm cursor-pointer">
@@ -122,16 +132,6 @@ export function HiflWizard({
               Missing Info Only
             </label>
           </fieldset>
-
-          {previewTable && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
-              <p className="text-xs text-muted-foreground">
-                Updates immediately as you save corrections. The Effective column reflects your overrides.
-              </p>
-              {previewTable}
-            </div>
-          )}
 
           {filteredQuestions.length > 0 ? (
             <div className="space-y-1">
