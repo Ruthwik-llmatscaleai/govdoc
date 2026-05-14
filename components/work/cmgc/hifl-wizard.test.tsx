@@ -26,28 +26,28 @@ describe("HiflWizard", () => {
 
   it("starts on Step 1 (Review & Override)", () => {
     render(<HiflWizard {...baseProps} />);
-    expect(screen.getByRole("button", { name: /Approve & Export/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Save & Continue/i })).toBeTruthy();
   });
 
-  it("disables Approve & Export when no overrides AND no acknowledgment", () => {
+  it("disables Save & Continue when no overrides AND no acknowledgment", () => {
     render(<HiflWizard {...baseProps} />);
-    expect(screen.getByRole("button", { name: /Approve & Export/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Save & Continue/i })).toBeDisabled();
   });
 
-  it("enables Approve & Export when 'no changes needed' is clicked", () => {
+  it("enables Save & Continue when 'no changes needed' is clicked", () => {
     render(<HiflWizard {...baseProps} />);
     fireEvent.click(screen.getByRole("button", { name: /reviewed all flagged questions/i }));
-    expect(screen.getByRole("button", { name: /Approve & Export/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Save & Continue/i })).toBeEnabled();
   });
 
-  it("enables Approve & Export when there is at least one override", () => {
+  it("enables Save & Continue when there is at least one override", () => {
     render(
       <HiflWizard
         {...baseProps}
         overrides={[{ question_id: "A1", oldValue: "B", newValue: "A", reason: "needs deeper study yes" }]}
       />
     );
-    expect(screen.getByRole("button", { name: /Approve & Export/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Save & Continue/i })).toBeEnabled();
   });
 
   it("Back from Export returns to Review with overrides preserved", () => {
@@ -57,7 +57,7 @@ describe("HiflWizard", () => {
         overrides={[{ question_id: "A1", oldValue: "B", newValue: "A", reason: "needs deeper study yes" }]}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /Approve & Export/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Save & Continue/i }));
     fireEvent.click(screen.getByRole("button", { name: /← Back/i }));
     rerender(
       <HiflWizard
@@ -68,14 +68,14 @@ describe("HiflWizard", () => {
     expect(screen.getAllByText(/A1/).length).toBeGreaterThan(0);
   });
 
-  it("Approve & Export reveals the Export recap", () => {
+  it("Save & Continue reveals the Export recap", () => {
     render(
       <HiflWizard
         {...baseProps}
         overrides={[{ question_id: "A1", oldValue: "B", newValue: "A", reason: "needs deeper study yes" }]}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /Approve & Export/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Save & Continue/i }));
     expect(screen.getByText(/Review complete/i)).toBeTruthy();
     expect(screen.getByText(/Final recommendation/i)).toBeTruthy();
   });
@@ -88,7 +88,7 @@ describe("HiflWizard", () => {
         overrides={[{ question_id: "A1", oldValue: "B", newValue: "A", reason: "needs deeper study yes" }]}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /Approve & Export/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Save & Continue/i }));
     expect(screen.getByText(/Project Delivery Evaluation/i)).toBeTruthy();
   });
 
@@ -110,7 +110,7 @@ describe("HiflWizard", () => {
         overrides={[{ question_id: "A1", oldValue: "B", newValue: "A", reason: "needs deeper study yes" }]}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: /Approve & Export/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Save & Continue/i }));
     expect(screen.getByRole("button", { name: /Back to Review/i })).toBeTruthy();
   });
 
@@ -143,5 +143,23 @@ describe("HiflWizard", () => {
     const optionTexts = Array.from(select.options).map((o) => o.textContent ?? "");
     expect(optionTexts.some((t) => t.includes("A2"))).toBe(true);
     expect(optionTexts.some((t) => t.includes("A1"))).toBe(false);
+  });
+
+  it("renders live preview ABOVE the override card", () => {
+    render(
+      <HiflWizard
+        questions={[makeQuestion("A1")]}
+        recommendationLabel="CM/GC"
+        overrides={[]}
+        previewTable={<div data-testid="preview">PREVIEW</div>}
+        onSaveOverride={() => {}}
+        onRemoveOverride={() => {}}
+      />,
+    );
+    const preview = screen.getByTestId("preview");
+    const card = screen.getByLabelText(/Your Rating Override/i);
+    const order = preview.compareDocumentPosition(card);
+    // DOCUMENT_POSITION_FOLLOWING (4) means `card` follows `preview`.
+    expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

@@ -129,12 +129,14 @@ export function HiflWizard({
               <select
                 id="hifl-question-select"
                 aria-label="Select question"
+                size={1}
                 value={effectiveSelectedId}
                 onChange={(e) => setSelectedQuestionId(e.target.value)}
                 className={cn(
-                  "h-9 w-full rounded-lg border border-input bg-muted/30 px-2 text-sm",
-                  "transition-colors focus:border-primary/40 focus:bg-background",
-                  "focus:outline-none focus:ring-2 focus:ring-primary/15",
+                  "h-9 w-full max-w-md truncate rounded-md border border-[var(--color-line)] bg-[var(--color-paper)] px-2.5 text-sm text-[var(--color-ink)]",
+                  "transition-colors hover:bg-[var(--color-cream-soft)]",
+                  "focus:border-[var(--color-govdoc-primary)] focus:bg-[var(--color-paper)]",
+                  "focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-soft)]",
                 )}
               >
                 {filteredQuestions.map((q) => (
@@ -148,6 +150,16 @@ export function HiflWizard({
             <p className="text-sm text-muted-foreground">No questions match this filter.</p>
           )}
 
+          {previewTable && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
+              <p className="text-xs text-muted-foreground">
+                Updates immediately as you save corrections. The Effective column reflects your overrides.
+              </p>
+              {previewTable}
+            </div>
+          )}
+
           {selectedQuestion && (
             <OverrideCard
               key={selectedQuestion.question_id}
@@ -157,16 +169,6 @@ export function HiflWizard({
               }}
               onSave={onSaveOverride}
             />
-          )}
-
-          {previewTable && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
-              <p className="text-xs text-muted-foreground">
-                Updates immediately as you save corrections. The Effective column reflects your overrides.
-              </p>
-              {previewTable}
-            </div>
           )}
 
           <div className="rounded-md border border-border bg-muted/20 p-4 space-y-2">
@@ -224,7 +226,7 @@ export function HiflWizard({
                 "disabled:cursor-not-allowed disabled:opacity-50",
               )}
             >
-              Approve &amp; Export
+              Save &amp; Continue →
             </button>
           </div>
         </div>
