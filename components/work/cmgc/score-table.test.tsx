@@ -42,6 +42,19 @@ describe("ScoreTable", () => {
     expect(screen.queryByRole("button", { name: /undo/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /clear all overrides/i })).toBeNull();
   });
+
+  it("renders 'edited' indicator on the Effective cell when an override exists", () => {
+    useOverridesStore
+      .getState()
+      .push({ category: "A1", oldValue: "A", newValue: "C", reason: "Reviewer correction." });
+    render(<ScoreTable ratings={mockRatings({ A1: "A" })} />);
+    expect(screen.getByText(/edited/i)).toBeInTheDocument();
+  });
+
+  it("labels the source column 'Source Excerpt'", () => {
+    render(<ScoreTable ratings={mockRatings()} />);
+    expect(screen.getByText(/Source Excerpt/i)).toBeInTheDocument();
+  });
 });
 
 function makeRating(overrides: Partial<CmgcRating> = {}): CmgcRating {

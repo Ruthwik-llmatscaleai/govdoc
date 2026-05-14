@@ -27,7 +27,7 @@ export function ScoreTable({ ratings }: Props) {
             <th className="text-left p-2">AI Rating</th>
             <th className="text-left p-2">Effective</th>
             <th className="text-left p-2">Confidence</th>
-            <th className="text-left p-2">Source</th>
+            <th className="text-left p-2">Source Excerpt</th>
           </tr>
         </thead>
         <tbody>
@@ -35,20 +35,29 @@ export function ScoreTable({ ratings }: Props) {
             // Use `||` rather than `??` so that empty-string ratings (legitimate
             // when narrative info is missing) collapse to "—" alongside null/undefined.
             const override = overrideMap[r.question_id];
-            const effectiveDisplay = override || r.selected_rating || "—";
+            const aiDisplay = r.selected_rating || "—";
+            const effectiveDisplay = override || aiDisplay;
+            const isEdited = override != null && override !== r.selected_rating;
             return (
               <tr key={r.question_id} className="border-t align-top">
                 <td className="p-2 font-mono">{r.question_id ?? "—"}</td>
                 <td className="p-2">{r.question_text ?? "—"}</td>
-                <td className="p-2">{r.selected_rating || "—"}</td>
+                <td className="p-2">{aiDisplay}</td>
                 <td className="p-2">
                   <span className="font-medium">{effectiveDisplay}</span>
+                  {isEdited && (
+                    <span className="ml-2 text-[11px] italic text-muted-foreground">
+                      (edited)
+                    </span>
+                  )}
                 </td>
                 <td className="p-2">
                   {r.confidence != null ? r.confidence.toFixed(2) : "—"}
                 </td>
-                <td className="p-2 text-xs">
-                  {(r.source_reasoning ?? "—").slice(0, 200)}
+                <td className="p-2">
+                  <blockquote className="border-l-2 border-[var(--color-line)] pl-2 text-xs italic text-muted-foreground">
+                    {(r.source_reasoning ?? "—").slice(0, 200) || "—"}
+                  </blockquote>
                 </td>
               </tr>
             );
