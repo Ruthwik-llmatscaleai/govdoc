@@ -86,7 +86,7 @@ export function HiflWizard({
   return (
     <div className="space-y-4">
       {currentStep === "review" && rubricPreview && (
-        <details className="group rounded-md border border-[var(--color-line)]">
+        <details className="group rounded-md border border-[var(--color-line)] bg-[var(--color-paper)]">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 text-sm font-medium text-[var(--color-ink)] hover:bg-[var(--color-cream-soft)]">
             <span>Preview rubric</span>
             <span
@@ -109,7 +109,7 @@ export function HiflWizard({
       )}
 
       {currentStep === "review" && previewTable && (
-        <div className="space-y-2 rounded-lg border border-[var(--color-line)] p-5">
+        <div className="space-y-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-5">
           <h3 className="text-sm font-semibold text-foreground">Live preview</h3>
           <p className="text-xs text-muted-foreground">
             Updates immediately as you save corrections. Edited rows show &ldquo;(edited)&rdquo; next to the AI Rating.
@@ -193,7 +193,7 @@ export function HiflWizard({
             />
           )}
 
-          <div className="rounded-lg border border-[var(--color-line)] p-5 space-y-2">
+          <div className="rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-5 space-y-2">
             <h3 className="text-sm font-semibold">Pending Corrections</h3>
             {overrides.length === 0 ? (
               <p className="text-sm text-muted-foreground">No corrections yet.</p>

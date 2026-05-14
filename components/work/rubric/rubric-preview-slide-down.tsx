@@ -27,7 +27,7 @@ export function RubricPreviewSlideDown({ usecaseId }: { usecaseId: UseCaseId }) 
   }, [usecaseId]);
 
   return (
-    <details className="group rounded-md border border-[var(--color-line)]">
+    <details className="group rounded-md border border-[var(--color-line)] bg-[var(--color-paper)]">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 text-sm font-medium text-[var(--color-ink)] hover:bg-[var(--color-cream-soft)]">
         <span>Preview rubric</span>
         <span
