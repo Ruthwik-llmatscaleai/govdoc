@@ -4,7 +4,7 @@ type Props = { multiMethod: MultiMethodResult };
 
 export function MethodRanking({ multiMethod }: Props) {
   return (
-    <div className="space-y-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-5">
+    <div className="space-y-3 rounded-lg border border-[var(--color-line)] p-5">
       <h3 className="text-base font-semibold text-[var(--color-ink)]">Method ranking</h3>
       <div className="overflow-x-auto rounded-md border border-[var(--color-line)]">
         <table className="min-w-full text-sm">

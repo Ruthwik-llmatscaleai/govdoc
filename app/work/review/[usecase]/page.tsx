@@ -286,7 +286,7 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
         <MethodRanking multiMethod={result.multi_method} />
         {role === "district" ? (
           <>
-            <div className="space-y-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-5">
+            <div className="space-y-2 rounded-lg border border-[var(--color-line)] p-5">
               <h3 className="text-sm font-semibold text-foreground">Project rubric scores</h3>
               <ScoreTable ratings={result.evaluation.ratings} />
             </div>
