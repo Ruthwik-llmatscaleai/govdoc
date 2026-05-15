@@ -28,10 +28,8 @@ export default async function PreviewRubricsPage() {
         ]}
       />
 
-      {/* Page header — bespoke (we need the read-only meta column on the right).
-          No bottom border or pb-* here: the Tabs.List below carries the divider,
-          and a second line would just double up the rule. */}
-      <header className="mb-4 grid grid-cols-[auto_1fr] items-start gap-6 lg:grid-cols-[auto_1fr_auto]">
+      {/* Page header — bespoke (we need the read-only meta column on the right). */}
+      <header className="mb-7 grid grid-cols-[auto_1fr] items-start gap-6 border-b border-[var(--color-line)] pb-6 lg:grid-cols-[auto_1fr_auto]">
         <div className="flex size-11 shrink-0 items-center justify-center bg-[var(--color-govdoc-primary)] text-white">
           <svg
             viewBox="0 0 24 24"
