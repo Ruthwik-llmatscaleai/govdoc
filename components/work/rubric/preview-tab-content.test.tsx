@@ -7,8 +7,19 @@ const rubrics = [
   { id: "pilot", label: "DBE Pilot", isDefault: false, createdAt: "2026-05-14T00:00:00Z" },
 ] as const;
 
-function FakeView({ data }: { data: { v: string } }) {
-  return <div data-testid="view">{data.v}</div>;
+function FakeView({
+  data,
+  headerRight,
+}: {
+  data: { v: string };
+  headerRight?: React.ReactNode;
+}) {
+  return (
+    <div>
+      {headerRight}
+      <div data-testid="view">{data.v}</div>
+    </div>
+  );
 }
 
 beforeEach(() => {

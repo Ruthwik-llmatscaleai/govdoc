@@ -8,7 +8,7 @@ type Props<T> = {
   usecaseId: string;
   rubrics: readonly RubricsManifestEntry[];
   initialData: T;
-  View: ComponentType<{ data: T }>;
+  View: ComponentType<{ data: T; headerRight?: React.ReactNode }>;
 };
 
 function pickInitialId(rubrics: readonly RubricsManifestEntry[]): string {
@@ -41,19 +41,23 @@ export function PreviewTabContent<T>({ usecaseId, rubrics, initialData, View }: 
 
   return (
     <div className="space-y-4">
-      <RubricPicker
-        rubrics={rubrics}
-        selectedId={selectedId}
-        onSelect={handleSelect}
-        mode="read-only"
-        busy={loading}
-      />
       {error && (
         <div className="rounded-md border border-l-4 border-destructive/30 border-l-destructive bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive">
           {error}
         </div>
       )}
-      <View data={data} />
+      <View
+        data={data}
+        headerRight={
+          <RubricPicker
+            rubrics={rubrics}
+            selectedId={selectedId}
+            onSelect={handleSelect}
+            mode="read-only"
+            busy={loading}
+          />
+        }
+      />
     </div>
   );
 }

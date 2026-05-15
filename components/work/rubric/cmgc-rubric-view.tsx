@@ -20,7 +20,15 @@ function sectionNameOnly(label: string): string {
 const DESCRIPTION =
   "Project Review rubric — six sections, each scored on a 3-tier A/B/C scale. Section weights combine into a weighted composite recommendation across eight delivery methods.";
 
-export function CmgcRubricView({ data, compact = false }: { data?: CmgcRubricData; compact?: boolean }) {
+export function CmgcRubricView({
+  data,
+  compact = false,
+  headerRight,
+}: {
+  data?: CmgcRubricData;
+  compact?: boolean;
+  headerRight?: React.ReactNode;
+}) {
   const { questions, weights } = data ?? defaultCmgcRubric();
 
   const bySection = new Map<SectionKey, { name: string; qs: RubricQuestion[] }>();
@@ -39,7 +47,7 @@ export function CmgcRubricView({ data, compact = false }: { data?: CmgcRubricDat
   }));
 
   return (
-    <RubricShell description={DESCRIPTION}>
+    <RubricShell description={DESCRIPTION} headerRight={headerRight}>
       {sections.map((s, i) => (
         <RubricSection
           key={s.key}
