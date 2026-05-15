@@ -8,12 +8,20 @@ const TIERS: ("1" | "2" | "3" | "4" | "5")[] = ["1", "2", "3", "4", "5"];
 const DESCRIPTION =
   "Appraisal Review — 34 categories, each rated on a 1–5 scale against the descriptors below. Per-category scores combine into the overall evaluation.";
 
-export function RowRubricView({ data, compact = false }: { data?: RowRubricData; compact?: boolean }) {
+export function RowRubricView({
+  data,
+  compact = false,
+  headerRight,
+}: {
+  data?: RowRubricData;
+  compact?: boolean;
+  headerRight?: React.ReactNode;
+}) {
   const schema = data ?? defaultRowRubric();
   const categories = Object.entries(schema);
 
   return (
-    <RubricShell description={DESCRIPTION}>
+    <RubricShell description={DESCRIPTION} headerRight={headerRight}>
       {categories.map(([category, tiers]) => (
         <RubricSection key={category} title={category} count={TIERS.length} countLabel="tier" compact={compact}>
           <dl className="flex flex-col gap-1.5">

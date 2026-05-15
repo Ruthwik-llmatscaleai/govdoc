@@ -8,13 +8,21 @@ import { RubricSection } from "./shared/rubric-section";
 const DESCRIPTION =
   "Narrative Review — three Mandatory Eligibility Requirements followed by four Scored Evaluation Criteria. Each criterion is judged YES or NO.";
 
-export function CucpRubricView({ data, compact = false }: { data?: CucpRubricData; compact?: boolean }) {
+export function CucpRubricView({
+  data,
+  compact = false,
+  headerRight,
+}: {
+  data?: CucpRubricData;
+  compact?: boolean;
+  headerRight?: React.ReactNode;
+}) {
   const { l3 } = data ?? defaultCucpRubric();
   const mandatory = l3.filter((c) => c.s_no <= 3);
   const evaluation = l3.filter((c) => c.s_no >= 4);
 
   return (
-    <RubricShell description={DESCRIPTION}>
+    <RubricShell description={DESCRIPTION} headerRight={headerRight}>
       <RubricSection
         title="Mandatory Eligibility Requirements"
         count={mandatory.length}
