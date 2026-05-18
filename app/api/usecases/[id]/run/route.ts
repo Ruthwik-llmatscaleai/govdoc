@@ -6,6 +6,7 @@ import { makeLlmRouter } from "@/lib/llm/router";
 import type { StepContext, StepEvent } from "@/lib/usecases/types";
 import { logger } from "@/lib/logger";
 import { EMPTY_PRECEDENTS } from "@/lib/usecases/cucp-reevals/memory/precedents";
+import { getDefaultRubricId, loadRubric } from "@/lib/usecases/rubrics-store";
 
 function getCookie(req: Request, name: string): string | undefined {
   const cookie = req.headers.get("cookie") ?? "";
@@ -37,6 +38,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!useCase) return new NextResponse("Unknown use case", { status: 404 });
 
   const formData = await req.formData();
+  const rubricIdField = formData.get("rubricId");
+  const rubricVersionField = formData.get("rubricVersionId");
+  const submittedRubricId =
+    typeof rubricIdField === "string" && rubricIdField.length > 0 ? rubricIdField : undefined;
+  const submittedRubricVersion =
+    typeof rubricVersionField === "string" && rubricVersionField.length > 0
+      ? rubricVersionField
+      : undefined;
+  const resolvedRubricId = submittedRubricId ?? (await getDefaultRubricId(id));
+  const rubricContent = await loadRubric(id, resolvedRubricId, submittedRubricVersion);
   const projectIdRaw = formData.get("projectId");
   const submittedProjectId = typeof projectIdRaw === "string" ? projectIdRaw.trim() : "";
   let derivedProjectId = "";
@@ -72,6 +83,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       llm: makeLlmRouter(),
       abortSignal: req.signal,
       log: (msg, data) => logger.warn({ runId, projectId: effectiveProjectId, data }, msg),
+      rubricId: resolvedRubricId,
+      rubricVersionId: submittedRubricVersion,
+      rubric: rubricContent,
     };
     yield { type: "run-started", runId, projectId: effectiveProjectId } satisfies StepEvent;
     yield { type: "progress", stage: "init", pct: 0, message: `Starting ${useCase.label}` } satisfies StepEvent;
