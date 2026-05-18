@@ -1,26 +1,24 @@
-// The 5 legal categories below are mirrored as structured data in
-// `../rubric.ts` (CUCP_L2_CATEGORIES) for the Preview Rubric UI. The two
-// must stay in sync — the regression test at `../rubric.test.ts` asserts
-// that every category name + description from rubric.ts still appears in
-// this prompt. Update both together.
-
 import type { ExtractedFact } from "@/lib/usecases/cucp-reevals/types";
 import type { Precedent } from "@/lib/usecases/cucp-reevals/memory/precedents";
 import { buildPrecedentsBlock } from "@/lib/usecases/cucp-reevals/memory/precedents";
+import { CUCP_L2_CATEGORIES, type CucpL2Category } from "../rubric";
+
+function renderCategories(categories: readonly CucpL2Category[]): string {
+  return categories
+    .map((c) => `- "${c.name}" (${c.description})`)
+    .join("\n");
+}
 
 export function buildLevel2SystemPrompt(
   precedents: readonly Precedent[] = [],
+  categories: readonly CucpL2Category[] = CUCP_L2_CATEGORIES,
 ): string {
   const precedentsBlock = buildPrecedentsBlock(2, precedents);
   return `You are an expert legal definer for 49 CFR §26.67 SED determinations.
 Your job is to look at extracted raw facts and classify them legally.
 
 Categories to choose from:
-- "Social Disadvantage" (Personal experiences of discrimination — bias in contracting, exclusion from networks, personal prejudice)
-- "Economic Disadvantage" (Capital access barriers — denied loans, bonding difficulties, financial limitations)
-- "Institutional/Systemic Barrier" (Discriminatory institutional policies — not individual acts, but systemic patterns)
-- "Ordinary Business Risk" (Setbacks from normal market forces — competition, pricing, general economy)
-- "Insufficient Evidence" (The incident lacks enough detail to classify under §26.67)${precedentsBlock}
+${renderCategories(categories)}${precedentsBlock}
 
 OUTPUT FORMAT:
 Return valid JSON mapping each input fact ID to a classification.
