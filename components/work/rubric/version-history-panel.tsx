@@ -26,13 +26,12 @@ export function VersionHistoryPanel({
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const fetchVersions = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const res = await fetch(`/api/usecases/${usecaseId}/rubrics/${rubricId}/versions`);
       if (!res.ok) throw new Error(`Failed to load versions (${res.status})`);
       const body = (await res.json()) as { versions: VersionEntry[] };
       setVersions(body.versions);
+      setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -41,8 +40,26 @@ export function VersionHistoryPanel({
   }, [usecaseId, rubricId]);
 
   useEffect(() => {
-    fetchVersions();
-  }, [fetchVersions]);
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/usecases/${usecaseId}/rubrics/${rubricId}/versions`);
+        if (!alive) return;
+        if (!res.ok) throw new Error(`Failed to load versions (${res.status})`);
+        const body = (await res.json()) as { versions: VersionEntry[] };
+        if (!alive) return;
+        setVersions(body.versions);
+      } catch (e) {
+        if (!alive) return;
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [usecaseId, rubricId]);
 
   async function handleRestore(versionId: string) {
     setBusyId(versionId);
