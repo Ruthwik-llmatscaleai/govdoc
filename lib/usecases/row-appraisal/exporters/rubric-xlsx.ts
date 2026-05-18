@@ -21,7 +21,7 @@ export async function buildRowRubricXlsx(data: RowRubricData): Promise<Buffer> {
     "Tier 5 — Excellent",
   ];
   applyTitleBlock(sheet, {
-    title: "Appraisal Review Rubric",
+    title: "Validate Appraisal Rubric",
     subtitle: `Exported ${new Date().toISOString().slice(0, 10)} · Caltrans ROW Appraisal`,
     columnCount: headers.length,
   });

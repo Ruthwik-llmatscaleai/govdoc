@@ -18,7 +18,7 @@ function sectionNameOnly(label: string): string {
 }
 
 const DESCRIPTION =
-  "Project Review rubric — six sections, each scored on a 3-tier A/B/C scale. Section weights combine into a weighted composite recommendation across eight delivery methods.";
+  "Validate Project rubric — six sections, each scored on a 3-tier A/B/C scale. Section weights combine into a weighted composite recommendation across eight delivery methods.";
 
 export function CmgcRubricView({
   data,

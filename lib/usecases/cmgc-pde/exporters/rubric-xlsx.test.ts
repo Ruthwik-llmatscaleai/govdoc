@@ -18,7 +18,7 @@ describe("buildCmgcRubricXlsx", () => {
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(buf as unknown as ArrayBuffer);
     const sheet = wb.getWorksheet("Questions");
-    expect(sheet?.getCell(1, 1).value).toBe("Project Review Rubric");
+    expect(sheet?.getCell(1, 1).value).toBe("Validate Project Rubric");
     expect(String(sheet?.getCell(2, 1).value ?? "")).toContain("CMGC");
   });
 

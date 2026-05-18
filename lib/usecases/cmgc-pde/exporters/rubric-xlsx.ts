@@ -19,7 +19,7 @@ export async function buildCmgcRubricXlsx(data: CmgcRubricData): Promise<Buffer>
   const questions = wb.addWorksheet("Questions");
   const qHeaders = ["ID", "Section", "Question", "Option A", "Option B", "Option C"];
   applyTitleBlock(questions, {
-    title: "Project Review Rubric",
+    title: "Validate Project Rubric",
     subtitle,
     columnCount: qHeaders.length,
   });

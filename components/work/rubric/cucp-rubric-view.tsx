@@ -6,7 +6,7 @@ import { RubricShell } from "./shared/rubric-shell";
 import { RubricSection } from "./shared/rubric-section";
 
 const DESCRIPTION =
-  "Narrative Review — three Mandatory Eligibility Requirements followed by four Scored Evaluation Criteria. Each criterion is judged YES or NO.";
+  "Validate Narrative — three Mandatory Eligibility Requirements followed by four Scored Evaluation Criteria. Each criterion is judged YES or NO.";
 
 export function CucpRubricView({
   data,

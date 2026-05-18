@@ -104,7 +104,7 @@ export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
   function onReset() {
     setConfirm({
       title: "Reset rubric",
-      message: "Reset Narrative Review rubric to defaults? This deletes any saved edits.",
+      message: "Reset Validate Narrative rubric to defaults? This deletes any saved edits.",
       confirmLabel: "Reset to defaults",
       danger: true,
       onConfirm: async () => {
@@ -134,7 +134,7 @@ export function CucpRubricEdit({ initial }: { initial: CucpRubricData }) {
   return (
     <div className="space-y-6 pb-2">
       <RubricShell
-        description="Narrative Review — three Mandatory Eligibility Requirements followed by four Scored Evaluation Criteria. Each criterion is judged YES or NO."
+        description="Validate Narrative — three Mandatory Eligibility Requirements followed by four Scored Evaluation Criteria. Each criterion is judged YES or NO."
       >
         {l3.length === 0 ? (
           <RubricSection

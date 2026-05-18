@@ -18,7 +18,7 @@ describe("buildRowRubricXlsx", () => {
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(buf as unknown as ArrayBuffer);
     const sheet = wb.getWorksheet("Categories");
-    expect(sheet?.getCell(1, 1).value).toBe("Appraisal Review Rubric");
+    expect(sheet?.getCell(1, 1).value).toBe("Validate Appraisal Rubric");
   });
 
   it("writes the expected header row and one data row per category", async () => {
