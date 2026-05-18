@@ -48,6 +48,22 @@ function assertSafeRubricId(rubricId: string): void {
   }
 }
 
+function assertSafeVersionId(versionId: string): void {
+  if (!/^v\d{3,}$/.test(versionId)) {
+    throw new Error(`Invalid version id: ${JSON.stringify(versionId)}`);
+  }
+}
+
+export type RubricVersionEntry = {
+  id: string;        // "v001", "v002", ...
+  createdAt: string;
+  source: "edit" | "upload" | "clone" | "restore" | "seed";
+  label?: string;
+  note?: string;
+};
+
+type RubricVersionsManifest = { versions: RubricVersionEntry[] };
+
 function usecaseDir(usecaseId: string): string {
   assertKnownUsecase(usecaseId);
   return join(rootDir(), usecaseId);
@@ -60,6 +76,56 @@ function manifestFile(usecaseId: string): string {
 function rubricFile(usecaseId: string, rubricId: string): string {
   assertSafeRubricId(rubricId);
   return join(usecaseDir(usecaseId), `${rubricId}.json`);
+}
+
+function versionsDir(usecaseId: string, rubricId: string): string {
+  assertSafeRubricId(rubricId);
+  return join(usecaseDir(usecaseId), "versions", rubricId);
+}
+
+function versionsManifestFile(usecaseId: string, rubricId: string): string {
+  return join(versionsDir(usecaseId, rubricId), "manifest.json");
+}
+
+function versionFile(usecaseId: string, rubricId: string, versionId: string): string {
+  assertSafeVersionId(versionId);
+  return join(versionsDir(usecaseId, rubricId), `${versionId}.json`);
+}
+
+async function readVersionsManifest(
+  usecaseId: string,
+  rubricId: string,
+): Promise<RubricVersionsManifest> {
+  try {
+    const text = await fsp.readFile(versionsManifestFile(usecaseId, rubricId), "utf-8");
+    const parsed = JSON.parse(text);
+    if (!parsed || !Array.isArray(parsed.versions)) return { versions: [] };
+    return parsed as RubricVersionsManifest;
+  } catch {
+    return { versions: [] };
+  }
+}
+
+async function writeVersionsManifest(
+  usecaseId: string,
+  rubricId: string,
+  manifest: RubricVersionsManifest,
+): Promise<void> {
+  const dir = versionsDir(usecaseId, rubricId);
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  await fsp.writeFile(
+    versionsManifestFile(usecaseId, rubricId),
+    JSON.stringify(manifest, null, 2),
+    "utf-8",
+  );
+}
+
+function nextVersionId(existing: RubricVersionEntry[]): string {
+  const maxN = existing.reduce((acc, v) => {
+    const n = parseInt(v.id.slice(1), 10);
+    return Number.isFinite(n) && n > acc ? n : acc;
+  }, 0);
+  return `v${String(maxN + 1).padStart(3, "0")}`;
 }
 
 function legacySingleFile(usecaseId: string): string {
@@ -158,10 +224,20 @@ export async function getDefaultRubricId(usecaseId: string): Promise<string> {
 export async function loadRubric(
   usecaseId: string,
   rubricId?: string,
+  versionId?: string,
 ): Promise<unknown | null> {
   const m = await ensureManifest(usecaseId);
   const id = rubricId ?? findDefault(m).id;
   if (!m.rubrics.some((r) => r.id === id)) return null;
+  if (versionId !== undefined) {
+    assertSafeVersionId(versionId);
+    try {
+      const text = await fsp.readFile(versionFile(usecaseId, id, versionId), "utf-8");
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
   try {
     const text = await fsp.readFile(rubricFile(usecaseId, id), "utf-8");
     return JSON.parse(text);
@@ -170,27 +246,82 @@ export async function loadRubric(
   }
 }
 
+export async function listVersions(
+  usecaseId: string,
+  rubricId: string,
+): Promise<RubricVersionEntry[]> {
+  await ensureManifest(usecaseId);
+  assertSafeRubricId(rubricId);
+  const m = await readVersionsManifest(usecaseId, rubricId);
+  // newest-first
+  return [...m.versions].sort((a, b) => (a.id < b.id ? 1 : a.id > b.id ? -1 : 0));
+}
+
 export async function saveRubric(
   usecaseId: string,
   rubricId: string,
   data: unknown,
-): Promise<void> {
+  opts: { source?: RubricVersionEntry["source"]; note?: string; label?: string } = {},
+): Promise<{ versionId: string }> {
   const m = await ensureManifest(usecaseId);
   if (!m.rubrics.some((r) => r.id === rubricId)) {
     throw new Error(`Unknown rubric id: ${rubricId}`);
   }
   ensureUsecaseDir(usecaseId);
+
+  // 1. Seed on first save: if the versions folder is empty AND a live file
+  //    already exists with content, snapshot the previous content as v001
+  //    (source: "seed") BEFORE writing the new version. This guarantees
+  //    history is complete from the moment versioning ships.
+  let versionsManifest = await readVersionsManifest(usecaseId, rubricId);
+  if (versionsManifest.versions.length === 0 && existsSync(rubricFile(usecaseId, rubricId))) {
+    const priorText = await fsp.readFile(rubricFile(usecaseId, rubricId), "utf-8");
+    const seedId = "v001";
+    const seedEntry: RubricVersionEntry = {
+      id: seedId,
+      createdAt: nowIso(),
+      source: "seed",
+    };
+    await fsp.writeFile(versionFile(usecaseId, rubricId, seedId), priorText, "utf-8");
+    versionsManifest = { versions: [seedEntry] };
+    await writeVersionsManifest(usecaseId, rubricId, versionsManifest);
+  }
+
+  // 2. Write the live file (existing behavior).
   await fsp.writeFile(
     rubricFile(usecaseId, rubricId),
     JSON.stringify(data, null, 2),
     "utf-8",
   );
+
+  // 3. Append a new version snapshot.
+  const newId = nextVersionId(versionsManifest.versions);
+  const vdir = versionsDir(usecaseId, rubricId);
+  if (!existsSync(vdir)) mkdirSync(vdir, { recursive: true });
+  await fsp.writeFile(
+    versionFile(usecaseId, rubricId, newId),
+    JSON.stringify(data, null, 2),
+    "utf-8",
+  );
+  const entry: RubricVersionEntry = {
+    id: newId,
+    createdAt: nowIso(),
+    source: opts.source ?? "edit",
+    ...(opts.label ? { label: opts.label } : {}),
+    ...(opts.note ? { note: opts.note } : {}),
+  };
+  versionsManifest = { versions: [...versionsManifest.versions, entry] };
+  await writeVersionsManifest(usecaseId, rubricId, versionsManifest);
+
+  // 4. Update the rubrics manifest's `updatedAt`.
   const next: RubricsManifest = {
     rubrics: m.rubrics.map((r) =>
       r.id === rubricId ? { ...r, updatedAt: nowIso() } : r,
     ),
   };
   await writeManifest(usecaseId, next);
+
+  return { versionId: newId };
 }
 
 // Resets a single rubric back to bundled defaults by removing its data file.
