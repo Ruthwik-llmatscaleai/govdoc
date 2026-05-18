@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/mock-session";
-import { loadRubric } from "@/lib/usecases/rubrics-store";
+import { loadRubric, deleteVersion } from "@/lib/usecases/rubrics-store";
 
 const KNOWN_IDS = new Set(["cmgc-pde", "cucp-reevals", "row-appraisal"]);
 
@@ -36,4 +36,24 @@ export async function GET(
     return NextResponse.json({ error: "Version not found" }, { status: 404 });
   }
   return NextResponse.json(content);
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string; rubricId: string; versionId: string }> },
+) {
+  const session = await verifySession(getCookie(req, "govdoc_session"));
+  if (!session) return new NextResponse("Unauthorized", { status: 401 });
+  const { id, rubricId, versionId } = await params;
+  if (!KNOWN_IDS.has(id)) {
+    return NextResponse.json({ error: "Unknown use case" }, { status: 404 });
+  }
+  try {
+    await deleteVersion(id, rubricId, versionId);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const status = /Unknown version/i.test(msg) ? 404 : 400;
+    return NextResponse.json({ error: msg }, { status });
+  }
 }
