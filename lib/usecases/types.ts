@@ -32,6 +32,9 @@ export type StepContext = {
   llm: LlmRouter;
   abortSignal: AbortSignal;
   log: (msg: string, data?: unknown) => void;
+  rubricId?: string;
+  rubricVersionId?: string;
+  rubric?: unknown;
 };
 
 export type PipelineStep<TIn = unknown> = {

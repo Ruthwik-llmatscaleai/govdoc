@@ -25,8 +25,11 @@ function isValidWeights(w: unknown): w is CmgcRubricData["weights"] {
   );
 }
 
-export async function loadCmgcRubric(rubricId?: string): Promise<CmgcRubricData> {
-  const saved = await loadRubric("cmgc-pde", rubricId);
+export async function loadCmgcRubric(
+  rubricId?: string,
+  versionId?: string,
+): Promise<CmgcRubricData> {
+  const saved = await loadRubric("cmgc-pde", rubricId, versionId);
   if (!saved || typeof saved !== "object") return defaultCmgcRubric();
   const obj = saved as { questions?: unknown; weights?: unknown };
   if (!Array.isArray(obj.questions) || !obj.questions.every(isValidQuestion)) {
