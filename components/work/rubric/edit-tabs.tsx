@@ -78,9 +78,9 @@ export function EditRubricTabs({
       onValueChange={(v) => setActive(v as TabValue)}
     >
       <Tabs.List className="mb-6 flex items-stretch gap-0 border-b border-[var(--color-line)]">
-        <TabButton value="cmgc-pde" label="Project Review" count={cmgcCount} />
-        <TabButton value="row-appraisal" label="Appraisal Review" count={rowCount} />
-        <TabButton value="cucp-reevals" label="Narrative Review" count={cucpCount} />
+        <TabButton value="cmgc-pde" label="Validate Project" count={cmgcCount} />
+        <TabButton value="row-appraisal" label="Validate Appraisal" count={rowCount} />
+        <TabButton value="cucp-reevals" label="Validate Narrative" count={cucpCount} />
       </Tabs.List>
 
       <Tabs.Panel value="cmgc-pde" className="space-y-6">

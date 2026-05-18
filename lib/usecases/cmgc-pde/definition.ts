@@ -7,7 +7,7 @@ import { docxExporter } from "./exporters/docx";
 
 export const cmgcPde: UseCase = {
   id: "cmgc-pde",
-  label: "Project Review",
+  label: "Validate Project",
   blurb: "Score a Caltrans nomination fact sheet against the 25-question delivery method rubric.",
   tile: "review",
   inputs: [

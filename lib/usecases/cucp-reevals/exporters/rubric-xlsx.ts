@@ -14,7 +14,7 @@ export async function buildCucpRubricXlsx(data: CucpRubricData): Promise<Buffer>
   const sheet = wb.addWorksheet("Criteria");
   const headers = ["S/No", "Type", "Name", "Rule", "YES (Pass)", "NO (Fail)"];
   applyTitleBlock(sheet, {
-    title: "Narrative Review Rubric",
+    title: "Validate Narrative Rubric",
     subtitle: `Exported ${new Date().toISOString().slice(0, 10)} · CUCP §26.67 SED Narrative + PNW`,
     columnCount: headers.length,
   });

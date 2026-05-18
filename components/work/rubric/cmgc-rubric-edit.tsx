@@ -217,7 +217,7 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
   function onReset() {
     setConfirm({
       title: "Reset rubric",
-      message: "Reset Project Review rubric to defaults? This deletes any saved edits.",
+      message: "Reset Validate Project rubric to defaults? This deletes any saved edits.",
       confirmLabel: "Reset to defaults",
       danger: true,
       onConfirm: async () => {
@@ -284,7 +284,7 @@ export function CmgcRubricEdit({ initial }: { initial: CmgcRubricData }) {
   return (
     <div className="space-y-6 pb-2">
       <RubricShell
-        description="Project Review rubric — six sections, each scored on a 3-tier A/B/C scale. Section weights combine into a weighted composite recommendation across eight delivery methods."
+        description="Validate Project rubric — six sections, each scored on a 3-tier A/B/C scale. Section weights combine into a weighted composite recommendation across eight delivery methods."
         intro={weightWarning}
       >
         {sections.length === 0 ? (

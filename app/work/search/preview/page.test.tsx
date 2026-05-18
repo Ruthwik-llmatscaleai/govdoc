@@ -30,18 +30,18 @@ describe("PreviewRubricTabs", () => {
 
   it("renders a tab for each of the 3 use cases", () => {
     renderTabs();
-    expect(screen.getByRole("tab", { name: /Project Review/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Narrative Review/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Appraisal Review/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Validate Project/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Validate Narrative/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Validate Appraisal/i })).toBeInTheDocument();
   });
 
-  it("defaults to Project Review and switches to Narrative Review on click", async () => {
+  it("defaults to Validate Project and switches to Validate Narrative on click", async () => {
     const user = userEvent.setup();
     renderTabs();
-    // Project Review description renders on first paint.
-    expect(screen.getByText(/Project Review rubric/i)).toBeInTheDocument();
-    await user.click(screen.getByRole("tab", { name: /Narrative Review/i }));
-    // After switching, the Narrative Review's two top-level sections are visible.
+    // Validate Project description renders on first paint.
+    expect(screen.getByText(/Validate Project rubric/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: /Validate Narrative/i }));
+    // After switching, the Validate Narrative's two top-level sections are visible.
     expect(
       screen.getByRole("button", { name: /Mandatory Eligibility Requirements/i }),
     ).toBeInTheDocument();

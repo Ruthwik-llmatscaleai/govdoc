@@ -18,7 +18,7 @@ describe("buildCucpRubricXlsx", () => {
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(buf as unknown as ArrayBuffer);
     const sheet = wb.getWorksheet("Criteria");
-    expect(sheet?.getCell(1, 1).value).toBe("Narrative Review Rubric");
+    expect(sheet?.getCell(1, 1).value).toBe("Validate Narrative Rubric");
   });
 
   it("writes the expected header row and one data row per criterion", async () => {

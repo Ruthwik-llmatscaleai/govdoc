@@ -16,7 +16,7 @@ test.describe("ROW Appraisal happy path", () => {
     await page.fill('input[name="password"]', process.env.GOVDOC_DEV_PASS!);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/workspace$/);
-    await page.click("text=Review Documents");
+    await page.click("text=Validate Documents");
     await page.click("text=ROW Appraisal");
     await page.setInputFiles('input[name="pdf"]', process.env.ROW_E2E_PDF!);
     await page.click('button:has-text("Run evaluation")');

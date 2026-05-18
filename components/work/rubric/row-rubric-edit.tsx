@@ -113,7 +113,7 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
   function onReset() {
     setConfirm({
       title: "Reset rubric",
-      message: "Reset Appraisal Review rubric to defaults? This deletes any saved edits.",
+      message: "Reset Validate Appraisal rubric to defaults? This deletes any saved edits.",
       confirmLabel: "Reset to defaults",
       danger: true,
       onConfirm: async () => {
@@ -146,7 +146,7 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
   return (
     <div className="space-y-6 pb-2">
       <RubricShell
-        description="Appraisal Review — 34 categories, each rated on a 1–5 scale against the descriptors below. Per-category scores combine into the overall evaluation."
+        description="Validate Appraisal — 34 categories, each rated on a 1–5 scale against the descriptors below. Per-category scores combine into the overall evaluation."
       >
         {categories.length === 0 ? (
           <div className="border border-dashed border-[var(--color-line)] bg-[var(--color-cream-soft)] px-6 py-12 text-center">

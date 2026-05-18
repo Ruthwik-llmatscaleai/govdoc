@@ -6,7 +6,7 @@ import { RubricSection } from "./shared/rubric-section";
 const TIERS: ("1" | "2" | "3" | "4" | "5")[] = ["1", "2", "3", "4", "5"];
 
 const DESCRIPTION =
-  "Appraisal Review — 34 categories, each rated on a 1–5 scale against the descriptors below. Per-category scores combine into the overall evaluation.";
+  "Validate Appraisal — 34 categories, each rated on a 1–5 scale against the descriptors below. Per-category scores combine into the overall evaluation.";
 
 export function RowRubricView({
   data,
