@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -29,6 +29,7 @@ import { InputsForm as CmgcInputsForm } from "@/components/work/cmgc/inputs-form
 import { ScoreTable } from "@/components/work/cmgc/score-table";
 import { CmgcRubricView } from "@/components/work/rubric/cmgc-rubric-view";
 import { RubricPreviewSlideDown } from "@/components/work/rubric/rubric-preview-slide-down";
+import { RubricSelectorCard, type RubricSelection } from "@/components/work/rubric/rubric-selector-card";
 import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
 import type { UseCaseId } from "@/lib/usecases/types";
 import { RecommendationCard } from "@/components/work/cmgc/recommendation-card";
@@ -208,20 +209,25 @@ function HowItWorks({ steps }: { steps: string[] }) {
 function IdleLayout({
   usecaseId,
   steps,
-  inputs,
+  renderInputs,
 }: {
   usecaseId: UseCaseId;
   steps: string[];
-  inputs: React.ReactNode;
+  renderInputs: (sel: RubricSelection | null) => React.ReactNode;
 }) {
+  const [selection, setSelection] = useState<RubricSelection | null>(null);
+  const handleChange = useCallback((sel: RubricSelection) => setSelection(sel), []);
   return (
     <div className="grid gap-6 md:grid-cols-[1fr_320px]">
-      <WorkCard title="Inputs" description="Provide the documents to evaluate.">
-        <div className="space-y-4">
-          <RubricPreviewSlideDown usecaseId={usecaseId} />
-          {inputs}
-        </div>
-      </WorkCard>
+      <div className="space-y-4">
+        <RubricSelectorCard usecaseId={usecaseId} onChange={handleChange} />
+        <WorkCard title="Inputs" description="Provide the documents to evaluate.">
+          <div className="space-y-4">
+            <RubricPreviewSlideDown usecaseId={usecaseId} />
+            {renderInputs(selection)}
+          </div>
+        </WorkCard>
+      </div>
       <HowItWorks steps={steps} />
     </div>
   );
@@ -250,7 +256,18 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
   const pushOverride = useOverridesStore((s) => s.push);
 
   if (!current || (current.status === "idle" && Object.keys(current.stages).length === 0)) {
-    return <IdleLayout usecaseId="cmgc-pde" steps={steps} inputs={<CmgcInputsForm />} />;
+    return (
+      <IdleLayout
+        usecaseId="cmgc-pde"
+        steps={steps}
+        renderInputs={(sel) => (
+          <CmgcInputsForm
+            rubricId={sel?.rubricId}
+            rubricVersionId={sel?.versionId ?? undefined}
+          />
+        )}
+      />
+    );
   }
   if (current.status === "running" || current.status === "needs-input") {
     return <RunningPanel current={current} reset={reset} />;
@@ -390,7 +407,18 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
   const [overridesSubmitted, setOverridesSubmitted] = useState(false);
 
   if (!current || (current.status === "idle" && Object.keys(current.stages).length === 0)) {
-    return <IdleLayout usecaseId="cucp-reevals" steps={steps} inputs={<CucpInputsForm />} />;
+    return (
+      <IdleLayout
+        usecaseId="cucp-reevals"
+        steps={steps}
+        renderInputs={(sel) => (
+          <CucpInputsForm
+            rubricId={sel?.rubricId}
+            rubricVersionId={sel?.versionId ?? undefined}
+          />
+        )}
+      />
+    );
   }
 
   if (current.status === "needs-input" && !overridesSubmitted) {
@@ -469,7 +497,18 @@ function CucpView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
 
 function RowView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
   if (!current || (current.status === "idle" && Object.keys(current.stages).length === 0)) {
-    return <IdleLayout usecaseId="row-appraisal" steps={steps} inputs={<RowInputsForm />} />;
+    return (
+      <IdleLayout
+        usecaseId="row-appraisal"
+        steps={steps}
+        renderInputs={(sel) => (
+          <RowInputsForm
+            rubricId={sel?.rubricId}
+            rubricVersionId={sel?.versionId ?? undefined}
+          />
+        )}
+      />
+    );
   }
   if (current.status === "running" || current.status === "needs-input") {
     return <RunningPanel current={current} reset={reset} />;
