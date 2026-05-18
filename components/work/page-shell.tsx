@@ -109,24 +109,29 @@ export function WorkCard({
   description,
   children,
   footer,
+  headerRight,
 }: {
   title?: string;
   description?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  headerRight?: React.ReactNode;
 }) {
   return (
     <div className="overflow-hidden border border-[var(--color-line)] bg-[var(--color-paper)]">
-      {(title || description) && (
-        <div className="border-b border-[var(--color-line-soft)] px-6 py-4">
-          {title && (
-            <h2 className="text-base font-semibold tracking-tight text-[var(--color-ink)]">
-              {title}
-            </h2>
-          )}
-          {description && (
-            <p className="mt-0.5 text-sm text-[var(--color-ink-mute)]">{description}</p>
-          )}
+      {(title || description || headerRight) && (
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line-soft)] px-6 py-4">
+          <div className="min-w-0">
+            {title && (
+              <h2 className="text-base font-semibold tracking-tight text-[var(--color-ink)]">
+                {title}
+              </h2>
+            )}
+            {description && (
+              <p className="mt-0.5 text-sm text-[var(--color-ink-mute)]">{description}</p>
+            )}
+          </div>
+          {headerRight && <div className="shrink-0">{headerRight}</div>}
         </div>
       )}
       <div className="px-6 py-5">{children}</div>

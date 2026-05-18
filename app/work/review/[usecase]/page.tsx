@@ -29,7 +29,7 @@ import { InputsForm as CmgcInputsForm } from "@/components/work/cmgc/inputs-form
 import { ScoreTable } from "@/components/work/cmgc/score-table";
 import { CmgcRubricView } from "@/components/work/rubric/cmgc-rubric-view";
 import { RubricPreviewSlideDown } from "@/components/work/rubric/rubric-preview-slide-down";
-import { RubricSelectorCard, type RubricSelection } from "@/components/work/rubric/rubric-selector-card";
+import { RubricSelectorInline, type RubricSelection } from "@/components/work/rubric/rubric-selector-card";
 import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
 import type { UseCaseId } from "@/lib/usecases/types";
 import { RecommendationCard } from "@/components/work/cmgc/recommendation-card";
@@ -219,15 +219,16 @@ function IdleLayout({
   const handleChange = useCallback((sel: RubricSelection) => setSelection(sel), []);
   return (
     <div className="grid gap-6 md:grid-cols-[1fr_320px]">
-      <div className="space-y-4">
-        <RubricSelectorCard usecaseId={usecaseId} onChange={handleChange} />
-        <WorkCard title="Inputs" description="Provide the documents to evaluate.">
-          <div className="space-y-4">
-            <RubricPreviewSlideDown usecaseId={usecaseId} />
-            {renderInputs(selection)}
-          </div>
-        </WorkCard>
-      </div>
+      <WorkCard
+        title="Inputs"
+        description="Provide the documents to evaluate."
+        headerRight={<RubricSelectorInline usecaseId={usecaseId} onChange={handleChange} />}
+      >
+        <div className="space-y-4">
+          <RubricPreviewSlideDown usecaseId={usecaseId} />
+          {renderInputs(selection)}
+        </div>
+      </WorkCard>
       <HowItWorks steps={steps} />
     </div>
   );

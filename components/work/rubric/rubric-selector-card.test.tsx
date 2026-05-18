@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { RubricSelectorCard } from "./rubric-selector-card";
+import { RubricSelectorInline } from "./rubric-selector-card";
 
 const rubrics = [
   { id: "default", label: "Default", isDefault: true, createdAt: "2026-05-14T00:00:00Z" },
@@ -31,26 +31,34 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("RubricSelectorCard", () => {
+describe("RubricSelectorInline", () => {
   it("loads rubrics, then versions, and emits the initial selection (default rubric, latest version)", async () => {
     const onChange = vi.fn();
-    render(<RubricSelectorCard usecaseId="cmgc-pde" onChange={onChange} />);
+    render(<RubricSelectorInline usecaseId="cmgc-pde" onChange={onChange} />);
     await waitFor(() => expect(screen.getByLabelText(/Rubric/i)).toBeTruthy());
     await waitFor(() => expect(onChange).toHaveBeenCalledWith({ rubricId: "default", versionId: "v002" }));
   });
 
   it("switching rubric resets version to the latest of that rubric", async () => {
     const onChange = vi.fn();
-    render(<RubricSelectorCard usecaseId="cmgc-pde" onChange={onChange} />);
+    render(<RubricSelectorInline usecaseId="cmgc-pde" onChange={onChange} />);
     await waitFor(() => expect(onChange).toHaveBeenCalled());
     onChange.mockClear();
     fireEvent.change(screen.getByLabelText(/Rubric/i), { target: { value: "pilot" } });
     await waitFor(() => expect(onChange).toHaveBeenLastCalledWith({ rubricId: "pilot", versionId: "v002" }));
   });
 
+  it("renders a New rubric button that opens the upload modal", async () => {
+    render(<RubricSelectorInline usecaseId="cmgc-pde" onChange={() => {}} />);
+    const btn = await screen.findByRole("button", { name: /new rubric/i });
+    expect(btn).toBeTruthy();
+    fireEvent.click(btn);
+    expect(await screen.findByRole("dialog")).toBeTruthy();
+  });
+
   it("does not render an implementation-detail disclosure banner for any use case", () => {
     for (const id of ["cmgc-pde", "cucp-reevals", "row-appraisal"]) {
-      const { unmount } = render(<RubricSelectorCard usecaseId={id} onChange={() => {}} />);
+      const { unmount } = render(<RubricSelectorInline usecaseId={id} onChange={() => {}} />);
       expect(screen.queryByText(/reference-only/i)).toBeNull();
       unmount();
     }
