@@ -29,6 +29,7 @@ export const evaluateStep: PipelineStep<unknown> = {
     const isValidRubric =
       runtimeRubric &&
       typeof runtimeRubric === "object" &&
+      !Array.isArray(runtimeRubric) &&
       Object.values(runtimeRubric).every(
         (v) => v && typeof v === "object" && !Array.isArray(v),
       );
