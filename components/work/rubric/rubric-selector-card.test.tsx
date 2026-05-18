@@ -48,13 +48,11 @@ describe("RubricSelectorCard", () => {
     await waitFor(() => expect(onChange).toHaveBeenLastCalledWith({ rubricId: "pilot", versionId: "v002" }));
   });
 
-  it("shows a CUCP/ROW limitation banner for non-CMGC use cases", () => {
-    render(<RubricSelectorCard usecaseId="cucp-reevals" onChange={() => {}} />);
-    expect(screen.getByText(/reference-only/i)).toBeTruthy();
-  });
-
-  it("does NOT show the limitation banner for CMGC", async () => {
-    render(<RubricSelectorCard usecaseId="cmgc-pde" onChange={() => {}} />);
-    expect(screen.queryByText(/reference-only/i)).toBeNull();
+  it("does not render an implementation-detail disclosure banner for any use case", () => {
+    for (const id of ["cmgc-pde", "cucp-reevals", "row-appraisal"]) {
+      const { unmount } = render(<RubricSelectorCard usecaseId={id} onChange={() => {}} />);
+      expect(screen.queryByText(/reference-only/i)).toBeNull();
+      unmount();
+    }
   });
 });
