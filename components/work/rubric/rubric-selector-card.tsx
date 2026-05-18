@@ -114,12 +114,15 @@ export function RubricSelectorInline({
           onChange={(e) => setRubricId(e.target.value)}
           className="rounded-lg border border-border bg-card px-2.5 py-1.5 font-sans text-sm font-normal normal-case tracking-normal text-foreground hover:bg-muted"
         >
-          {rubrics.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.label}
-              {r.isDefault ? " · Default" : ""}
-            </option>
-          ))}
+          {rubrics.map((r) => {
+            const showDefaultTag = r.isDefault && r.label.toLowerCase() !== "default";
+            return (
+              <option key={r.id} value={r.id}>
+                {r.label}
+                {showDefaultTag ? " · Default" : ""}
+              </option>
+            );
+          })}
         </select>
       </label>
 
