@@ -387,6 +387,32 @@ export async function setDefaultRubric(
   await writeManifest(usecaseId, next);
 }
 
+export async function deleteVersion(
+  usecaseId: string,
+  rubricId: string,
+  versionId: string,
+): Promise<void> {
+  await ensureManifest(usecaseId);
+  assertSafeRubricId(rubricId);
+  assertSafeVersionId(versionId);
+  const manifest = await readVersionsManifest(usecaseId, rubricId);
+  if (!manifest.versions.some((v) => v.id === versionId)) {
+    throw new Error(`Unknown version id: ${versionId}`);
+  }
+  if (manifest.versions.length <= 1) {
+    throw new Error("Cannot delete the only remaining version");
+  }
+  const newest = [...manifest.versions].sort((a, b) => (a.id < b.id ? 1 : a.id > b.id ? -1 : 0))[0]!;
+  if (newest.id === versionId) {
+    throw new Error("Cannot delete the newest version. Restore an older version first.");
+  }
+  const f = versionFile(usecaseId, rubricId, versionId);
+  if (existsSync(f)) await fsp.unlink(f);
+  await writeVersionsManifest(usecaseId, rubricId, {
+    versions: manifest.versions.filter((v) => v.id !== versionId),
+  });
+}
+
 export async function deleteRubric(
   usecaseId: string,
   rubricId: string,

@@ -13,6 +13,7 @@ import {
   resetRubricContent,
   getDefaultRubricId,
   listVersions,
+  deleteVersion,
 } from "./rubrics-store";
 
 let tmp = "";
@@ -200,5 +201,36 @@ describe("rubrics-store", () => {
     await saveRubric("cmgc-pde", "default", { v: 1 });
     await expect(loadRubric("cmgc-pde", "default", "../etc/passwd")).rejects.toThrow(/Invalid version id/);
     await expect(loadRubric("cmgc-pde", "default", "v1")).rejects.toThrow(/Invalid version id/);
+  });
+
+  it("deleteVersion removes a non-newest version and its manifest entry", async () => {
+    await saveRubric("cmgc-pde", "default", { v: 1 });
+    await saveRubric("cmgc-pde", "default", { v: 2 });
+    await saveRubric("cmgc-pde", "default", { v: 3 });
+    await deleteVersion("cmgc-pde", "default", "v002");
+    const list = await listVersions("cmgc-pde", "default");
+    expect(list.map((v) => v.id)).toEqual(["v003", "v001"]);
+  });
+
+  it("deleteVersion rejects deleting the newest version", async () => {
+    await saveRubric("cmgc-pde", "default", { v: 1 });
+    await saveRubric("cmgc-pde", "default", { v: 2 });
+    await expect(deleteVersion("cmgc-pde", "default", "v002")).rejects.toThrow(/newest/i);
+  });
+
+  it("deleteVersion rejects deleting the only remaining version", async () => {
+    await saveRubric("cmgc-pde", "default", { v: 1 });
+    await expect(deleteVersion("cmgc-pde", "default", "v001")).rejects.toThrow(/only remaining/i);
+  });
+
+  it("deleteVersion rejects an unknown version", async () => {
+    await saveRubric("cmgc-pde", "default", { v: 1 });
+    await saveRubric("cmgc-pde", "default", { v: 2 });
+    await expect(deleteVersion("cmgc-pde", "default", "v099")).rejects.toThrow(/Unknown version/i);
+  });
+
+  it("deleteVersion rejects unsafe version id shapes", async () => {
+    await saveRubric("cmgc-pde", "default", { v: 1 });
+    await expect(deleteVersion("cmgc-pde", "default", "../etc/passwd")).rejects.toThrow(/Invalid version id/);
   });
 });
