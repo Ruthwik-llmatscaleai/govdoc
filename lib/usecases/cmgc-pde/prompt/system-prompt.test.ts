@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { buildSystemPrompt, buildUserMessage } from "./system-prompt";
+import { RUBRIC_QUESTIONS, type RubricQuestion } from "../rubric";
 
 describe("buildSystemPrompt", () => {
   it("includes persona, KB, rubric, output schema", () => {
-    const prompt = buildSystemPrompt("KB-PLACEHOLDER");
+    const prompt = buildSystemPrompt("KB-PLACEHOLDER", RUBRIC_QUESTIONS);
     expect(prompt).toContain("Senior Alternative Contracting Expert");
     expect(prompt).toContain("KB-PLACEHOLDER");
     expect(prompt).toContain("[A1]");
@@ -13,13 +14,13 @@ describe("buildSystemPrompt", () => {
   });
 
   it("includes the design-sequencing block and baseline norms", () => {
-    const prompt = buildSystemPrompt("KB");
+    const prompt = buildSystemPrompt("KB", RUBRIC_QUESTIONS);
     expect(prompt).toContain("DESIGN-SEQUENCING");
     expect(prompt).toContain("CALTRANS BASELINE NORMS");
   });
 
   it("includes the few-shot examples", () => {
-    const prompt = buildSystemPrompt("KB");
+    const prompt = buildSystemPrompt("KB", RUBRIC_QUESTIONS);
     expect(prompt).toContain("EVALUATION METHODOLOGY");
     expect(prompt).toContain("EXAMPLE 1");
     expect(prompt).toContain("EXAMPLE 2");
@@ -27,15 +28,27 @@ describe("buildSystemPrompt", () => {
   });
 
   it("includes the exclusion block", () => {
-    const prompt = buildSystemPrompt("KB");
+    const prompt = buildSystemPrompt("KB", RUBRIC_QUESTIONS);
     expect(prompt).toContain("IMPORTANT EXCLUSIONS");
     expect(prompt).toContain("Sections 13");
   });
 
   it("rubric text shows section headers grouped by section", () => {
-    const prompt = buildSystemPrompt("KB");
+    const prompt = buildSystemPrompt("KB", RUBRIC_QUESTIONS);
     expect(prompt).toContain("--- A: Project Scope & Characteristics ---");
     expect(prompt).toContain("--- F: Staffing Issues ---");
+  });
+});
+
+describe("buildSystemPrompt with injected questions", () => {
+  it("uses the questions passed in, not the bundled default", () => {
+    const fakeQuestions: RubricQuestion[] = [
+      { id: "qX", section: "Custom Section", question: "Custom Q?", option_a: "A?", option_b: "B?", option_c: "C?" },
+    ];
+    const out = buildSystemPrompt("KB-TEXT", fakeQuestions);
+    expect(out).toContain("Custom Section");
+    expect(out).toContain("Custom Q?");
+    expect(out).toContain("KB-TEXT");
   });
 });
 

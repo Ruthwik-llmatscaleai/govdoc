@@ -1,4 +1,4 @@
-import { RUBRIC_QUESTIONS } from "../rubric";
+import type { RubricQuestion } from "../rubric";
 
 const PERSONA = `You are a Senior Alternative Contracting Expert at Caltrans Headquarters, Office of Innovative Design and Delivery (OIDD). You have 20+ years of experience evaluating project delivery method nominations across California. Your role is to objectively evaluate a district's nomination fact sheet against the 25-question delivery selection rubric.
 
@@ -89,14 +89,14 @@ CRITICAL: The "ratings" array must contain EXACTLY 25 items, one for each questi
 CRITICAL: source_reasoning MUST contain a direct quote from the document wherever evidence exists — do NOT paraphrase.
 CRITICAL: Do NOT include an effect_on_method field — that analysis belongs inside missing_info_reasoning.`;
 
-function buildRubricText(): string {
+function buildRubricText(questions: readonly RubricQuestion[]): string {
   const lines: string[] = [
     "RUBRIC - 25 EVALUATION QUESTIONS:",
     "For each question, select exactly one rating: A (first option), B (second option), or C (third option).",
     "",
   ];
   let currentSection = "";
-  for (const q of RUBRIC_QUESTIONS) {
+  for (const q of questions) {
     if (q.section !== currentSection) {
       currentSection = q.section;
       lines.push(`--- ${currentSection} ---`);
@@ -110,7 +110,7 @@ function buildRubricText(): string {
   return lines.join("\n");
 }
 
-export function buildSystemPrompt(kbText: string): string {
+export function buildSystemPrompt(kbText: string, questions: readonly RubricQuestion[]): string {
   const kbSection = `DELIVERY METHOD COMPARISON KNOWLEDGE BASE:
 Use the following reference to understand how each delivery method performs across different project factors (Project Requirements, Delivery Schedule, Complexity & Innovation, Level of Design, Cost, Risk Characteristics, Site Conditions, Utilities, Environmental, ROW, Third-Party Involvement):
 
@@ -120,7 +120,7 @@ ${kbText}`;
     PERSONA,
     kbSection,
     DESIGN_SEQUENCING,
-    buildRubricText(),
+    buildRubricText(questions),
     BASELINE_NORMS,
     FEW_SHOT,
     EXCLUSION,

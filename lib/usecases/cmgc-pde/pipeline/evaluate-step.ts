@@ -2,6 +2,7 @@ import type { PipelineStep } from "@/lib/usecases/types";
 import type { LlmProvider } from "@/lib/llm/types";
 import type { CmgcEvaluation } from "../types";
 import { buildSystemPrompt, buildUserMessage } from "../prompt/system-prompt";
+import { RUBRIC_QUESTIONS, type RubricQuestion } from "../rubric";
 import { DELIVERY_METHOD_KB_TEXT } from "../delivery-method-kb";
 
 export const evaluateStep: PipelineStep<FormData> = {
@@ -17,7 +18,11 @@ export const evaluateStep: PipelineStep<FormData> = {
     const provider: LlmProvider = "openai";
     const model = "gpt-4o";
 
-    const systemPrompt = buildSystemPrompt(DELIVERY_METHOD_KB_TEXT);
+    const cmgcRubric = ctx.rubric as { questions?: unknown } | undefined;
+    const questions = Array.isArray(cmgcRubric?.questions)
+      ? (cmgcRubric!.questions as RubricQuestion[])
+      : RUBRIC_QUESTIONS;
+    const systemPrompt = buildSystemPrompt(DELIVERY_METHOD_KB_TEXT, questions);
     const userMessage = buildUserMessage(narrative);
     const messages = [
       { role: "system" as const, content: systemPrompt },
