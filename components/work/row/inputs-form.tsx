@@ -8,7 +8,13 @@ import {
   PrimaryButton,
 } from "@/components/work/form-fields";
 
-export function InputsForm() {
+export function InputsForm({
+  rubricId,
+  rubricVersionId,
+}: {
+  rubricId?: string;
+  rubricVersionId?: string;
+}) {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -17,6 +23,8 @@ export function InputsForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
+      {rubricId && <input type="hidden" name="rubricId" value={rubricId} />}
+      {rubricVersionId && <input type="hidden" name="rubricVersionId" value={rubricVersionId} />}
       <Field
         htmlFor="pdf"
         label="Appraisal PDF"
