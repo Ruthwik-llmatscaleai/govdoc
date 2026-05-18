@@ -6,6 +6,7 @@ import { RubricPicker } from "./shared/rubric-picker";
 import { CreateRubricDialog, type CreateRubricInput } from "./shared/create-rubric-dialog";
 import { ConfirmDialog, type ConfirmRequest } from "./shared/confirm-dialog";
 import { RubricUploadModal } from "./rubric-upload-modal";
+import { VersionHistoryPanel } from "./version-history-panel";
 
 type Props<T> = {
   usecaseId: string;
@@ -158,6 +159,20 @@ export function EditTabContent<T>({
       {/* `key` forces a fresh mount when the selected rubric changes so the
           editor's internal state is replaced with the newly-loaded content. */}
       <EditComponent key={selectedId} initial={data} />
+
+      <VersionHistoryPanel
+        usecaseId={usecaseId}
+        rubricId={selectedId}
+        onChanged={async () => {
+          await withBusy(async () => {
+            // Restoring or deleting changes the live file; refetch content + manifest.
+            const list = await fetchManifest();
+            const content = await fetchRubricContent(selectedId);
+            setRubrics(list);
+            setData(content);
+          });
+        }}
+      />
 
       {showCreate && (
         <CreateRubricDialog
