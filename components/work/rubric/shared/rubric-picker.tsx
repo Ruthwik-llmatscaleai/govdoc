@@ -10,6 +10,7 @@ type Props = {
   // Delete affordances. In "read-only" mode only the dropdown shows.
   mode: "read-only" | "manage";
   onCreateClick?: () => void;
+  onUploadClick?: () => void;
   onSetDefault?: (id: string) => void;
   onDelete?: (id: string) => void;
   busy?: boolean;
@@ -21,6 +22,7 @@ export function RubricPicker({
   onSelect,
   mode,
   onCreateClick,
+  onUploadClick,
   onSetDefault,
   onDelete,
   busy = false,
@@ -130,6 +132,17 @@ export function RubricPicker({
           className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
         >
           + New rubric
+        </button>
+      )}
+
+      {mode === "manage" && onUploadClick && (
+        <button
+          type="button"
+          onClick={onUploadClick}
+          disabled={busy}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
+        >
+          Upload…
         </button>
       )}
 

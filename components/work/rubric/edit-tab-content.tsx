@@ -5,6 +5,7 @@ import type { RubricsManifestEntry } from "@/lib/usecases/rubrics-store";
 import { RubricPicker } from "./shared/rubric-picker";
 import { CreateRubricDialog, type CreateRubricInput } from "./shared/create-rubric-dialog";
 import { ConfirmDialog, type ConfirmRequest } from "./shared/confirm-dialog";
+import { RubricUploadModal } from "./rubric-upload-modal";
 
 type Props<T> = {
   usecaseId: string;
@@ -30,6 +31,7 @@ export function EditTabContent<T>({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
 
   async function fetchRubricContent(rubricId: string): Promise<T> {
@@ -144,6 +146,7 @@ export function EditTabContent<T>({
         mode="manage"
         busy={busy}
         onCreateClick={() => setShowCreate(true)}
+        onUploadClick={() => setShowUpload(true)}
         onSetDefault={handleSetDefault}
         onDelete={requestDelete}
       />
@@ -164,6 +167,22 @@ export function EditTabContent<T>({
         />
       )}
       {confirm && <ConfirmDialog request={confirm} onCancel={() => setConfirm(null)} />}
+      <RubricUploadModal
+        open={showUpload}
+        usecaseId={usecaseId}
+        rubricId={selectedId}
+        onClose={() => setShowUpload(false)}
+        onUploaded={async ({ rubricId: uploadedId }) => {
+          setShowUpload(false);
+          await withBusy(async () => {
+            const list = await fetchManifest();
+            const content = await fetchRubricContent(uploadedId);
+            setRubrics(list);
+            setSelectedId(uploadedId);
+            setData(content);
+          });
+        }}
+      />
     </div>
   );
 }
