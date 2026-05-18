@@ -83,20 +83,11 @@ export function RubricSelectorCard({
   const latestId = versions[0]?.id;
   const selectedVersion = versions.find((v) => v.id === (versionId || latestId));
 
-  const isCmgc = usecaseId === "cmgc-pde";
-
   return (
     <WorkCard title="Rubric" description="Choose the rubric and version to evaluate against.">
       {loadError && (
         <div role="alert" className="mb-3 border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
           {loadError}
-        </div>
-      )}
-
-      {!isCmgc && (
-        <div className="mb-3 border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-          This rubric is reference-only for {usecaseId === "cucp-reevals" ? "Narrative" : "Appraisal"} today;
-          the evaluation prompt is hardcoded. Edits affect the preview/export, not the LLM run.
         </div>
       )}
 
