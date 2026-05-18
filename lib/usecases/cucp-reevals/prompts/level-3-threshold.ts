@@ -1,28 +1,24 @@
-// The 7 criteria below are mirrored as structured data in `../rubric.ts`
-// (CUCP_L3_CRITERIA) for the Preview Rubric UI. The two must stay in sync
-// — the regression test at `../rubric.test.ts` asserts that every
-// "{s_no}. {name}" line and the criterion #2 rule still appear in this
-// prompt. Update both together.
-
 import type { Classification, ExtractedFact } from "@/lib/usecases/cucp-reevals/types";
 import type { Precedent } from "@/lib/usecases/cucp-reevals/memory/precedents";
 import { buildPrecedentsBlock } from "@/lib/usecases/cucp-reevals/memory/precedents";
+import { CUCP_L3_CRITERIA, type CucpL3Criterion } from "../rubric";
+
+function renderCriteria(criteria: readonly CucpL3Criterion[]): string {
+  return criteria
+    .map((c) => (c.rule ? `${c.s_no}. ${c.name}. Rule: ${c.rule}` : `${c.s_no}. ${c.name}`))
+    .join("\n");
+}
 
 export function buildLevel3SystemPrompt(
   precedents: readonly Precedent[] = [],
+  criteria: readonly CucpL3Criterion[] = CUCP_L3_CRITERIA,
 ): string {
   const precedentsBlock = buildPrecedentsBlock(3, precedents);
   return `You are the final evaluator applying the exact standard of proof (Preponderance of the Evidence) under 49 CFR §26.67.
 You will evaluate against the 7 mandatory CUCP criteria based on the classified evidence.
 
 The 7 Criteria rows are exactly:
-1. Meets Requirements of SED (No Race or Sex Presumptions)
-2. Meets Personal Net Worth (PNW < $2.047M). Rule: Review the Excel Cross-Reference Revenue/PNW. HOWEVER, if the 'Narrative Declared PNW' provides a specific number, it OVERRIDES the Excel data.
-3. Meets Disadvantage in American Society
-4. Demonstration of Disadvantage (Past Experiences)
-5. Evidence of Specific Impediments
-6. Link Between Impediments and Harm
-7. Economic Disadvantage in Fact${precedentsBlock}
+${renderCriteria(criteria)}${precedentsBlock}
 
 OUTPUT FORMAT:
 Return valid JSON exactly matching this structure.
