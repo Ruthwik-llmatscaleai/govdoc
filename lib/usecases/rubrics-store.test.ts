@@ -12,6 +12,7 @@ import {
   deleteRubric,
   resetRubricContent,
   getDefaultRubricId,
+  listVersions,
 } from "./rubrics-store";
 
 let tmp = "";
@@ -159,5 +160,45 @@ describe("rubrics-store", () => {
     const list = await listRubrics("cmgc-pde");
     expect(list).toHaveLength(1);
     expect(list[0]!.id).toBe("default");
+  });
+
+  it("saveRubric creates v001 snapshot on first save and increments thereafter", async () => {
+    await saveRubric("cmgc-pde", "default", { v: 1 });
+    const v1 = await listVersions("cmgc-pde", "default");
+    expect(v1).toHaveLength(1);
+    expect(v1[0]!.id).toBe("v001");
+    expect(v1[0]!.source).toBe("edit");
+
+    await saveRubric("cmgc-pde", "default", { v: 2 }, { source: "edit", note: "tightened C-tier" });
+    const v2 = await listVersions("cmgc-pde", "default");
+    expect(v2).toHaveLength(2);
+    expect(v2[0]!.id).toBe("v002"); // newest-first
+    expect(v2[0]!.note).toBe("tightened C-tier");
+    expect(v2[1]!.id).toBe("v001");
+  });
+
+  it("loadRubric with versionId reads the immutable snapshot, not the live file", async () => {
+    await saveRubric("cmgc-pde", "default", { v: 1 });
+    await saveRubric("cmgc-pde", "default", { v: 2 });
+    const live = await loadRubric("cmgc-pde", "default");
+    expect(live).toEqual({ v: 2 });
+    const old = await loadRubric("cmgc-pde", "default", "v001");
+    expect(old).toEqual({ v: 1 });
+  });
+
+  it("loadRubric returns null for an unknown versionId", async () => {
+    await saveRubric("cmgc-pde", "default", { v: 1 });
+    expect(await loadRubric("cmgc-pde", "default", "v999")).toBeNull();
+  });
+
+  it("listVersions returns an empty array for a rubric with no history yet", async () => {
+    // Manifest exists (default seeded) but saveRubric was never called.
+    expect(await listVersions("cmgc-pde", "default")).toEqual([]);
+  });
+
+  it("listVersions rejects an unsafe versionId shape via load", async () => {
+    await saveRubric("cmgc-pde", "default", { v: 1 });
+    await expect(loadRubric("cmgc-pde", "default", "../etc/passwd")).rejects.toThrow(/Invalid version id/);
+    await expect(loadRubric("cmgc-pde", "default", "v1")).rejects.toThrow(/Invalid version id/);
   });
 });
