@@ -2,6 +2,7 @@ import type { PipelineStep, StepEvent } from "@/lib/usecases/types";
 import type { LlmProvider } from "@/lib/llm/types";
 import type { Level1Data, Level2Data, Level3Data, Criterion } from "@/lib/usecases/cucp-reevals/types";
 import { buildLevel3SystemPrompt, buildLevel3UserMessage } from "@/lib/usecases/cucp-reevals/prompts/level-3-threshold";
+import { type CucpL3Criterion } from "@/lib/usecases/cucp-reevals/rubric";
 import { commitStagedPrecedents, loadPrecedents } from "@/lib/usecases/cucp-reevals/memory/store";
 import { l3OverrideToPrecedent, type L3OverridePayload } from "@/lib/usecases/cucp-reevals/memory/staged";
 import { awaitLevelDecision } from "@/lib/runs/level-rendezvous";
@@ -28,8 +29,11 @@ export const level3Step: PipelineStep<FormData> = {
 
       const provider: LlmProvider = "openai";
       const model = "gpt-4o";
+      const rubric = ctx.rubric as { l3?: unknown } | undefined;
+      const rubricCriteria: readonly CucpL3Criterion[] | undefined =
+        Array.isArray(rubric?.l3) ? (rubric!.l3 as readonly CucpL3Criterion[]) : undefined;
       const messages = [
-        { role: "system" as const, content: buildLevel3SystemPrompt(all) },
+        { role: "system" as const, content: buildLevel3SystemPrompt(all, rubricCriteria) },
         { role: "user" as const, content: buildLevel3UserMessage(l2.classifications ?? [], l1.extracted_facts ?? [], pnwResult) },
       ];
 
