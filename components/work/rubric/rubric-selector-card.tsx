@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { WorkCard } from "@/components/work/page-shell";
+import { useCallback, useEffect, useState } from "react";
+import { RubricUploadModal } from "./rubric-upload-modal";
 
 type RubricEntry = {
   id: string;
@@ -21,7 +21,7 @@ type VersionEntry = {
 
 export type RubricSelection = { rubricId: string; versionId: string | null };
 
-export function RubricSelectorCard({
+export function RubricSelectorInline({
   usecaseId,
   onChange,
 }: {
@@ -33,6 +33,8 @@ export function RubricSelectorCard({
   const [rubricId, setRubricId] = useState<string>("");
   const [versionId, setVersionId] = useState<string>("");
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -43,8 +45,10 @@ export function RubricSelectorCard({
         const body = (await res.json()) as { rubrics: RubricEntry[] };
         if (!alive) return;
         setRubrics(body.rubrics);
-        const def = body.rubrics.find((r) => r.isDefault) ?? body.rubrics[0];
-        if (def) setRubricId(def.id);
+        if (!rubricId) {
+          const def = body.rubrics.find((r) => r.isDefault) ?? body.rubrics[0];
+          if (def) setRubricId(def.id);
+        }
       } catch (e) {
         if (alive) setLoadError(e instanceof Error ? e.message : "Failed to load rubrics");
       }
@@ -52,7 +56,9 @@ export function RubricSelectorCard({
     return () => {
       alive = false;
     };
-  }, [usecaseId]);
+    // refreshKey forces a re-fetch after an upload.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usecaseId, refreshKey]);
 
   useEffect(() => {
     if (!rubricId) return;
@@ -72,7 +78,7 @@ export function RubricSelectorCard({
     return () => {
       alive = false;
     };
-  }, [usecaseId, rubricId]);
+  }, [usecaseId, rubricId, refreshKey]);
 
   useEffect(() => {
     if (!rubricId) return;
@@ -81,58 +87,75 @@ export function RubricSelectorCard({
   }, [rubricId, versionId, versions, onChange]);
 
   const latestId = versions[0]?.id;
-  const selectedVersion = versions.find((v) => v.id === (versionId || latestId));
+
+  const handleUploaded = useCallback(
+    ({ rubricId: newRubricId, versionId: newVersionId }: { rubricId: string; versionId: string }) => {
+      setUploadOpen(false);
+      setRubricId(newRubricId);
+      setVersionId(newVersionId);
+      setRefreshKey((k) => k + 1);
+    },
+    [],
+  );
 
   return (
-    <WorkCard title="Rubric" description="Choose the rubric and version to evaluate against.">
+    <div className="flex flex-wrap items-center gap-2.5">
       {loadError && (
-        <div role="alert" className="mb-3 border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+        <span role="alert" className="text-[11px] text-destructive">
           {loadError}
-        </div>
+        </span>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-xs font-medium text-foreground/85">
-          Rubric
-          <select
-            aria-label="Rubric"
-            value={rubricId}
-            onChange={(e) => setRubricId(e.target.value)}
-            className="mt-1 block w-full border border-[var(--color-line)] bg-[var(--color-paper)] px-2 py-1.5 text-sm"
-          >
-            {rubrics.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.label}
-                {r.isDefault ? " (Default)" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-xs font-medium text-foreground/85">
-          Version
-          <select
-            aria-label="Version"
-            value={versionId}
-            onChange={(e) => setVersionId(e.target.value)}
-            className="mt-1 block w-full border border-[var(--color-line)] bg-[var(--color-paper)] px-2 py-1.5 text-sm"
-          >
-            <option value="">Latest{latestId ? ` (${latestId})` : ""}</option>
-            {versions.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.id} — {new Date(v.createdAt).toLocaleDateString()}
-                {v.note ? ` — ${v.note.slice(0, 40)}` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <label className="flex items-center gap-1.5 text-[11px] font-mono font-semibold uppercase tracking-[0.16em] text-[var(--color-ink-faint)]">
+        Rubric
+        <select
+          aria-label="Rubric"
+          value={rubricId}
+          onChange={(e) => setRubricId(e.target.value)}
+          className="rounded-lg border border-border bg-card px-2.5 py-1.5 font-sans text-sm font-normal normal-case tracking-normal text-foreground hover:bg-muted"
+        >
+          {rubrics.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.label}
+              {r.isDefault ? " · Default" : ""}
+            </option>
+          ))}
+        </select>
+      </label>
 
-      {selectedVersion && (
-        <p className="mt-2 text-[11px] text-muted-foreground">
-          {selectedVersion.id} · {new Date(selectedVersion.createdAt).toLocaleString()}
-          {selectedVersion.note ? ` · ${selectedVersion.note}` : ""}
-        </p>
-      )}
-    </WorkCard>
+      <label className="flex items-center gap-1.5 text-[11px] font-mono font-semibold uppercase tracking-[0.16em] text-[var(--color-ink-faint)]">
+        Version
+        <select
+          aria-label="Version"
+          value={versionId}
+          onChange={(e) => setVersionId(e.target.value)}
+          className="rounded-lg border border-border bg-card px-2.5 py-1.5 font-sans text-sm font-normal normal-case tracking-normal text-foreground hover:bg-muted"
+        >
+          <option value="">Latest{latestId ? ` (${latestId})` : ""}</option>
+          {versions.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.id} — {new Date(v.createdAt).toLocaleDateString()}
+              {v.note ? ` — ${v.note.slice(0, 32)}` : ""}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <button
+        type="button"
+        onClick={() => setUploadOpen(true)}
+        className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+      >
+        + New rubric
+      </button>
+
+      <RubricUploadModal
+        open={uploadOpen}
+        usecaseId={usecaseId}
+        rubricId={rubricId || "default"}
+        onUploaded={handleUploaded}
+        onClose={() => setUploadOpen(false)}
+      />
+    </div>
   );
 }
