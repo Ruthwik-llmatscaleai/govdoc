@@ -23,9 +23,19 @@ export const evaluateStep: PipelineStep<unknown> = {
     const provider: LlmProvider = "openai";
     const model = "gpt-4.1";
 
-    const ordered = orderCategoriesByDependencyGroups(
-      rubricSchema as Record<string, Record<string, string>>,
-    );
+    // Read the rubric chosen for this run; fall back to the bundled default
+    // for older callers (StepContext literals in tests, legacy callers).
+    const runtimeRubric = ctx.rubric as Record<string, Record<string, string>> | undefined;
+    const isValidRubric =
+      runtimeRubric &&
+      typeof runtimeRubric === "object" &&
+      Object.values(runtimeRubric).every(
+        (v) => v && typeof v === "object" && !Array.isArray(v),
+      );
+    const effectiveRubric = isValidRubric
+      ? runtimeRubric
+      : (rubricSchema as Record<string, Record<string, string>>);
+    const ordered = orderCategoriesByDependencyGroups(effectiveRubric);
     const total = Math.ceil(ordered.length / CHUNK_SIZE);
 
     const allResults: EvaluationResult[] = [];
