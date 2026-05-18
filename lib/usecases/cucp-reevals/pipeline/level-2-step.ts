@@ -2,6 +2,7 @@ import type { PipelineStep, StepEvent } from "@/lib/usecases/types";
 import type { LlmProvider } from "@/lib/llm/types";
 import type { Level1Data, Level2Data, Classification } from "@/lib/usecases/cucp-reevals/types";
 import { buildLevel2SystemPrompt, buildLevel2UserMessage } from "@/lib/usecases/cucp-reevals/prompts/level-2-classify";
+import { type CucpL2Category } from "@/lib/usecases/cucp-reevals/rubric";
 import { loadPrecedents } from "@/lib/usecases/cucp-reevals/memory/store";
 import { l2OverrideToPrecedent, type L2OverridePayload } from "@/lib/usecases/cucp-reevals/memory/staged";
 import { awaitLevelDecision } from "@/lib/runs/level-rendezvous";
@@ -31,8 +32,11 @@ export const level2Step: PipelineStep<FormData> = {
 
       const provider: LlmProvider = "openai";
       const model = "gpt-4o";
+      const rubric = ctx.rubric as { l2?: unknown } | undefined;
+      const categories: readonly CucpL2Category[] | undefined =
+        Array.isArray(rubric?.l2) ? (rubric!.l2 as readonly CucpL2Category[]) : undefined;
       const messages = [
-        { role: "system" as const, content: buildLevel2SystemPrompt(all) },
+        { role: "system" as const, content: buildLevel2SystemPrompt(all, categories) },
         { role: "user" as const, content: buildLevel2UserMessage(l1.extracted_facts ?? [], combinedFinancials) },
       ];
 
