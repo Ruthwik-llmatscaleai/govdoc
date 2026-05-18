@@ -11,7 +11,7 @@ export type UseCaseMetadata = {
 const ALL_METADATA: UseCaseMetadata[] = [
   {
     id: "cmgc-pde",
-    label: "Project Review",
+    label: "Validate Project",
     blurb: "Score project narratives against the 25-category delivery method rubric.",
     tile: "review",
     exporters: [
@@ -21,7 +21,7 @@ const ALL_METADATA: UseCaseMetadata[] = [
   },
   {
     id: "cucp-reevals",
-    label: "Narrative Review",
+    label: "Validate Narrative",
     blurb: "Re-evaluate firms under 49 CFR §26.67 against 7 mandatory criteria.",
     tile: "review",
     exporters: [
@@ -32,7 +32,7 @@ const ALL_METADATA: UseCaseMetadata[] = [
   },
   {
     id: "row-appraisal",
-    label: "Appraisal Review",
+    label: "Validate Appraisal",
     blurb: "Score Caltrans appraisal reports against the 34-category rubric.",
     tile: "review",
     exporters: [
