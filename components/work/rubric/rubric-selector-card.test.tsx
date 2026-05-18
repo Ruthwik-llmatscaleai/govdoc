@@ -48,12 +48,12 @@ describe("RubricSelectorInline", () => {
     await waitFor(() => expect(onChange).toHaveBeenLastCalledWith({ rubricId: "pilot", versionId: "v002" }));
   });
 
-  it("renders a New rubric button that opens the upload modal", async () => {
+  it("does not render any rubric CRUD affordance (no New rubric / upload triggers)", async () => {
     render(<RubricSelectorInline usecaseId="cmgc-pde" onChange={() => {}} />);
-    const btn = await screen.findByRole("button", { name: /new rubric/i });
-    expect(btn).toBeTruthy();
-    fireEvent.click(btn);
-    expect(await screen.findByRole("dialog")).toBeTruthy();
+    await waitFor(() => expect(screen.getByLabelText(/Rubric/i)).toBeTruthy());
+    expect(screen.queryByRole("button", { name: /new rubric/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /upload/i })).toBeNull();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("does not render an implementation-detail disclosure banner for any use case", () => {

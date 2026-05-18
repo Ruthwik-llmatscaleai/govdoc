@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { RubricUploadModal } from "./rubric-upload-modal";
+import { useEffect, useState } from "react";
 
 type RubricEntry = {
   id: string;
@@ -33,8 +32,6 @@ export function RubricSelectorInline({
   const [rubricId, setRubricId] = useState<string>("");
   const [versionId, setVersionId] = useState<string>("");
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -45,10 +42,8 @@ export function RubricSelectorInline({
         const body = (await res.json()) as { rubrics: RubricEntry[] };
         if (!alive) return;
         setRubrics(body.rubrics);
-        if (!rubricId) {
-          const def = body.rubrics.find((r) => r.isDefault) ?? body.rubrics[0];
-          if (def) setRubricId(def.id);
-        }
+        const def = body.rubrics.find((r) => r.isDefault) ?? body.rubrics[0];
+        if (def) setRubricId(def.id);
       } catch (e) {
         if (alive) setLoadError(e instanceof Error ? e.message : "Failed to load rubrics");
       }
@@ -56,9 +51,7 @@ export function RubricSelectorInline({
     return () => {
       alive = false;
     };
-    // refreshKey forces a re-fetch after an upload.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usecaseId, refreshKey]);
+  }, [usecaseId]);
 
   useEffect(() => {
     if (!rubricId) return;
@@ -78,7 +71,7 @@ export function RubricSelectorInline({
     return () => {
       alive = false;
     };
-  }, [usecaseId, rubricId, refreshKey]);
+  }, [usecaseId, rubricId]);
 
   useEffect(() => {
     if (!rubricId) return;
@@ -87,16 +80,6 @@ export function RubricSelectorInline({
   }, [rubricId, versionId, versions, onChange]);
 
   const latestId = versions[0]?.id;
-
-  const handleUploaded = useCallback(
-    ({ rubricId: newRubricId, versionId: newVersionId }: { rubricId: string; versionId: string }) => {
-      setUploadOpen(false);
-      setRubricId(newRubricId);
-      setVersionId(newVersionId);
-      setRefreshKey((k) => k + 1);
-    },
-    [],
-  );
 
   return (
     <div className="flex flex-wrap items-center gap-2.5">
@@ -144,21 +127,6 @@ export function RubricSelectorInline({
         </select>
       </label>
 
-      <button
-        type="button"
-        onClick={() => setUploadOpen(true)}
-        className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
-      >
-        + New rubric
-      </button>
-
-      <RubricUploadModal
-        open={uploadOpen}
-        usecaseId={usecaseId}
-        rubricId={rubricId || "default"}
-        onUploaded={handleUploaded}
-        onClose={() => setUploadOpen(false)}
-      />
     </div>
   );
 }
