@@ -6,6 +6,8 @@ import { RubricShell } from "./shared/rubric-shell";
 import { RubricSection } from "./shared/rubric-section";
 import { RubricEditorCard, type EditorField } from "./shared/rubric-editor-card";
 import { ConfirmDialog, type ConfirmRequest } from "./shared/confirm-dialog";
+import { SaveBar } from "./shared/save-bar";
+import type { SaveDraft } from "./shared/save-options-popover";
 
 const TIERS: ("1" | "2" | "3" | "4" | "5")[] = ["1", "2", "3", "4", "5"];
 
@@ -13,7 +15,23 @@ type ComposeTarget =
   | { kind: "addCategory" }
   | { kind: "renameCategory"; name: string };
 
-export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
+export function RowRubricEdit({
+  initial,
+  usecaseId,
+  rubricId,
+  baselineVersionId = null,
+  loadedFromHistory = false,
+  onSaved,
+}: {
+  initial: RowRubricData;
+  usecaseId: string;
+  rubricId: string;
+  baselineVersionId?: string | null;
+  loadedFromHistory?: boolean;
+  onSaved?: () => void | Promise<void>;
+}) {
+  const rubricUrlBase = `/api/usecases/${usecaseId}/rubric`;
+  const rubricQuery = `?rubric=${encodeURIComponent(rubricId)}`;
   const [schema, setSchema] = useState<RowRubricData>(() =>
     Object.fromEntries(
       Object.entries(initial).map(([k, v]) => [k, { ...v }]),
@@ -91,18 +109,33 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
     });
   }
 
-  async function onSave() {
+  async function onSave(draft: SaveDraft) {
     setSaving(true);
     setMsg(null);
     try {
-      const res = await fetch("/api/usecases/row-appraisal/rubric", {
+      const params = new URLSearchParams();
+      params.set("rubric", rubricId);
+      if (draft.mode === "overwrite") {
+        params.set("mode", "overwrite");
+      } else if (draft.useCustom) {
+        if (!draft.customId) throw new Error("Custom version id is required");
+        params.set("versionId", draft.customId);
+      } else {
+        params.set("bump", draft.bump);
+      }
+      const res = await fetch(`${rubricUrlBase}?${params.toString()}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(schema),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setMsg("Saved. Preview rubrics will reflect this on next load.");
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
+      const body = (await res.json()) as { versionId: string };
+      setMsg(draft.mode === "overwrite" ? `Overwrote ${body.versionId}.` : `Saved as ${body.versionId}.`);
       setDirty(false);
+      await onSaved?.();
     } catch (e) {
       setMsg(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
@@ -121,7 +154,7 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
         setSaving(true);
         setMsg(null);
         try {
-          const res = await fetch("/api/usecases/row-appraisal/rubric", { method: "DELETE" });
+          const res = await fetch(`${rubricUrlBase}${rubricQuery}`, { method: "DELETE" });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const def = defaultRowRubric();
           setSchema(
@@ -216,12 +249,16 @@ export function RowRubricEdit({ initial }: { initial: RowRubricData }) {
       </div>
 
       <SaveBar
+        usecaseId={usecaseId}
+        rubricId={rubricId}
         saving={saving}
         msg={msg}
         dirty={dirty}
+        baselineVersionId={baselineVersionId}
+        loadedFromHistory={loadedFromHistory}
         onSave={onSave}
         onReset={onReset}
-        downloadHref="/api/usecases/row-appraisal/rubric/download"
+        downloadHref={`${rubricUrlBase}/download${rubricQuery}`}
         downloadLabel="Download .xlsx"
       />
 
@@ -280,57 +317,4 @@ function buildCompose(target: ComposeTarget): {
     fields: [{ name: "name", label: "New category name", type: "text", required: true }],
     initial: { name: target.name },
   };
-}
-
-function SaveBar({
-  saving,
-  msg,
-  dirty,
-  onSave,
-  onReset,
-  downloadHref,
-  downloadLabel,
-}: {
-  saving: boolean;
-  msg: string | null;
-  dirty: boolean;
-  onSave: () => void;
-  onReset: () => void;
-  downloadHref: string;
-  downloadLabel: string;
-}) {
-  const status = msg ?? (dirty ? "You have unsaved changes." : "No unsaved changes.");
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
-      <span
-        className={`text-xs ${dirty && !msg ? "font-medium text-foreground" : "text-muted-foreground"}`}
-      >
-        {status}
-      </span>
-      <div className="flex gap-2">
-        <a
-          href={downloadHref}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
-        >
-          {downloadLabel}
-        </a>
-        <button
-          type="button"
-          onClick={onReset}
-          disabled={saving}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-muted disabled:opacity-50"
-        >
-          Reset
-        </button>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={saving || !dirty}
-          className="rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)] disabled:opacity-50"
-        >
-          {saving ? "Saving…" : dirty ? "Save changes" : "Saved"}
-        </button>
-      </div>
-    </div>
-  );
 }
