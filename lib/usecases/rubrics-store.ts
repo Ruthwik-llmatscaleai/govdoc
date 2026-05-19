@@ -1,5 +1,6 @@
 import { promises as fsp, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { computeNextVersionId, type VersionBump } from "./version-id";
 
 const KNOWN_IDS = new Set(["cmgc-pde", "cucp-reevals", "row-appraisal"]);
 
@@ -49,7 +50,9 @@ function assertSafeRubricId(rubricId: string): void {
 }
 
 function assertSafeVersionId(versionId: string): void {
-  if (!/^v\d{3,}$/.test(versionId)) {
+  // Accept the new shape (v1, v1.2) AND the legacy 3+-digit shape (v001) for
+  // backward compat with rubrics versioned before this format change.
+  if (!/^v(\d+(\.\d+)?|\d{3,})$/.test(versionId)) {
     throw new Error(`Invalid version id: ${JSON.stringify(versionId)}`);
   }
 }
@@ -118,14 +121,6 @@ async function writeVersionsManifest(
     JSON.stringify(manifest, null, 2),
     "utf-8",
   );
-}
-
-function nextVersionId(existing: RubricVersionEntry[]): string {
-  const maxN = existing.reduce((acc, v) => {
-    const n = parseInt(v.id.slice(1), 10);
-    return Number.isFinite(n) && n > acc ? n : acc;
-  }, 0);
-  return `v${String(maxN + 1).padStart(3, "0")}`;
 }
 
 function legacySingleFile(usecaseId: string): string {
@@ -261,7 +256,14 @@ export async function saveRubric(
   usecaseId: string,
   rubricId: string,
   data: unknown,
-  opts: { source?: RubricVersionEntry["source"]; note?: string; label?: string } = {},
+  opts: {
+    source?: RubricVersionEntry["source"];
+    note?: string;
+    label?: string;
+    mode?: "new" | "overwrite";
+    bump?: VersionBump;
+    versionId?: string;
+  } = {},
 ): Promise<{ versionId: string }> {
   const m = await ensureManifest(usecaseId);
   if (!m.rubrics.some((r) => r.id === rubricId)) {
@@ -271,8 +273,8 @@ export async function saveRubric(
 
   // 1. Seed on first save: if the versions folder is empty AND a live file
   //    already exists with content, snapshot the previous content as v001
-  //    (source: "seed") BEFORE writing the new version. This guarantees
-  //    history is complete from the moment versioning ships.
+  //    (legacy id, source: "seed") BEFORE writing the new version. This
+  //    guarantees history is complete from the moment versioning ships.
   let versionsManifest = await readVersionsManifest(usecaseId, rubricId);
   if (versionsManifest.versions.length === 0 && existsSync(rubricFile(usecaseId, rubricId))) {
     const priorText = await fsp.readFile(rubricFile(usecaseId, rubricId), "utf-8");
@@ -287,33 +289,64 @@ export async function saveRubric(
     await writeVersionsManifest(usecaseId, rubricId, versionsManifest);
   }
 
-  // 2. Write the live file (existing behavior).
+  // 2. Write the live file (same for both modes).
   await fsp.writeFile(
     rubricFile(usecaseId, rubricId),
     JSON.stringify(data, null, 2),
     "utf-8",
   );
 
-  // 3. Append a new version snapshot.
-  const newId = nextVersionId(versionsManifest.versions);
+  // 3. Resolve target version id + new versions manifest.
+  const mode = opts.mode ?? "new";
+  let targetId: string;
+  let manifestNext: RubricVersionsManifest;
+
+  if (mode === "overwrite") {
+    if (versionsManifest.versions.length === 0) {
+      throw new Error(
+        "No version to overwrite — call saveRubric with mode: 'new' for the first save.",
+      );
+    }
+    // Head = newest by descending id sort (matches listVersions's order).
+    const sorted = [...versionsManifest.versions].sort((a, b) =>
+      a.id < b.id ? 1 : a.id > b.id ? -1 : 0,
+    );
+    const head = sorted[0]!;
+    targetId = head.id;
+    manifestNext = {
+      versions: versionsManifest.versions.map((v) =>
+        v.id === head.id
+          ? { ...v, createdAt: nowIso(), ...(opts.note ? { note: opts.note } : {}) }
+          : v,
+      ),
+    };
+  } else {
+    targetId = computeNextVersionId(
+      versionsManifest.versions,
+      opts.bump ?? "minor",
+      opts.versionId,
+    );
+    const entry: RubricVersionEntry = {
+      id: targetId,
+      createdAt: nowIso(),
+      source: opts.source ?? "edit",
+      ...(opts.label ? { label: opts.label } : {}),
+      ...(opts.note ? { note: opts.note } : {}),
+    };
+    manifestNext = { versions: [...versionsManifest.versions, entry] };
+  }
+
+  // 4. Write the version snapshot file.
   const vdir = versionsDir(usecaseId, rubricId);
   if (!existsSync(vdir)) mkdirSync(vdir, { recursive: true });
   await fsp.writeFile(
-    versionFile(usecaseId, rubricId, newId),
+    versionFile(usecaseId, rubricId, targetId),
     JSON.stringify(data, null, 2),
     "utf-8",
   );
-  const entry: RubricVersionEntry = {
-    id: newId,
-    createdAt: nowIso(),
-    source: opts.source ?? "edit",
-    ...(opts.label ? { label: opts.label } : {}),
-    ...(opts.note ? { note: opts.note } : {}),
-  };
-  versionsManifest = { versions: [...versionsManifest.versions, entry] };
-  await writeVersionsManifest(usecaseId, rubricId, versionsManifest);
+  await writeVersionsManifest(usecaseId, rubricId, manifestNext);
 
-  // 4. Update the rubrics manifest's `updatedAt`.
+  // 5. Touch the rubrics manifest updatedAt.
   const next: RubricsManifest = {
     rubrics: m.rubrics.map((r) =>
       r.id === rubricId ? { ...r, updatedAt: nowIso() } : r,
@@ -321,7 +354,7 @@ export async function saveRubric(
   };
   await writeManifest(usecaseId, next);
 
-  return { versionId: newId };
+  return { versionId: targetId };
 }
 
 // Resets a single rubric back to bundled defaults by removing its data file.
