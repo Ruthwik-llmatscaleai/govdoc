@@ -10,12 +10,24 @@ import { RowRubricView } from "./row-rubric-view";
 
 type Data = CmgcRubricData | CucpRubricData | RowRubricData;
 
-export function RubricPreviewSlideDown({ usecaseId }: { usecaseId: UseCaseId }) {
+export function RubricPreviewSlideDown({
+  usecaseId,
+  rubricId,
+  versionId = null,
+}: {
+  usecaseId: UseCaseId;
+  rubricId?: string;
+  versionId?: string | null;
+}) {
   const [data, setData] = useState<Data | null>(null);
 
   useEffect(() => {
     let alive = true;
-    fetch(`/api/usecases/${usecaseId}/rubric`)
+    const params = new URLSearchParams();
+    if (rubricId) params.set("rubric", rubricId);
+    if (versionId) params.set("versionId", versionId);
+    const qs = params.toString();
+    fetch(`/api/usecases/${usecaseId}/rubric${qs ? `?${qs}` : ""}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((next: Data | null) => {
         if (alive && next) setData(next);
@@ -24,7 +36,7 @@ export function RubricPreviewSlideDown({ usecaseId }: { usecaseId: UseCaseId }) 
     return () => {
       alive = false;
     };
-  }, [usecaseId]);
+  }, [usecaseId, rubricId, versionId]);
 
   return (
     <details className="group rounded-md border border-[var(--color-line)] bg-[var(--color-paper)]">
