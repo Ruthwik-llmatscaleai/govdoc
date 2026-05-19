@@ -57,7 +57,8 @@ describe("POST /api/usecases/[id]/rubrics/upload", () => {
     const body = await res.json();
     expect(body.ok).toBe(true);
     expect(body.rubricId).toBe("default");
-    expect(body.versionId).toMatch(/^v\d{3,}$/);
+    // Accepts either new shape (v1, v1.2) OR legacy (v001).
+    expect(body.versionId).toMatch(/^v(\d+(\.\d+)?|\d{3,})$/);
     const versions = await listVersions("cmgc-pde", "default");
     expect(versions[0]!.source).toBe("upload");
     expect(versions[0]!.note).toBe("uploaded via UI");

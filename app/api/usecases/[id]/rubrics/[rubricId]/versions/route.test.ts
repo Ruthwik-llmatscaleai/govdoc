@@ -54,7 +54,7 @@ describe("/api/usecases/[id]/rubrics/[rubricId]/versions", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.versions).toHaveLength(2);
-    expect(body.versions[0].id).toBe("v002");
+    expect(body.versions[0].id).toBe("v1.1");
     expect(body.versions[0].note).toBe("tightened");
   });
 });

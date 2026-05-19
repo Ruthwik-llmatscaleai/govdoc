@@ -43,23 +43,23 @@ async function authedReq(body?: unknown): Promise<Request> {
 
 describe("POST .../versions/[versionId]/restore", () => {
   it("copies the chosen version's content into the live file and creates a new version", async () => {
-    await saveRubric("cmgc-pde", "default", { v: 1 });
-    await saveRubric("cmgc-pde", "default", { v: 2 });
+    await saveRubric("cmgc-pde", "default", { v: 1 });   // v1
+    await saveRubric("cmgc-pde", "default", { v: 2 });   // v1.1
 
     const req = await authedReq({ note: "rolled back to v1" });
     const res = await POST(req, {
-      params: Promise.resolve({ id: "cmgc-pde", rubricId: "default", versionId: "v001" }),
+      params: Promise.resolve({ id: "cmgc-pde", rubricId: "default", versionId: "v1" }),
     });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.ok).toBe(true);
-    expect(body.newVersionId).toBe("v003");
+    expect(body.newVersionId).toBe("v1.2");
 
     const live = await loadRubric("cmgc-pde", "default");
     expect(live).toEqual({ v: 1 });
 
     const versions = await listVersions("cmgc-pde", "default");
-    expect(versions[0]!.id).toBe("v003");
+    expect(versions[0]!.id).toBe("v1.2");
     expect(versions[0]!.source).toBe("restore");
     expect(versions[0]!.note).toBe("rolled back to v1");
   });

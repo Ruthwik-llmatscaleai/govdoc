@@ -34,11 +34,11 @@ async function authedReq(): Promise<Request> {
 
 describe("/api/usecases/[id]/rubrics/[rubricId]/versions/[versionId]", () => {
   it("returns the snapshot content", async () => {
-    await saveRubric("cmgc-pde", "default", { v: 1 });
-    await saveRubric("cmgc-pde", "default", { v: 2 });
+    await saveRubric("cmgc-pde", "default", { v: 1 });           // v1
+    await saveRubric("cmgc-pde", "default", { v: 2 });           // v1.1
     const req = await authedReq();
     const res = await GET(req, {
-      params: Promise.resolve({ id: "cmgc-pde", rubricId: "default", versionId: "v001" }),
+      params: Promise.resolve({ id: "cmgc-pde", rubricId: "default", versionId: "v1" }),
     });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ v: 1 });
@@ -72,12 +72,12 @@ async function authedDeleteReq(): Promise<Request> {
 
 describe("DELETE .../versions/[versionId]", () => {
   it("204 removes a non-newest version", async () => {
-    await saveRubric("cmgc-pde", "default", { v: 1 });
-    await saveRubric("cmgc-pde", "default", { v: 2 });
-    await saveRubric("cmgc-pde", "default", { v: 3 });
+    await saveRubric("cmgc-pde", "default", { v: 1 });    // v1
+    await saveRubric("cmgc-pde", "default", { v: 2 });    // v1.1
+    await saveRubric("cmgc-pde", "default", { v: 3 });    // v1.2
     const req = await authedDeleteReq();
     const res = await DELETE(req, {
-      params: Promise.resolve({ id: "cmgc-pde", rubricId: "default", versionId: "v002" }),
+      params: Promise.resolve({ id: "cmgc-pde", rubricId: "default", versionId: "v1.1" }),
     });
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -85,11 +85,11 @@ describe("DELETE .../versions/[versionId]", () => {
   });
 
   it("400 when deleting the newest version", async () => {
-    await saveRubric("cmgc-pde", "default", { v: 1 });
-    await saveRubric("cmgc-pde", "default", { v: 2 });
+    await saveRubric("cmgc-pde", "default", { v: 1 });    // v1
+    await saveRubric("cmgc-pde", "default", { v: 2 });    // v1.1
     const req = await authedDeleteReq();
     const res = await DELETE(req, {
-      params: Promise.resolve({ id: "cmgc-pde", rubricId: "default", versionId: "v002" }),
+      params: Promise.resolve({ id: "cmgc-pde", rubricId: "default", versionId: "v1.1" }),
     });
     expect(res.status).toBe(400);
   });
@@ -99,7 +99,7 @@ describe("DELETE .../versions/[versionId]", () => {
     await saveRubric("cmgc-pde", "default", { v: 2 });
     const req = await authedDeleteReq();
     const res = await DELETE(req, {
-      params: Promise.resolve({ id: "cmgc-pde", rubricId: "default", versionId: "v099" }),
+      params: Promise.resolve({ id: "cmgc-pde", rubricId: "default", versionId: "v9.9" }),
     });
     expect(res.status).toBe(404);
   });
