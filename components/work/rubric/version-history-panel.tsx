@@ -13,12 +13,22 @@ type VersionEntry = {
 export function VersionHistoryPanel({
   usecaseId,
   rubricId,
+  refreshNonce = 0,
+  baselineVersionId = null,
   onChanged,
+  onLoad,
 }: {
   usecaseId: string;
   rubricId: string;
+  /** Bumping this triggers a refetch — used by the parent after a save lands. */
+  refreshNonce?: number;
+  /** The version currently loaded into the editor. Used to disable Load on
+   *  that row (clicking would be a no-op). */
+  baselineVersionId?: string | null;
   /** Fires after a restore or delete so the parent can refresh its editor state. */
   onChanged: () => void | Promise<void>;
+  /** Loads a version's content into the editor without persisting. */
+  onLoad?: (versionId: string) => void | Promise<void>;
 }) {
   const [versions, setVersions] = useState<VersionEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -59,7 +69,7 @@ export function VersionHistoryPanel({
     return () => {
       alive = false;
     };
-  }, [usecaseId, rubricId]);
+  }, [usecaseId, rubricId, refreshNonce]);
 
   async function handleRestore(versionId: string) {
     setBusyId(versionId);
@@ -154,6 +164,16 @@ export function VersionHistoryPanel({
                 <span className="ml-auto flex gap-2">
                   <button
                     type="button"
+                    aria-label={`Load ${v.id} into editor`}
+                    onClick={() => onLoad?.(v.id)}
+                    disabled={!onLoad || v.id === baselineVersionId || busyId !== null}
+                    className="rounded border border-border px-2 py-0.5 text-[11px] font-medium text-foreground transition hover:bg-muted disabled:opacity-40"
+                  >
+                    Load
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`Restore ${v.id}`}
                     onClick={() => handleRestore(v.id)}
                     disabled={!canRestore || busyId !== null}
                     className="rounded border border-border px-2 py-0.5 text-[11px] font-medium text-foreground transition hover:bg-muted disabled:opacity-40"
@@ -162,6 +182,7 @@ export function VersionHistoryPanel({
                   </button>
                   <button
                     type="button"
+                    aria-label={`Delete ${v.id}`}
                     onClick={() => handleDelete(v.id)}
                     disabled={!canDelete || busyId !== null}
                     className="rounded border border-destructive/40 px-2 py-0.5 text-[11px] font-medium text-destructive transition hover:bg-destructive/5 disabled:opacity-40"

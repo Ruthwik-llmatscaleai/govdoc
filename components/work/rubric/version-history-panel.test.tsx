@@ -45,8 +45,8 @@ describe("VersionHistoryPanel", () => {
     render(<VersionHistoryPanel usecaseId="cmgc-pde" rubricId="default" onChanged={() => {}} />);
     await waitFor(() => expect(screen.getByText("v003")).toBeTruthy());
     const newestRow = screen.getByText("v003").closest("li")!;
-    const restoreBtn = newestRow.querySelector("button:nth-of-type(1)") as HTMLButtonElement;
-    const deleteBtn = newestRow.querySelector("button:nth-of-type(2)") as HTMLButtonElement;
+    const restoreBtn = newestRow.querySelector('button[aria-label^="Restore"]') as HTMLButtonElement;
+    const deleteBtn = newestRow.querySelector('button[aria-label^="Delete"]') as HTMLButtonElement;
     expect(restoreBtn.disabled).toBe(true);
     expect(deleteBtn.disabled).toBe(true);
   });
@@ -56,8 +56,42 @@ describe("VersionHistoryPanel", () => {
     render(<VersionHistoryPanel usecaseId="cmgc-pde" rubricId="default" onChanged={onChanged} />);
     await waitFor(() => expect(screen.getByText("v002")).toBeTruthy());
     const row = screen.getByText("v002").closest("li")!;
-    const restoreBtn = row.querySelector("button:nth-of-type(1)") as HTMLButtonElement;
+    const restoreBtn = row.querySelector('button[aria-label^="Restore"]') as HTMLButtonElement;
     fireEvent.click(restoreBtn);
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
+  });
+
+  it("calls onLoad with the version id when Load is clicked", async () => {
+    const onLoad = vi.fn();
+    render(
+      <VersionHistoryPanel
+        usecaseId="cmgc-pde"
+        rubricId="default"
+        onChanged={() => {}}
+        onLoad={onLoad}
+      />,
+    );
+    await waitFor(() => expect(screen.getByText("v002")).toBeTruthy());
+    const row = screen.getByText("v002").closest("li")!;
+    const loadBtn = row.querySelector('button[aria-label^="Load"]') as HTMLButtonElement;
+    expect(loadBtn).toBeTruthy();
+    fireEvent.click(loadBtn);
+    expect(onLoad).toHaveBeenCalledWith("v002");
+  });
+
+  it("disables Load on the row matching baselineVersionId", async () => {
+    render(
+      <VersionHistoryPanel
+        usecaseId="cmgc-pde"
+        rubricId="default"
+        onChanged={() => {}}
+        onLoad={() => {}}
+        baselineVersionId="v002"
+      />,
+    );
+    await waitFor(() => expect(screen.getByText("v002")).toBeTruthy());
+    const row = screen.getByText("v002").closest("li")!;
+    const loadBtn = row.querySelector('button[aria-label^="Load"]') as HTMLButtonElement;
+    expect(loadBtn.disabled).toBe(true);
   });
 });
