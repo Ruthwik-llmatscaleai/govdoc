@@ -75,9 +75,11 @@ export function RubricSelectorInline({
 
   useEffect(() => {
     if (!rubricId) return;
-    const effectiveVersionId = versionId || versions[0]?.id || null;
-    onChange({ rubricId, versionId: effectiveVersionId });
-  }, [rubricId, versionId, versions, onChange]);
+    // Latest (empty value) → null so consumers can distinguish "use the live
+    // file" from an explicit pin to a particular version. The run route's
+    // loadRubric(id, rubricId, undefined) path returns the live file.
+    onChange({ rubricId, versionId: versionId || null });
+  }, [rubricId, versionId, onChange]);
 
   const latestId = versions[0]?.id;
 

@@ -32,20 +32,31 @@ afterEach(() => {
 });
 
 describe("RubricSelectorInline", () => {
-  it("loads rubrics, then versions, and emits the initial selection (default rubric, latest version)", async () => {
+  it("loads rubrics, then versions, and emits initial selection (default rubric, Latest = null versionId)", async () => {
     const onChange = vi.fn();
     render(<RubricSelectorInline usecaseId="cmgc-pde" onChange={onChange} />);
     await waitFor(() => expect(screen.getByLabelText(/Rubric/i)).toBeTruthy());
-    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ rubricId: "default", versionId: "v002" }));
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ rubricId: "default", versionId: null }));
   });
 
-  it("switching rubric resets version to the latest of that rubric", async () => {
+  it("switching rubric resets version to Latest (null)", async () => {
     const onChange = vi.fn();
     render(<RubricSelectorInline usecaseId="cmgc-pde" onChange={onChange} />);
     await waitFor(() => expect(onChange).toHaveBeenCalled());
     onChange.mockClear();
     fireEvent.change(screen.getByLabelText(/Rubric/i), { target: { value: "pilot" } });
-    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith({ rubricId: "pilot", versionId: "v002" }));
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith({ rubricId: "pilot", versionId: null }));
+  });
+
+  it("picking a specific version emits that versionId", async () => {
+    const onChange = vi.fn();
+    render(<RubricSelectorInline usecaseId="cmgc-pde" onChange={onChange} />);
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    onChange.mockClear();
+    fireEvent.change(screen.getByLabelText(/Version/i), { target: { value: "v001" } });
+    await waitFor(() =>
+      expect(onChange).toHaveBeenLastCalledWith({ rubricId: "default", versionId: "v001" }),
+    );
   });
 
   it("does not render any rubric CRUD affordance (no New rubric / upload triggers)", async () => {

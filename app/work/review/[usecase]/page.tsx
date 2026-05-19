@@ -217,6 +217,7 @@ function IdleLayout({
 }) {
   const [selection, setSelection] = useState<RubricSelection | null>(null);
   const handleChange = useCallback((sel: RubricSelection) => setSelection(sel), []);
+  const pinnedVersionId = selection?.versionId ?? null;
   return (
     <div className="grid gap-6 md:grid-cols-[1fr_320px]">
       <WorkCard
@@ -225,7 +226,26 @@ function IdleLayout({
         headerRight={<RubricSelectorInline usecaseId={usecaseId} onChange={handleChange} />}
       >
         <div className="space-y-4">
-          <RubricPreviewSlideDown usecaseId={usecaseId} />
+          {pinnedVersionId && (
+            <div
+              role="status"
+              className="flex items-start justify-between gap-3 rounded-md border border-l-4 border-primary/30 border-l-primary bg-primary/5 px-3 py-2 text-xs"
+            >
+              <span className="text-foreground/85">
+                ⓘ This run will use{" "}
+                <strong>{selection?.rubricId ?? "default"}</strong>
+                {" · "}
+                <strong className="font-mono">{pinnedVersionId}</strong>
+                . Picked from version history. Pick{" "}
+                <strong>Latest</strong> to use the current saved rubric.
+              </span>
+            </div>
+          )}
+          <RubricPreviewSlideDown
+            usecaseId={usecaseId}
+            rubricId={selection?.rubricId}
+            versionId={pinnedVersionId}
+          />
           {renderInputs(selection)}
         </div>
       </WorkCard>
