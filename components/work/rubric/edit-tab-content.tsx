@@ -12,7 +12,14 @@ type Props<T> = {
   usecaseId: string;
   initialRubrics: readonly RubricsManifestEntry[];
   initialData: T;
-  EditComponent: ComponentType<{ initial: T }>;
+  EditComponent: ComponentType<{
+    initial: T;
+    usecaseId: string;
+    rubricId: string;
+    baselineVersionId?: string | null;
+    loadedFromHistory?: boolean;
+    onSaved?: () => void | Promise<void>;
+  }>;
 };
 
 function pickInitialId(rubrics: readonly RubricsManifestEntry[]): string {
@@ -34,11 +41,22 @@ export function EditTabContent<T>({
   const [showCreate, setShowCreate] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
+  // Bumped after any mutation that appends a version (save, restore, delete).
+  // Threaded into VersionHistoryPanel so it refetches without remounting.
+  const [versionsNonce, setVersionsNonce] = useState(0);
+  // Bumped whenever `data` is replaced externally (load, restore, upload,
+  // rubric switch). Appended to the editor's React key so it remounts and
+  // reseeds its local state from the new initial.
+  const [dataNonce, setDataNonce] = useState(0);
+  // The version the editor's current `data` came from. Null = live file head.
+  const [baselineVersionId, setBaselineVersionId] = useState<string | null>(null);
+  const [loadedFromHistory, setLoadedFromHistory] = useState(false);
 
-  async function fetchRubricContent(rubricId: string): Promise<T> {
-    const res = await fetch(
-      `/api/usecases/${usecaseId}/rubric?rubric=${encodeURIComponent(rubricId)}`,
-    );
+  async function fetchRubricContent(rubricId: string, versionId?: string): Promise<T> {
+    const params = new URLSearchParams();
+    params.set("rubric", rubricId);
+    if (versionId) params.set("versionId", versionId);
+    const res = await fetch(`/api/usecases/${usecaseId}/rubric?${params.toString()}`);
     if (!res.ok) throw new Error(`Failed to load rubric (${res.status})`);
     return (await res.json()) as T;
   }
@@ -69,6 +87,9 @@ export function EditTabContent<T>({
       const next = await fetchRubricContent(id);
       setSelectedId(id);
       setData(next);
+      setBaselineVersionId(null);
+      setLoadedFromHistory(false);
+      setDataNonce((n) => n + 1);
     });
   }
 
@@ -156,13 +177,34 @@ export function EditTabContent<T>({
           {error}
         </div>
       )}
-      {/* `key` forces a fresh mount when the selected rubric changes so the
-          editor's internal state is replaced with the newly-loaded content. */}
-      <EditComponent key={selectedId} initial={data} />
+      {/* `key` includes dataNonce so the editor remounts whenever the parent
+          replaces `data` from outside (load, restore, upload, rubric switch).
+          A normal save does NOT bump dataNonce — the editor's state already
+          matches what was just sent to the server. */}
+      <EditComponent
+        key={`${selectedId}:${dataNonce}`}
+        initial={data}
+        usecaseId={usecaseId}
+        rubricId={selectedId}
+        baselineVersionId={baselineVersionId}
+        loadedFromHistory={loadedFromHistory}
+        onSaved={async () => {
+          // A save appended a new version. Refresh the manifest (so updatedAt
+          // stays current) and bump versions so the history panel refetches.
+          await withBusy(async () => {
+            const list = await fetchManifest();
+            setRubrics(list);
+          });
+          setVersionsNonce((n) => n + 1);
+          setLoadedFromHistory(false);
+        }}
+      />
 
       <VersionHistoryPanel
         usecaseId={usecaseId}
         rubricId={selectedId}
+        refreshNonce={versionsNonce}
+        baselineVersionId={baselineVersionId}
         onChanged={async () => {
           await withBusy(async () => {
             // Restoring or deleting changes the live file; refetch content + manifest.
@@ -170,7 +212,20 @@ export function EditTabContent<T>({
             const content = await fetchRubricContent(selectedId);
             setRubrics(list);
             setData(content);
+            setBaselineVersionId(null);
+            setLoadedFromHistory(false);
           });
+          setDataNonce((n) => n + 1);
+          setVersionsNonce((n) => n + 1);
+        }}
+        onLoad={async (versionId) => {
+          await withBusy(async () => {
+            const content = await fetchRubricContent(selectedId, versionId);
+            setData(content);
+            setBaselineVersionId(versionId);
+            setLoadedFromHistory(true);
+          });
+          setDataNonce((n) => n + 1);
         }}
       />
 
@@ -195,7 +250,15 @@ export function EditTabContent<T>({
             setRubrics(list);
             setSelectedId(uploadedId);
             setData(content);
+            setBaselineVersionId(null);
+            setLoadedFromHistory(false);
           });
+          // If the upload targeted the currently-selected rubric, rubricId
+          // doesn't change so the version panel's mount-deps don't change
+          // either — bump the nonce to force a refetch. Bump dataNonce too
+          // so the editor remounts with the uploaded content.
+          setDataNonce((n) => n + 1);
+          setVersionsNonce((n) => n + 1);
         }}
       />
     </div>
