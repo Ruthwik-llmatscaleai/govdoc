@@ -51,6 +51,11 @@ export function RubricPicker({
 
   const showAdminActions = mode === "manage" && !selected.isDefault;
 
+  // Avoid the "Default [Default]" duplication when the rubric's own label is
+  // already "Default" (the seeded entry's label collides with the badge text).
+  const labelDuplicatesDefault = (label: string) =>
+    label.trim().toLowerCase() === "default";
+
   return (
     <div className="flex flex-wrap items-center gap-2.5">
       <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
@@ -67,7 +72,7 @@ export function RubricPicker({
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground transition hover:bg-muted disabled:opacity-50"
         >
           <span>{selected.label}</span>
-          {selected.isDefault && (
+          {selected.isDefault && !labelDuplicatesDefault(selected.label) && (
             <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground">
               Default
             </span>
@@ -112,7 +117,7 @@ export function RubricPicker({
                   }`}
                 >
                   <span className="text-foreground">{r.label}</span>
-                  {r.isDefault && (
+                  {r.isDefault && !labelDuplicatesDefault(r.label) && (
                     <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground">
                       Default
                     </span>
