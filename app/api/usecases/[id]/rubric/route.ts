@@ -21,10 +21,14 @@ function getCookie(req: Request, name: string): string | undefined {
   return undefined;
 }
 
-async function loadFor(id: string, rubricId: string | undefined): Promise<unknown> {
-  if (id === "cmgc-pde") return loadCmgcRubric(rubricId);
-  if (id === "cucp-reevals") return loadCucpRubric(rubricId);
-  if (id === "row-appraisal") return loadRowRubric(rubricId);
+async function loadFor(
+  id: string,
+  rubricId: string | undefined,
+  versionId: string | undefined,
+): Promise<unknown> {
+  if (id === "cmgc-pde") return loadCmgcRubric(rubricId, versionId);
+  if (id === "cucp-reevals") return loadCucpRubric(rubricId, versionId);
+  if (id === "row-appraisal") return loadRowRubric(rubricId, versionId);
   throw new Error(`Unknown id: ${id}`);
 }
 
@@ -55,7 +59,8 @@ export async function GET(
   const url = new URL(req.url);
   const resolved = await resolveRubricId(id, url.searchParams.get("rubric"));
   if ("error" in resolved) return resolved.error;
-  const data = await loadFor(id, resolved.rubricId);
+  const versionId = url.searchParams.get("versionId") ?? undefined;
+  const data = await loadFor(id, resolved.rubricId, versionId);
   return NextResponse.json(data);
 }
 
@@ -78,9 +83,25 @@ export async function POST(
   const url = new URL(req.url);
   const resolved = await resolveRubricId(id, url.searchParams.get("rubric"));
   if ("error" in resolved) return resolved.error;
-  await multiSaveRubric(id, resolved.rubricId, body);
-  const verified = await loadFor(id, resolved.rubricId);
-  return NextResponse.json({ ok: true, rubric: verified });
+
+  const rawMode = url.searchParams.get("mode");
+  const mode: "new" | "overwrite" = rawMode === "overwrite" ? "overwrite" : "new";
+  const rawBump = url.searchParams.get("bump");
+  const bump: "minor" | "major" = rawBump === "major" ? "major" : "minor";
+  const customVersionId = url.searchParams.get("versionId") ?? undefined;
+
+  try {
+    const { versionId } = await multiSaveRubric(id, resolved.rubricId, body, {
+      mode,
+      bump,
+      ...(customVersionId ? { versionId: customVersionId } : {}),
+    });
+    const verified = await loadFor(id, resolved.rubricId, undefined);
+    return NextResponse.json({ ok: true, rubric: verified, versionId });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: msg }, { status: 400 });
+  }
 }
 
 export async function DELETE(
@@ -97,6 +118,6 @@ export async function DELETE(
   const resolved = await resolveRubricId(id, url.searchParams.get("rubric"));
   if ("error" in resolved) return resolved.error;
   await resetRubricContent(id, resolved.rubricId);
-  const data = await loadFor(id, resolved.rubricId);
+  const data = await loadFor(id, resolved.rubricId, undefined);
   return NextResponse.json({ ok: true, rubric: data });
 }
