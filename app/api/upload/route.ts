@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processPDFDocument } from "@/lib/document-service";
+import { saveDocument } from "@/lib/bigquery-storage";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -7,7 +8,12 @@ export const maxDuration = 60;
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
+    const userId = formData.get("userId") as string;
     const files = formData.getAll("files") as File[];
+
+    if (!userId) {
+      return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
+    }
 
     if (files.length === 0) {
       return NextResponse.json({ success: false, error: "No files provided" }, { status: 400 });
@@ -24,6 +30,21 @@ export async function POST(request: NextRequest) {
       const documentId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
       const processed = await processPDFDocument(buffer, documentId, file.name);
+
+      // Save to BigQuery
+      await saveDocument({
+        userId,
+        documentId: processed.id,
+        documentName: processed.name,
+        pageCount: processed.pageCount,
+        chunks: processed.chunks.map((c) => ({
+          chunkIndex: c.chunkIndex,
+          text: c.text,
+          embedding: c.embedding,
+        })),
+        uploadedAt: processed.uploadedAt,
+      });
+
       processedDocuments.push(processed);
     }
 

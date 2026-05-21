@@ -3,35 +3,52 @@
 import { useState, useEffect, useRef } from "react";
 import type { ProcessedDocument } from "@/lib/document-service";
 import type { ChatMessage } from "@/lib/chat-service";
-import { loadDocuments, saveDocuments, loadChatHistory, saveChatHistory, clearAllData, getAllChunks } from "@/lib/storage-service";
-import { FileText, Upload, Menu, X, Send } from "lucide-react";
+import { FileText, Menu, X, Send, Paperclip } from "lucide-react";
+
+// Hardcoded user for now - will use actual auth in production
+const USER_ID = "dev";
 
 export default function SearchAskPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [documents, setDocuments] = useState<ProcessedDocument[]>(() => loadDocuments());
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>(() => loadChatHistory());
+  const [documents, setDocuments] = useState<ProcessedDocument[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isAnswering, setIsAnswering] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load data from BigQuery on mount
+  useEffect(() => {
+    async function loadData() {
+      try {
+        // Load documents
+        const docsResponse = await fetch(`/api/storage/load-documents?userId=${USER_ID}`);
+        const docsData = await docsResponse.json();
+        if (docsData.success) {
+          setDocuments(docsData.documents);
+        }
+
+        // Load chat history
+        const historyResponse = await fetch(`/api/storage/load-history?userId=${USER_ID}`);
+        const historyData = await historyResponse.json();
+        if (historyData.success) {
+          setChatHistory(historyData.history);
+        }
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatHistory]);
-
-  // Save to localStorage whenever state changes
-  useEffect(() => {
-    if (documents.length > 0) {
-      saveDocuments(documents);
-    }
-  }, [documents]);
-
-  useEffect(() => {
-    if (chatHistory.length > 0) {
-      saveChatHistory(chatHistory);
-    }
   }, [chatHistory]);
 
   const handleFileUpload = async (files: FileList | null) => {
@@ -40,6 +57,7 @@ export default function SearchAskPage() {
     setIsUploading(true);
     try {
       const formData = new FormData();
+      formData.append("userId", USER_ID);
       Array.from(files).forEach((file) => {
         formData.append("files", file);
       });
@@ -52,9 +70,12 @@ export default function SearchAskPage() {
       const data = await response.json();
 
       if (data.success) {
-        const newDocs = [...documents, ...data.documents];
-        setDocuments(newDocs);
-        saveDocuments(newDocs);
+        // Reload documents
+        const docsResponse = await fetch(`/api/storage/load-documents?userId=${USER_ID}`);
+        const docsData = await docsResponse.json();
+        if (docsData.success) {
+          setDocuments(docsData.documents);
+        }
       } else {
         alert(`Upload failed: ${data.error}`);
       }
@@ -69,7 +90,7 @@ export default function SearchAskPage() {
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isAnswering) return;
     if (documents.length === 0) {
-      alert("Please upload at least one PDF document first.");
+      alert("Please upload at least one PDF document first using the paperclip icon.");
       return;
     }
 
@@ -79,20 +100,29 @@ export default function SearchAskPage() {
       timestamp: new Date().toISOString(),
     };
 
+    // Save user message to BigQuery
+    await fetch("/api/storage/save-message", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...userMessage,
+        userId: USER_ID,
+        messageId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      }),
+    });
+
     const newHistory = [...chatHistory, userMessage];
     setChatHistory(newHistory);
     setInputValue("");
     setIsAnswering(true);
 
     try {
-      const allChunks = getAllChunks();
-
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           question: userMessage.content,
-          allChunks,
+          userId: USER_ID,
           chatHistory,
         }),
       });
@@ -100,9 +130,21 @@ export default function SearchAskPage() {
       const data = await response.json();
 
       if (data.success) {
+        // Save assistant message to BigQuery
+        const assistantMessage = {
+          ...data.answer,
+          userId: USER_ID,
+          messageId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        };
+
+        await fetch("/api/storage/save-message", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(assistantMessage),
+        });
+
         const updatedHistory = [...newHistory, data.answer];
         setChatHistory(updatedHistory);
-        saveChatHistory(updatedHistory);
       } else {
         alert(`Error: ${data.error}`);
       }
@@ -121,16 +163,35 @@ export default function SearchAskPage() {
     }
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (confirm("Clear all documents and chat history?")) {
-      clearAllData();
-      setDocuments([]);
-      setChatHistory([]);
+      try {
+        await fetch("/api/storage/clear", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: USER_ID }),
+        });
+        setDocuments([]);
+        setChatHistory([]);
+      } catch (error) {
+        console.error("Clear error:", error);
+        alert("Failed to clear data.");
+      }
     }
   };
 
-  const hasDocuments = documents.length > 0;
   const totalChunks = documents.reduce((sum, doc) => sum + doc.chunks.length, 0);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[var(--color-cream)]">
+        <div className="text-center">
+          <div className="mx-auto mb-4 size-12 animate-spin rounded-full border-4 border-[var(--color-line)] border-t-[var(--color-govdoc-primary)]" />
+          <p className="text-sm text-[var(--color-ink-mute)]">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-[var(--color-cream)]">
@@ -181,6 +242,18 @@ export default function SearchAskPage() {
           )}
         </div>
 
+        {/* Actions */}
+        {documents.length > 0 && (
+          <div className="border-t border-[var(--color-line)] px-4 py-3">
+            <button
+              onClick={handleClearAll}
+              className="w-full rounded border border-[var(--color-line)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-ink-mute)] hover:bg-[var(--color-cream-soft)]"
+            >
+              Clear All
+            </button>
+          </div>
+        )}
+
         {/* User info at bottom */}
         <div className="border-t border-[var(--color-line)] p-4">
           <div className="flex items-center gap-2">
@@ -207,70 +280,42 @@ export default function SearchAskPage() {
               </button>
             )}
             <h1 className="text-sm font-medium text-[var(--color-ink)]">
-              {hasDocuments ? `${documents.length} document${documents.length > 1 ? "s" : ""} loaded` : "Search & Ask"}
+              {documents.length > 0 ? `${documents.length} document${documents.length > 1 ? "s" : ""} • ${totalChunks} chunks` : "Search & Ask"}
             </h1>
           </div>
-          {hasDocuments && (
-            <button
-              onClick={handleClearAll}
-              className="rounded border border-[var(--color-line)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-ink-mute)] hover:bg-[var(--color-cream-soft)]"
-            >
-              Clear All
-            </button>
-          )}
         </div>
 
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto">
-          {!hasDocuments ? (
-            /* Welcome screen with upload */
+          {chatHistory.length === 0 ? (
+            /* Welcome screen */
             <div className="flex h-full flex-col items-center justify-center p-8">
               <div className="w-full max-w-2xl text-center">
+                <div className="mb-6 flex size-16 items-center justify-center rounded-full bg-[var(--color-govdoc-primary)] text-2xl font-bold text-white mx-auto">
+                  AI
+                </div>
                 <h2
-                  className="mb-2 text-2xl tracking-tight text-[var(--color-ink)]"
+                  className="mb-3 text-3xl tracking-tight text-[var(--color-ink)]"
                   style={{
                     fontFamily: "var(--font-display)",
                     fontWeight: 500,
                     fontVariationSettings: '"opsz" 96',
                   }}
                 >
-                  Welcome, dev
+                  How can I help you today?
                 </h2>
-                <p className="mb-8 text-sm text-[var(--color-ink-mute)]">Upload PDF documents to get started</p>
+                <p className="mb-8 text-sm text-[var(--color-ink-mute)]">
+                  Upload PDFs using the paperclip icon below and ask questions about your documents
+                </p>
 
-                {/* Drag-drop upload zone */}
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    handleFileUpload(e.dataTransfer.files);
-                  }}
-                  className="cursor-pointer rounded-lg border-2 border-dashed border-[var(--color-line)] bg-white p-12 transition hover:border-[var(--color-govdoc-primary)] hover:bg-[var(--color-cream-soft)]"
-                >
-                  {isUploading ? (
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="size-8 animate-spin rounded-full border-4 border-[var(--color-line)] border-t-[var(--color-govdoc-primary)]" />
-                      <p className="text-sm text-[var(--color-ink-mute)]">Processing PDFs...</p>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="mx-auto mb-4 size-12 text-[var(--color-ink-faint)]" />
-                      <p className="mb-2 text-sm font-medium text-[var(--color-ink)]">
-                        Click to upload or drag and drop
-                      </p>
-                      <p className="text-xs text-[var(--color-ink-mute)]">PDF files, up to 200 pages each</p>
-                    </>
-                  )}
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handleFileUpload(e.target.files)}
-                />
+                {documents.length > 0 && (
+                  <div className="rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-4">
+                    <p className="mb-2 text-sm font-medium text-[var(--color-govdoc-primary)]">
+                      ✓ {documents.length} document{documents.length > 1 ? "s" : ""} ready
+                    </p>
+                    <p className="text-xs text-[var(--color-ink-mute)]">Ask me anything about your uploaded files</p>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -339,58 +384,61 @@ export default function SearchAskPage() {
           )}
         </div>
 
-        {/* Input area (only show when documents are loaded) */}
-        {hasDocuments && (
-          <div className="border-t border-[var(--color-line)] bg-[var(--color-paper)] p-5">
-            <div className="mx-auto w-full max-w-3xl">
-              <div className="flex gap-3">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex size-10 shrink-0 items-center justify-center rounded border border-[var(--color-line)] bg-white text-[var(--color-ink-mute)] hover:bg-[var(--color-cream-soft)]"
-                  aria-label="Upload more files"
-                  disabled={isUploading}
-                >
-                  {isUploading ? (
-                    <div className="size-4 animate-spin rounded-full border-2 border-[var(--color-line)] border-t-[var(--color-govdoc-primary)]" />
-                  ) : (
-                    <Upload className="size-4" />
-                  )}
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => handleFileUpload(e.target.files)}
-                />
+        {/* Input area */}
+        <div className="border-t border-[var(--color-line)] bg-[var(--color-paper)] p-5">
+          <div className="mx-auto w-full max-w-3xl">
+            <div className="relative flex items-end gap-2 rounded-xl border border-[var(--color-line)] bg-white p-2 focus-within:border-[var(--color-govdoc-primary)]">
+              {/* Paperclip button */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg text-[var(--color-ink-mute)] transition hover:bg-[var(--color-cream-soft)] hover:text-[var(--color-ink)]"
+                aria-label="Attach files"
+                disabled={isUploading}
+                title="Upload PDF documents"
+              >
+                {isUploading ? (
+                  <div className="size-4 animate-spin rounded-full border-2 border-[var(--color-line)] border-t-[var(--color-govdoc-primary)]" />
+                ) : (
+                  <Paperclip className="size-5" />
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf"
+                multiple
+                className="hidden"
+                onChange={(e) => handleFileUpload(e.target.files)}
+              />
 
-                <div className="relative flex-1">
-                  <textarea
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Ask a question about your documents..."
-                    className="w-full resize-none rounded border border-[var(--color-line)] bg-white px-4 py-3 pr-12 text-sm text-[var(--color-ink)] placeholder-[var(--color-ink-faint)] focus:border-[var(--color-govdoc-primary)] focus:outline-none"
-                    rows={2}
-                    disabled={isAnswering}
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || isAnswering}
-                    className="absolute bottom-3 right-3 flex size-6 items-center justify-center rounded bg-[var(--color-govdoc-primary)] text-white disabled:opacity-40"
-                    aria-label="Send message"
-                  >
-                    <Send className="size-3" />
-                  </button>
-                </div>
-              </div>
-              <p className="mt-2 text-center text-[10px] text-[var(--color-ink-faint)]">
-                Press Enter to send • Shift+Enter for new line • {totalChunks} chunks loaded
-              </p>
+              {/* Text input */}
+              <textarea
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask about your documents..."
+                className="max-h-[200px] min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2 text-sm text-[var(--color-ink)] placeholder-[var(--color-ink-faint)] focus:outline-none"
+                rows={1}
+                disabled={isAnswering}
+              />
+
+              {/* Send button */}
+              <button
+                onClick={handleSendMessage}
+                disabled={!inputValue.trim() || isAnswering}
+                className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-govdoc-primary)] text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                aria-label="Send message"
+              >
+                <Send className="size-4" />
+              </button>
             </div>
+            <p className="mt-2 text-center text-[10px] text-[var(--color-ink-faint)]">
+              {documents.length > 0
+                ? `${totalChunks} chunks loaded • Press Enter to send • Shift+Enter for new line`
+                : "Upload documents using the paperclip icon to get started"}
+            </p>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
