@@ -2,7 +2,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   Search,
-  FilePen,
   CheckCircle2,
   ScanText,
   Tag,
@@ -53,9 +52,9 @@ export default async function WorkspacePage() {
         </header>
 
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-          <Tile icon={Search} title="Search &" accent="Ask" href="/work/search" enabled featured />
-          <Tile icon={FilePen} title="Draft &" accent="Generate" href="/work/draft" enabled />
-          <Tile icon={CheckCircle2} title="Validate &" accent="Comply" href="/work/review" enabled />
+          <Tile icon={BookOpenCheck} title="" accent="Rubrics" href="/work/search" enabled featured />
+          <Tile icon={Search} title="Search &" accent="Ask" href="/work/chat" enabled />
+          <Tile icon={CheckCircle2} title="" accent="Projects" href="/work/review" enabled />
           <Tile icon={ScanText} title="OCR &" accent="Extract" href="/work/ocr" enabled />
           <Tile icon={Tag} title="Classify &" accent="Tag" href="/work/classify" enabled />
           <Tile icon={AlertTriangle} title="Detect" accent="Risk" href="/work/detect-risk" enabled />
