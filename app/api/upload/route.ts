@@ -5,7 +5,7 @@ import { saveDocument } from "@/lib/bigquery-storage";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".doc"];
+const SUPPORTED_EXTENSIONS = [".pdf", ".docx"];
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();

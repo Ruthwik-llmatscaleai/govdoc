@@ -37,8 +37,15 @@ async function extractTextFromPDF(pdfBuffer: Buffer): Promise<{ text: string; pa
  */
 async function extractTextFromDOCX(docxBuffer: Buffer): Promise<{ text: string; pageCount: number }> {
   const mammoth = require("mammoth");
+  // Verify it's actually a ZIP-based DOCX (starts with PK magic bytes)
+  if (docxBuffer.length < 4 || docxBuffer[0] !== 0x50 || docxBuffer[1] !== 0x4B) {
+    throw new Error("File is not a valid DOCX format. Please upload a .docx file (Word 2007+), not a .doc file.");
+  }
   const result = await mammoth.extractRawText({ buffer: docxBuffer });
   const text: string = result.value;
+  if (!text.trim()) {
+    throw new Error("Document appears to be empty or could not extract text.");
+  }
   const pageCount = Math.max(1, Math.ceil(text.length / 3000));
   return { text, pageCount };
 }
@@ -60,33 +67,55 @@ async function chunkText(text: string): Promise<string[]> {
  * Call Voyage AI REST API for embeddings
  */
 async function callVoyageAPI(input: string[], inputType: "document" | "query"): Promise<number[][]> {
-  const response = await fetch(VOYAGE_API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${VOYAGE_API_KEY}`,
-    },
-    body: JSON.stringify({
-      input,
-      model: "voyage-2",
-      input_type: inputType,
-    }),
-  });
+  const maxRetries = 3;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(VOYAGE_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${VOYAGE_API_KEY}`,
+      },
+      body: JSON.stringify({
+        input,
+        model: "voyage-2",
+        input_type: inputType,
+      }),
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Voyage AI API error: ${response.status} ${error}`);
+    if (response.status === 429 && attempt < maxRetries) {
+      const wait = Math.pow(2, attempt + 1) * 1000;
+      console.log(`[voyage] Rate limited, retrying in ${wait}ms (attempt ${attempt + 1}/${maxRetries})`);
+      await new Promise((r) => setTimeout(r, wait));
+      continue;
+    }
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Voyage AI API error: ${response.status} ${error}`);
+    }
+
+    const data = await response.json();
+    return data.data.map((item: { embedding: number[] }) => item.embedding);
   }
-
-  const data = await response.json();
-  return data.data.map((item: { embedding: number[] }) => item.embedding);
+  throw new Error("Voyage AI API: max retries exceeded");
 }
 
 /**
- * Generate embeddings for text chunks using Voyage AI
+ * Generate embeddings for text chunks using Voyage AI — batched to avoid rate limits
  */
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
-  return callVoyageAPI(texts, "document");
+  const BATCH_SIZE = 8;
+  const results: number[][] = [];
+  for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+    const batch = texts.slice(i, i + BATCH_SIZE);
+    console.log(`[voyage] Embedding batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(texts.length / BATCH_SIZE)} (${batch.length} chunks)`);
+    const embeddings = await callVoyageAPI(batch, "document");
+    results.push(...embeddings);
+    if (i + BATCH_SIZE < texts.length) {
+      await new Promise((r) => setTimeout(r, 1200));
+    }
+  }
+  return results;
 }
 
 /**

@@ -54,3 +54,4 @@ data/cucp-precedents/
 # Per-usecase rubric edits saved via /work/search/edit (created at runtime, not in repo).
 data/rubrics/
 .superpowers/
+.designs/

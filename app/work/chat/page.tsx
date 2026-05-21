@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { ProcessedDocument } from "@/lib/document-service";
 import type { ChatMessage } from "@/lib/chat-service";
-import { FileText, Send, Paperclip, Plus, X, Square, RotateCcw, Copy, Check } from "lucide-react";
+import { FileText, Send, Paperclip, Plus, X, Square, RotateCcw, Copy, Check, Pencil } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const USER_ID = "dev";
 
@@ -15,6 +17,9 @@ export default function SearchAskPage() {
   const [isAnswering, setIsAnswering] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [thinkingPhase, setThinkingPhase] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -101,11 +106,13 @@ export default function SearchAskPage() {
     setChatHistory(newHistory);
     setInputValue("");
     setIsAnswering(true);
+    setThinkingPhase("Searching documents...");
 
     const controller = new AbortController();
     abortRef.current = controller;
 
     try {
+      setTimeout(() => { if (abortRef.current === controller) setThinkingPhase("Generating answer..."); }, 2000);
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -136,6 +143,7 @@ export default function SearchAskPage() {
       }
     } finally {
       setIsAnswering(false);
+      setThinkingPhase("");
       abortRef.current = null;
     }
   };
@@ -178,6 +186,24 @@ export default function SearchAskPage() {
     setCopiedIdx(idx);
     setTimeout(() => setCopiedIdx(null), 2000);
   }, []);
+
+  const handleEditStart = useCallback((idx: number, content: string) => {
+    setEditingIdx(idx);
+    setEditValue(content);
+  }, []);
+
+  const handleEditCancel = useCallback(() => {
+    setEditingIdx(null);
+    setEditValue("");
+  }, []);
+
+  const handleEditSubmit = useCallback((idx: number) => {
+    if (!editValue.trim()) return;
+    setChatHistory(chatHistory.slice(0, idx));
+    setEditingIdx(null);
+    setInputValue(editValue.trim());
+    setEditValue("");
+  }, [editValue, chatHistory]);
 
   const removeDocument = (docId: string) => {
     setDocuments((prev) => prev.filter((d) => d.id !== docId));
@@ -294,10 +320,36 @@ export default function SearchAskPage() {
               <div className="mx-auto flex w-full max-w-[680px] flex-col gap-6 px-4 py-8">
                 {chatHistory.map((msg, i) =>
                   msg.role === "user" ? (
-                    <div key={i} className="flex justify-end">
-                      <div className="max-w-[min(80%,56ch)] rounded-2xl rounded-br-sm border border-gray-200 bg-white px-4 py-2.5 text-[13px] leading-[1.65] text-gray-900">
-                        {msg.content}
-                      </div>
+                    <div key={i} className="group flex justify-end gap-2">
+                      {editingIdx === i ? (
+                        <div className="flex w-full max-w-[min(80%,56ch)] flex-col gap-2">
+                          <textarea
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="w-full resize-none rounded-2xl border border-[#b04a2f] bg-white px-4 py-2.5 text-[13px] leading-[1.65] text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#b04a2f]"
+                            rows={3}
+                            autoFocus
+                            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleEditSubmit(i); } if (e.key === "Escape") handleEditCancel(); }}
+                          />
+                          <div className="flex justify-end gap-1.5">
+                            <button onClick={handleEditCancel} className="rounded-md px-2.5 py-1 text-[11px] text-gray-500 hover:bg-gray-100">Cancel</button>
+                            <button onClick={() => handleEditSubmit(i)} className="rounded-md bg-[#b04a2f] px-2.5 py-1 text-[11px] text-white hover:bg-[#8a3820]">Send</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleEditStart(i, msg.content)}
+                            className="flex size-6 shrink-0 items-center justify-center self-center rounded-md text-gray-400 opacity-0 transition-opacity hover:bg-gray-100 hover:text-gray-600 group-hover:opacity-100"
+                            title="Edit message"
+                          >
+                            <Pencil className="size-3" />
+                          </button>
+                          <div className="max-w-[min(80%,56ch)] rounded-2xl rounded-br-sm border border-gray-200 bg-white px-4 py-2.5 text-[13px] leading-[1.65] text-gray-900">
+                            {msg.content}
+                          </div>
+                        </>
+                      )}
                     </div>
                   ) : (
                     <div key={i} className="group flex items-start gap-3">
@@ -305,7 +357,9 @@ export default function SearchAskPage() {
                         <FileText className="size-3.5 text-white" strokeWidth={1.5} />
                       </div>
                       <div className="flex-1 text-[13px] leading-[1.65] text-gray-900">
-                        <div className="whitespace-pre-wrap">{msg.content}</div>
+                        <div className="prose prose-sm prose-gray max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:mb-1 prose-headings:mt-3 prose-code:rounded prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:text-[12px] prose-pre:rounded-lg prose-pre:bg-gray-50">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                        </div>
                         {msg.sources && msg.sources.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-1.5">
                             {msg.sources.map((source, si) => (
@@ -345,15 +399,18 @@ export default function SearchAskPage() {
                     <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-[#b04a2f]">
                       <FileText className="size-3.5 text-white" strokeWidth={1.5} />
                     </div>
-                    <div className="flex items-center gap-3 pt-1">
-                      <div className="flex items-center gap-1.5">
-                        <div className="size-1.5 animate-pulse rounded-full bg-gray-400" />
-                        <div className="size-1.5 animate-pulse rounded-full bg-gray-400 [animation-delay:150ms]" />
-                        <div className="size-1.5 animate-pulse rounded-full bg-gray-400 [animation-delay:300ms]" />
+                    <div className="flex flex-col gap-2 pt-1">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                          <div className="size-1.5 animate-pulse rounded-full bg-[#b04a2f]" />
+                          <div className="size-1.5 animate-pulse rounded-full bg-[#b04a2f] [animation-delay:150ms]" />
+                          <div className="size-1.5 animate-pulse rounded-full bg-[#b04a2f] [animation-delay:300ms]" />
+                        </div>
+                        <span className="text-[12px] text-gray-500">{thinkingPhase}</span>
                       </div>
                       <button
                         onClick={handleStop}
-                        className="flex items-center gap-1.5 rounded-md border border-gray-200 px-2 py-1 text-[11px] text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
+                        className="flex w-fit items-center gap-1.5 rounded-md border border-gray-200 px-2 py-1 text-[11px] text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
                       >
                         <Square className="size-2.5" fill="currentColor" />
                         Stop
@@ -443,7 +500,7 @@ function InputBox({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,.docx,.doc"
+        accept=".pdf,.docx"
         multiple
         className="hidden"
         onChange={(e) => handleFileUpload(e.target.files)}
