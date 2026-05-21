@@ -38,7 +38,7 @@ Flags:
   --help              Show this message.
 
 Required env vars:
-  OPENAI_API_KEY ANTHROPIC_API_KEY GROQ_API_KEY
+  OPENAI_API_KEY ANTHROPIC_API_KEY GROQ_API_KEY VOYAGE_API_KEY
   GOVDOC_DEV_USER GOVDOC_DEV_PASS GOVDOC_SESSION_SECRET
 
 Default mode reads them from Secret Manager. --legacy-env-vars reads them
@@ -109,7 +109,7 @@ if [[ "$LEGACY_ENV_VARS" -eq 1 ]]; then
   source "$ENV_FILE"
   set +a
   MISSING=()
-  for var in OPENAI_API_KEY ANTHROPIC_API_KEY GROQ_API_KEY GOVDOC_DEV_USER GOVDOC_DEV_PASS GOVDOC_SESSION_SECRET; do
+  for var in OPENAI_API_KEY ANTHROPIC_API_KEY GROQ_API_KEY VOYAGE_API_KEY GOVDOC_DEV_USER GOVDOC_DEV_PASS GOVDOC_SESSION_SECRET; do
     if [[ -z "${!var:-}" ]]; then MISSING+=("$var"); fi
   done
   if [[ "${#MISSING[@]}" -gt 0 ]]; then
@@ -120,7 +120,7 @@ if [[ "$LEGACY_ENV_VARS" -eq 1 ]]; then
   echo "         Default Compute SA will be used (no $SA)." >&2
   CMD+=(
     --clear-secrets
-    "--set-env-vars=^@^OPENAI_API_KEY=${OPENAI_API_KEY}@ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}@GROQ_API_KEY=${GROQ_API_KEY}@GOVDOC_DEV_USER=${GOVDOC_DEV_USER}@GOVDOC_DEV_PASS=${GOVDOC_DEV_PASS}@GOVDOC_SESSION_SECRET=${GOVDOC_SESSION_SECRET}@NODE_ENV=production@NEXT_TELEMETRY_DISABLED=1@LOG_LEVEL=info@GIT_COMMIT=${GIT_COMMIT}"
+    "--set-env-vars=^@^OPENAI_API_KEY=${OPENAI_API_KEY}@ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}@GROQ_API_KEY=${GROQ_API_KEY}@VOYAGE_API_KEY=${VOYAGE_API_KEY}@GOVDOC_DEV_USER=${GOVDOC_DEV_USER}@GOVDOC_DEV_PASS=${GOVDOC_DEV_PASS}@GOVDOC_SESSION_SECRET=${GOVDOC_SESSION_SECRET}@NODE_ENV=production@NEXT_TELEMETRY_DISABLED=1@LOG_LEVEL=info@GIT_COMMIT=${GIT_COMMIT}"
   )
 else
   CMD+=(
@@ -133,7 +133,7 @@ fi
 if [[ "$DRY_RUN" -eq 1 ]]; then
   if [[ "$LEGACY_ENV_VARS" -eq 1 ]]; then
     # Redact secret values in dry-run output so the printed command is shareable.
-    printf '%s\n' "${CMD[@]}" | sed -E 's/(OPENAI_API_KEY|ANTHROPIC_API_KEY|GROQ_API_KEY|GOVDOC_DEV_USER|GOVDOC_DEV_PASS|GOVDOC_SESSION_SECRET)=[^@]*/\1=<redacted>/g'
+    printf '%s\n' "${CMD[@]}" | sed -E 's/(OPENAI_API_KEY|ANTHROPIC_API_KEY|GROQ_API_KEY|VOYAGE_API_KEY|GOVDOC_DEV_USER|GOVDOC_DEV_PASS|GOVDOC_SESSION_SECRET)=[^@]*/\1=<redacted>/g'
   else
     printf '%s\n' "${CMD[*]}"
   fi
