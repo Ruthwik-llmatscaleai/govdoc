@@ -233,13 +233,13 @@ export default function SearchAskPage() {
 
         <div className="flex-1 overflow-y-auto px-2 py-1">
           <div className="px-3 pb-1.5 pt-3 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-400">
-            Today
+            Recent
           </div>
-          {chatHistory.length > 0 && (
-            <div className="rounded-md bg-gray-100 px-3 py-2 text-[13px] font-medium text-gray-900">
-              {chatHistory.find((m) => m.role === "user")?.content.slice(0, 32) ?? "Chat"}...
+          {chatHistory.filter((m) => m.role === "user").map((msg, i) => (
+            <div key={i} className="mb-0.5 cursor-pointer truncate rounded-md px-3 py-2 text-[13px] text-gray-700 transition-colors hover:bg-gray-100">
+              {msg.content.slice(0, 40)}{msg.content.length > 40 ? "…" : ""}
             </div>
-          )}
+          ))}
         </div>
 
         <div className="border-t border-gray-200 p-3">
@@ -286,17 +286,20 @@ export default function SearchAskPage() {
             {/* Input */}
             <div className="w-full max-w-[680px]">
               {documents.length > 0 && (
-                <div className="mb-2.5 flex flex-wrap gap-1.5">
-                  {documents.map((doc) => (
-                    <div key={doc.id} className="group flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px]">
-                      <span className="flex size-[18px] items-center justify-center rounded-[3px] bg-red-600 text-[8px] font-bold text-white">PDF</span>
-                      <span className="font-medium text-gray-900">{doc.name}</span>
-                      <span className="text-[11px] text-gray-400">· {doc.pageCount}p</span>
-                      <button onClick={() => removeDocument(doc.id)} className="ml-0.5 flex size-4 items-center justify-center rounded-full text-gray-400 opacity-0 transition-opacity hover:bg-gray-200 hover:text-gray-900 group-hover:opacity-100">
-                        <X className="size-3" />
-                      </button>
-                    </div>
-                  ))}
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {documents.map((doc) => {
+                    const isPdf = doc.name.toLowerCase().endsWith(".pdf");
+                    return (
+                      <div key={doc.id} className="group flex items-center gap-2.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                        <span className={`flex size-6 items-center justify-center rounded ${isPdf ? "bg-red-600" : "bg-blue-600"} text-[9px] font-bold text-white`}>{isPdf ? "PDF" : "DOC"}</span>
+                        <span className="font-medium text-gray-900">{doc.name}</span>
+                        <span className="text-xs text-gray-400">· {doc.pageCount}p</span>
+                        <button onClick={() => removeDocument(doc.id)} className="ml-1 flex size-5 items-center justify-center rounded-full text-gray-400 opacity-0 transition-opacity hover:bg-gray-200 hover:text-gray-900 group-hover:opacity-100">
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               <InputBox
@@ -426,17 +429,20 @@ export default function SearchAskPage() {
             <div className="border-t border-gray-200 bg-white px-4 py-3">
               <div className="mx-auto w-full max-w-[680px]">
                 {documents.length > 0 && (
-                  <div className="mb-2.5 flex flex-wrap gap-1.5">
-                    {documents.map((doc) => (
-                      <div key={doc.id} className="group flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px]">
-                        <span className="flex size-[18px] items-center justify-center rounded-[3px] bg-red-600 text-[8px] font-bold text-white">PDF</span>
-                        <span className="font-medium text-gray-900">{doc.name}</span>
-                        <span className="text-[11px] text-gray-500">· {doc.pageCount}p</span>
-                        <button onClick={() => removeDocument(doc.id)} className="ml-0.5 flex size-4 items-center justify-center rounded-full text-gray-500 opacity-0 transition-opacity hover:bg-gray-200 hover:text-gray-900 group-hover:opacity-100">
-                          <X className="size-3" />
-                        </button>
-                      </div>
-                    ))}
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {documents.map((doc) => {
+                      const isPdf = doc.name.toLowerCase().endsWith(".pdf");
+                      return (
+                        <div key={doc.id} className="group flex items-center gap-2.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                          <span className={`flex size-6 items-center justify-center rounded ${isPdf ? "bg-red-600" : "bg-blue-600"} text-[9px] font-bold text-white`}>{isPdf ? "PDF" : "DOC"}</span>
+                          <span className="font-medium text-gray-900">{doc.name}</span>
+                          <span className="text-xs text-gray-400">· {doc.pageCount}p</span>
+                          <button onClick={() => removeDocument(doc.id)} className="ml-1 flex size-5 items-center justify-center rounded-full text-gray-400 opacity-0 transition-opacity hover:bg-gray-200 hover:text-gray-900 group-hover:opacity-100">
+                            <X className="size-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
                 <InputBox
