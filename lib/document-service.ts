@@ -1,7 +1,11 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { GoogleAuth } from "google-auth-library";
 
-const VOYAGE_API_URL = "https://api.voyageai.com/v1/embeddings";
-const VOYAGE_API_KEY = process.env.VOYAGE_API_KEY!;
+const GCP_PROJECT = process.env.GCP_PROJECT_ID || "genai-poc-424806";
+const GCP_LOCATION = "us-central1";
+const EMBEDDING_MODEL = "text-embedding-004";
+
+const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
 
 export interface DocumentChunk {
   documentId: string;
@@ -64,65 +68,54 @@ async function chunkText(text: string): Promise<string[]> {
 }
 
 /**
- * Call Voyage AI REST API for embeddings
+ * Call Google Vertex AI text-embedding-004
  */
-async function callVoyageAPI(input: string[], inputType: "document" | "query"): Promise<number[][]> {
-  const maxRetries = 3;
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const response = await fetch(VOYAGE_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${VOYAGE_API_KEY}`,
-      },
-      body: JSON.stringify({
-        input,
-        model: "voyage-2",
-        input_type: inputType,
-      }),
-    });
+async function callGoogleEmbeddings(texts: string[], taskType: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY"): Promise<number[][]> {
+  const client = await auth.getClient();
+  const token = await client.getAccessToken();
 
-    if (response.status === 429 && attempt < maxRetries) {
-      const wait = Math.pow(2, attempt + 1) * 1000;
-      console.log(`[voyage] Rate limited, retrying in ${wait}ms (attempt ${attempt + 1}/${maxRetries})`);
-      await new Promise((r) => setTimeout(r, wait));
-      continue;
-    }
+  const url = `https://${GCP_LOCATION}-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT}/locations/${GCP_LOCATION}/publishers/google/models/${EMBEDDING_MODEL}:predict`;
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Voyage AI API error: ${response.status} ${error}`);
-    }
+  const instances = texts.map((text) => ({ content: text, task_type: taskType }));
 
-    const data = await response.json();
-    return data.data.map((item: { embedding: number[] }) => item.embedding);
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token.token}`,
+    },
+    body: JSON.stringify({ instances }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Google Embeddings API error: ${response.status} ${error}`);
   }
-  throw new Error("Voyage AI API: max retries exceeded");
+
+  const data = await response.json();
+  return data.predictions.map((p: { embeddings: { values: number[] } }) => p.embeddings.values);
 }
 
 /**
- * Generate embeddings for text chunks using Voyage AI — batched to avoid rate limits
+ * Generate embeddings for text chunks — batched (max 250 per request for Google)
  */
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
-  const BATCH_SIZE = 8;
+  const BATCH_SIZE = 50;
   const results: number[][] = [];
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
     const batch = texts.slice(i, i + BATCH_SIZE);
-    console.log(`[voyage] Embedding batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(texts.length / BATCH_SIZE)} (${batch.length} chunks)`);
-    const embeddings = await callVoyageAPI(batch, "document");
+    console.log(`[embed] Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(texts.length / BATCH_SIZE)} (${batch.length} chunks)`);
+    const embeddings = await callGoogleEmbeddings(batch, "RETRIEVAL_DOCUMENT");
     results.push(...embeddings);
-    if (i + BATCH_SIZE < texts.length) {
-      await new Promise((r) => setTimeout(r, 1200));
-    }
   }
   return results;
 }
 
 /**
- * Generate query embedding using Voyage AI
+ * Generate query embedding
  */
 export async function embedQuery(query: string): Promise<number[]> {
-  const embeddings = await callVoyageAPI([query], "query");
+  const embeddings = await callGoogleEmbeddings([query], "RETRIEVAL_QUERY");
   return embeddings[0]!;
 }
 
