@@ -3,7 +3,7 @@ import { GoogleAuth } from "google-auth-library";
 
 const GCP_PROJECT = process.env.GCP_PROJECT_ID || "genai-poc-424806";
 const GCP_LOCATION = "us-central1";
-const EMBEDDING_MODEL = "gemini-embedding-2";
+const EMBEDDING_MODEL = "text-embedding-005";
 
 const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
 
@@ -83,16 +83,15 @@ async function chunkText(text: string): Promise<string[]> {
 }
 
 /**
- * Call Google Vertex AI gemini-embedding-2
+ * Call Google Vertex AI text-embedding-005
  */
-async function callGoogleEmbeddings(texts: string[], task: "document" | "query"): Promise<number[][]> {
+async function callGoogleEmbeddings(texts: string[], taskType: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY"): Promise<number[][]> {
   const client = await auth.getClient();
   const token = await client.getAccessToken();
 
   const url = `https://${GCP_LOCATION}-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT}/locations/${GCP_LOCATION}/publishers/google/models/${EMBEDDING_MODEL}:predict`;
 
-  const taskPrefix = task === "document" ? "task: retrieval document" : "task: retrieval query";
-  const instances = texts.map((text) => ({ content: `${taskPrefix} | ${text}` }));
+  const instances = texts.map((text) => ({ content: text, task_type: taskType }));
 
   const response = await fetch(url, {
     method: "POST",
@@ -100,10 +99,7 @@ async function callGoogleEmbeddings(texts: string[], task: "document" | "query")
       "Content-Type": "application/json",
       Authorization: `Bearer ${token.token}`,
     },
-    body: JSON.stringify({
-      instances,
-      parameters: { outputDimensionality: 768 },
-    }),
+    body: JSON.stringify({ instances }),
   });
 
   if (!response.ok) {
@@ -124,7 +120,7 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
     const batch = texts.slice(i, i + BATCH_SIZE);
     console.log(`[embed] Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(texts.length / BATCH_SIZE)} (${batch.length} chunks)`);
-    const embeddings = await callGoogleEmbeddings(batch, "document");
+    const embeddings = await callGoogleEmbeddings(batch, "RETRIEVAL_DOCUMENT");
     results.push(...embeddings);
   }
   return results;
@@ -134,7 +130,7 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
  * Generate query embedding
  */
 export async function embedQuery(query: string): Promise<number[]> {
-  const embeddings = await callGoogleEmbeddings([query], "query");
+  const embeddings = await callGoogleEmbeddings([query], "RETRIEVAL_QUERY");
   return embeddings[0]!;
 }
 
