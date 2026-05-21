@@ -5,7 +5,6 @@ import type { ProcessedDocument } from "@/lib/document-service";
 import type { ChatMessage } from "@/lib/chat-service";
 import { FileText, Menu, X, Send, Paperclip, Trash2 } from "lucide-react";
 
-// Hardcoded user for now - will use actual auth in production
 const USER_ID = "dev";
 
 export default function SearchAskPage() {
@@ -20,7 +19,6 @@ export default function SearchAskPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Load data from BigQuery on mount
   useEffect(() => {
     async function loadData() {
       try {
@@ -45,12 +43,10 @@ export default function SearchAskPage() {
     loadData();
   }, []);
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory]);
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -205,7 +201,6 @@ export default function SearchAskPage() {
           sidebarOpen ? "w-[260px]" : "w-0"
         } overflow-hidden`}
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-3 py-3">
           <h2 className="text-sm font-medium text-gray-900">Documents</h2>
           <button
@@ -217,7 +212,6 @@ export default function SearchAskPage() {
           </button>
         </div>
 
-        {/* Documents list */}
         <div className="flex-1 overflow-y-auto px-3 py-3">
           {documents.length === 0 ? (
             <p className="text-xs text-gray-400">No documents yet</p>
@@ -243,7 +237,6 @@ export default function SearchAskPage() {
           )}
         </div>
 
-        {/* Clear button */}
         {documents.length > 0 && (
           <div className="border-t border-gray-200 p-3">
             <button
@@ -256,7 +249,6 @@ export default function SearchAskPage() {
           </div>
         )}
 
-        {/* User info */}
         <div className="border-t border-gray-200 p-3">
           <div className="flex items-center gap-2">
             <div className="flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xs font-semibold text-white">
@@ -285,158 +277,189 @@ export default function SearchAskPage() {
           </h1>
         </div>
 
-        {/* Messages area */}
-        <div className="flex-1 overflow-y-auto bg-white">
-          {chatHistory.length === 0 ? (
-            /* Welcome screen */
-            <div className="flex h-full flex-col items-center justify-center px-4">
-              <div className="w-full max-w-2xl text-center">
-                <div className="mb-8 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-2xl font-bold text-white mx-auto shadow-lg">
-                  AI
-                </div>
-                <h2 className="mb-4 text-3xl font-normal text-gray-900">
-                  How can I help you today?
-                </h2>
-                <p className="mb-8 text-base text-gray-500">
-                  Upload PDFs using the paperclip icon below and ask questions about your documents
-                </p>
+        {/* Messages area OR centered input */}
+        {chatHistory.length === 0 ? (
+          /* Centered input when no messages */
+          <div className="flex flex-1 flex-col items-center justify-center px-4">
+            <div className="w-full max-w-3xl">
+              {/* Input box */}
+              <div className="relative flex items-end gap-2 rounded-2xl border border-gray-300 bg-white px-4 py-3 shadow-sm focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                  aria-label="Attach files"
+                  disabled={isUploading}
+                  title="Upload PDF documents"
+                >
+                  {isUploading ? (
+                    <div className="size-4 animate-spin rounded-full border-2 border-gray-300 border-t-amber-600" />
+                  ) : (
+                    <Paperclip className="size-5" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e.target.files)}
+                />
 
-                {documents.length > 0 && (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
-                    <div className="size-2 rounded-full bg-green-500"></div>
-                    {documents.length} document{documents.length > 1 ? "s" : ""} ready
+                <textarea
+                  ref={textareaRef}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Message..."
+                  className="max-h-[200px] min-h-[24px] flex-1 resize-none bg-transparent text-[15px] text-gray-900 placeholder-gray-400 focus:outline-none"
+                  rows={1}
+                  disabled={isAnswering}
+                />
+
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim() || isAnswering}
+                  className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gray-900 text-white transition hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Send message"
+                >
+                  <Send className="size-4" />
+                </button>
+              </div>
+
+              {/* Helper text */}
+              <p className="mt-2 text-center text-xs text-gray-400">
+                {documents.length > 0
+                  ? `${totalChunks} chunks loaded`
+                  : "Upload documents using the paperclip icon to get started"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          /* Chat messages when conversation exists */
+          <>
+            <div className="flex-1 overflow-y-auto bg-white">
+              <div className="mx-auto w-full max-w-3xl space-y-8 px-4 py-8">
+                {chatHistory.map((msg, index) => (
+                  <div key={index} className="flex gap-4">
+                    <div
+                      className={`flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white ${
+                        msg.role === "user"
+                          ? "bg-gray-700"
+                          : "bg-gradient-to-br from-amber-400 to-orange-500"
+                      }`}
+                    >
+                      {msg.role === "user" ? "D" : "AI"}
+                    </div>
+
+                    <div className="min-w-0 flex-1 pt-1">
+                      <div className="mb-2 text-sm font-semibold text-gray-900">
+                        {msg.role === "user" ? "You" : "Assistant"}
+                      </div>
+                      <div className="whitespace-pre-wrap text-[15px] leading-7 text-gray-800">
+                        {msg.content}
+                      </div>
+
+                      {msg.sources && msg.sources.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Sources</div>
+                          {msg.sources.map((source, i) => (
+                            <div
+                              key={i}
+                              className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+                            >
+                              <div className="mb-1.5 flex items-center justify-between">
+                                <span className="text-xs font-medium text-gray-900">
+                                  {source.documentName} · Chunk {source.chunkIndex + 1}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {(source.score * 100).toFixed(0)}% match
+                                </span>
+                              </div>
+                              <p className="text-xs leading-relaxed text-gray-600">{source.excerpt}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {isAnswering && (
+                  <div className="flex gap-4">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-sm font-semibold text-white">
+                      AI
+                    </div>
+                    <div className="min-w-0 flex-1 pt-1">
+                      <div className="mb-2 text-sm font-semibold text-gray-900">Assistant</div>
+                      <div className="flex items-center gap-2 text-[15px] text-gray-400">
+                        <div className="size-1.5 animate-pulse rounded-full bg-gray-400"></div>
+                        <div className="size-1.5 animate-pulse rounded-full bg-gray-400" style={{ animationDelay: "0.2s" }}></div>
+                        <div className="size-1.5 animate-pulse rounded-full bg-gray-400" style={{ animationDelay: "0.4s" }}></div>
+                      </div>
+                    </div>
                   </div>
                 )}
+
+                <div ref={messagesEndRef} />
               </div>
             </div>
-          ) : (
-            /* Chat messages */
-            <div className="mx-auto w-full max-w-3xl space-y-8 px-4 py-8">
-              {chatHistory.map((msg, index) => (
-                <div key={index} className="flex gap-4">
-                  {/* Avatar */}
-                  <div
-                    className={`flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white ${
-                      msg.role === "user"
-                        ? "bg-gray-700"
-                        : "bg-gradient-to-br from-amber-400 to-orange-500"
-                    }`}
+
+            {/* Input area at bottom when messages exist */}
+            <div className="border-t border-gray-200 bg-white p-4">
+              <div className="mx-auto w-full max-w-3xl">
+                <div className="relative flex items-end gap-2 rounded-2xl border border-gray-300 bg-white px-4 py-3 shadow-sm focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                    aria-label="Attach files"
+                    disabled={isUploading}
+                    title="Upload PDF documents"
                   >
-                    {msg.role === "user" ? "D" : "AI"}
-                  </div>
-
-                  {/* Message content */}
-                  <div className="min-w-0 flex-1 pt-1">
-                    <div className="mb-2 text-sm font-semibold text-gray-900">
-                      {msg.role === "user" ? "You" : "Assistant"}
-                    </div>
-                    <div className="whitespace-pre-wrap text-[15px] leading-7 text-gray-800">
-                      {msg.content}
-                    </div>
-
-                    {/* Sources */}
-                    {msg.sources && msg.sources.length > 0 && (
-                      <div className="mt-4 space-y-2">
-                        <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Sources</div>
-                        {msg.sources.map((source, i) => (
-                          <div
-                            key={i}
-                            className="rounded-lg border border-gray-200 bg-gray-50 p-3"
-                          >
-                            <div className="mb-1.5 flex items-center justify-between">
-                              <span className="text-xs font-medium text-gray-900">
-                                {source.documentName} · Chunk {source.chunkIndex + 1}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {(source.score * 100).toFixed(0)}% match
-                              </span>
-                            </div>
-                            <p className="text-xs leading-relaxed text-gray-600">{source.excerpt}</p>
-                          </div>
-                        ))}
-                      </div>
+                    {isUploading ? (
+                      <div className="size-4 animate-spin rounded-full border-2 border-gray-300 border-t-amber-600" />
+                    ) : (
+                      <Paperclip className="size-5" />
                     )}
-                  </div>
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => handleFileUpload(e.target.files)}
+                  />
+
+                  <textarea
+                    ref={textareaRef}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Message..."
+                    className="max-h-[200px] min-h-[24px] flex-1 resize-none bg-transparent text-[15px] text-gray-900 placeholder-gray-400 focus:outline-none"
+                    rows={1}
+                    disabled={isAnswering}
+                  />
+
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={!inputValue.trim() || isAnswering}
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gray-900 text-white transition hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                    aria-label="Send message"
+                  >
+                    <Send className="size-4" />
+                  </button>
                 </div>
-              ))}
-
-              {isAnswering && (
-                <div className="flex gap-4">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-sm font-semibold text-white">
-                    AI
-                  </div>
-                  <div className="min-w-0 flex-1 pt-1">
-                    <div className="mb-2 text-sm font-semibold text-gray-900">Assistant</div>
-                    <div className="flex items-center gap-2 text-[15px] text-gray-400">
-                      <div className="size-1.5 animate-pulse rounded-full bg-gray-400"></div>
-                      <div className="size-1.5 animate-pulse rounded-full bg-gray-400" style={{ animationDelay: "0.2s" }}></div>
-                      <div className="size-1.5 animate-pulse rounded-full bg-gray-400" style={{ animationDelay: "0.4s" }}></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
+                <p className="mt-2 text-center text-xs text-gray-400">
+                  {documents.length > 0
+                    ? `${totalChunks} chunks loaded`
+                    : "Upload documents using the paperclip icon to get started"}
+                </p>
+              </div>
             </div>
-          )}
-        </div>
-
-        {/* Input area */}
-        <div className="border-t border-gray-200 bg-white p-4">
-          <div className="mx-auto w-full max-w-3xl">
-            <div className="relative flex items-end gap-2 rounded-2xl border border-gray-300 bg-white px-4 py-3 shadow-sm focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500">
-              {/* Paperclip button */}
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
-                aria-label="Attach files"
-                disabled={isUploading}
-                title="Upload PDF documents"
-              >
-                {isUploading ? (
-                  <div className="size-4 animate-spin rounded-full border-2 border-gray-300 border-t-amber-600" />
-                ) : (
-                  <Paperclip className="size-5" />
-                )}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf"
-                multiple
-                className="hidden"
-                onChange={(e) => handleFileUpload(e.target.files)}
-              />
-
-              {/* Text input */}
-              <textarea
-                ref={textareaRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Message..."
-                className="max-h-[200px] min-h-[24px] flex-1 resize-none bg-transparent text-[15px] text-gray-900 placeholder-gray-400 focus:outline-none"
-                rows={1}
-                disabled={isAnswering}
-              />
-
-              {/* Send button */}
-              <button
-                onClick={handleSendMessage}
-                disabled={!inputValue.trim() || isAnswering}
-                className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gray-900 text-white transition hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
-                aria-label="Send message"
-              >
-                <Send className="size-4" />
-              </button>
-            </div>
-            <p className="mt-2 text-center text-xs text-gray-400">
-              {documents.length > 0
-                ? `${totalChunks} chunks loaded`
-                : "Upload documents using the paperclip icon to get started"}
-            </p>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
