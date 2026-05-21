@@ -500,7 +500,7 @@ function InputBox({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,.docx"
+        accept=".pdf,.docx,.doc"
         multiple
         className="hidden"
         onChange={(e) => handleFileUpload(e.target.files)}

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { processPDFDocument, processDOCXDocument } from "@/lib/document-service";
+import { processPDFDocument, processDOCXDocument, processDOCDocument } from "@/lib/document-service";
 import { saveDocument } from "@/lib/bigquery-storage";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const SUPPORTED_EXTENSIONS = [".pdf", ".docx"];
+const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".doc"];
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -44,7 +44,9 @@ export async function POST(request: NextRequest) {
       const processed =
         ext === ".pdf"
           ? await processPDFDocument(buffer, documentId, file.name)
-          : await processDOCXDocument(buffer, documentId, file.name);
+          : ext === ".doc"
+            ? await processDOCDocument(buffer, documentId, file.name)
+            : await processDOCXDocument(buffer, documentId, file.name);
 
       console.log("[upload] Extracted", processed.pageCount, "pages,", processed.chunks.length, "chunks from", file.name, "in", Date.now() - fileStart, "ms");
 

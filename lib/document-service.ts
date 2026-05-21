@@ -37,6 +37,21 @@ async function extractTextFromPDF(pdfBuffer: Buffer): Promise<{ text: string; pa
 }
 
 /**
+ * Extract text from DOC buffer (legacy binary OLE2 format)
+ */
+async function extractTextFromDOC(docBuffer: Buffer): Promise<{ text: string; pageCount: number }> {
+  const WordExtractor = require("word-extractor");
+  const extractor = new WordExtractor();
+  const doc = await extractor.extract(docBuffer);
+  const text: string = doc.getBody();
+  if (!text.trim()) {
+    throw new Error("Document appears to be empty or could not extract text.");
+  }
+  const pageCount = Math.max(1, Math.ceil(text.length / 3000));
+  return { text, pageCount };
+}
+
+/**
  * Extract text from DOCX buffer
  */
 async function extractTextFromDOCX(docxBuffer: Buffer): Promise<{ text: string; pageCount: number }> {
@@ -167,6 +182,18 @@ export async function processDOCXDocument(
   documentName: string
 ): Promise<ProcessedDocument> {
   const { text, pageCount } = await extractTextFromDOCX(docxBuffer);
+  return buildProcessedDocument(text, pageCount, documentId, documentName);
+}
+
+/**
+ * Main function to process a DOC document (legacy binary format)
+ */
+export async function processDOCDocument(
+  docBuffer: Buffer,
+  documentId: string,
+  documentName: string
+): Promise<ProcessedDocument> {
+  const { text, pageCount } = await extractTextFromDOC(docBuffer);
   return buildProcessedDocument(text, pageCount, documentId, documentName);
 }
 
