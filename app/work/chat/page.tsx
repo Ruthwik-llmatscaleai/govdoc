@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { ProcessedDocument } from "@/lib/document-service";
 import type { ChatMessage } from "@/lib/chat-service";
-import { FileText, Send, Paperclip, Plus, X } from "lucide-react";
+import { FileText, Send, Paperclip, Plus, X, Square, RotateCcw, Copy, Check } from "lucide-react";
 
 const USER_ID = "dev";
 
@@ -14,9 +14,11 @@ export default function SearchAskPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isAnswering, setIsAnswering] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -100,11 +102,15 @@ export default function SearchAskPage() {
     setInputValue("");
     setIsAnswering(true);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: userMessage.content, userId: USER_ID, chatHistory }),
+        signal: controller.signal,
       });
       const data = await response.json();
       if (data.success) {
@@ -119,12 +125,18 @@ export default function SearchAskPage() {
         });
         setChatHistory([...newHistory, data.answer]);
       } else {
-        alert(`Error: ${data.error}`);
+        setChatHistory([...newHistory, { role: "assistant", content: `Error: ${data.error}`, timestamp: new Date().toISOString() }]);
       }
-    } catch {
-      alert("Failed to get answer. Please try again.");
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        setInputValue(userMessage.content);
+        setChatHistory(chatHistory);
+      } else {
+        setChatHistory([...newHistory, { role: "assistant", content: "Failed to get answer. Please try again.", timestamp: new Date().toISOString() }]);
+      }
     } finally {
       setIsAnswering(false);
+      abortRef.current = null;
     }
   };
 
@@ -149,6 +161,23 @@ export default function SearchAskPage() {
       alert("Failed to start new chat.");
     }
   };
+
+  const handleStop = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    const lastUserMsg = [...chatHistory].reverse().find((m) => m.role === "user");
+    if (!lastUserMsg) return;
+    setChatHistory(chatHistory.filter((_, i) => i < chatHistory.length - 1));
+    setInputValue(lastUserMsg.content);
+  }, [chatHistory]);
+
+  const handleCopy = useCallback((text: string, idx: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIdx(idx);
+    setTimeout(() => setCopiedIdx(null), 2000);
+  }, []);
 
   const removeDocument = (docId: string) => {
     setDocuments((prev) => prev.filter((d) => d.id !== docId));
@@ -252,6 +281,7 @@ export default function SearchAskPage() {
                 handleFileUpload={handleFileUpload}
                 isUploading={isUploading}
                 isAnswering={isAnswering}
+                onStop={handleStop}
                 fileInputRef={fileInputRef}
                 textareaRef={textareaRef}
               />
@@ -270,7 +300,7 @@ export default function SearchAskPage() {
                       </div>
                     </div>
                   ) : (
-                    <div key={i} className="flex items-start gap-3">
+                    <div key={i} className="group flex items-start gap-3">
                       <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-[#b04a2f]">
                         <FileText className="size-3.5 text-white" strokeWidth={1.5} />
                       </div>
@@ -286,6 +316,25 @@ export default function SearchAskPage() {
                             ))}
                           </div>
                         )}
+                        {/* Action buttons */}
+                        <div className="mt-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <button
+                            onClick={() => handleCopy(msg.content, i)}
+                            className="flex size-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                            title="Copy"
+                          >
+                            {copiedIdx === i ? <Check className="size-3" /> : <Copy className="size-3" />}
+                          </button>
+                          {i === chatHistory.length - 1 && (
+                            <button
+                              onClick={handleRetry}
+                              className="flex size-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                              title="Retry"
+                            >
+                              <RotateCcw className="size-3" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ),
@@ -296,10 +345,19 @@ export default function SearchAskPage() {
                     <div className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-[#b04a2f]">
                       <FileText className="size-3.5 text-white" strokeWidth={1.5} />
                     </div>
-                    <div className="flex items-center gap-1.5 pt-1">
-                      <div className="size-1.5 animate-pulse rounded-full bg-gray-400" />
-                      <div className="size-1.5 animate-pulse rounded-full bg-gray-400 [animation-delay:150ms]" />
-                      <div className="size-1.5 animate-pulse rounded-full bg-gray-400 [animation-delay:300ms]" />
+                    <div className="flex items-center gap-3 pt-1">
+                      <div className="flex items-center gap-1.5">
+                        <div className="size-1.5 animate-pulse rounded-full bg-gray-400" />
+                        <div className="size-1.5 animate-pulse rounded-full bg-gray-400 [animation-delay:150ms]" />
+                        <div className="size-1.5 animate-pulse rounded-full bg-gray-400 [animation-delay:300ms]" />
+                      </div>
+                      <button
+                        onClick={handleStop}
+                        className="flex items-center gap-1.5 rounded-md border border-gray-200 px-2 py-1 text-[11px] text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
+                      >
+                        <Square className="size-2.5" fill="currentColor" />
+                        Stop
+                      </button>
                     </div>
                   </div>
                 )}
@@ -332,6 +390,7 @@ export default function SearchAskPage() {
                   handleFileUpload={handleFileUpload}
                   isUploading={isUploading}
                   isAnswering={isAnswering}
+                  onStop={handleStop}
                   fileInputRef={fileInputRef}
                   textareaRef={textareaRef}
                 />
@@ -352,6 +411,7 @@ function InputBox({
   handleFileUpload,
   isUploading,
   isAnswering,
+  onStop,
   fileInputRef,
   textareaRef,
 }: {
@@ -362,6 +422,7 @@ function InputBox({
   handleFileUpload: (files: FileList | null) => void;
   isUploading: boolean;
   isAnswering: boolean;
+  onStop: () => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
 }) {
@@ -399,13 +460,23 @@ function InputBox({
         disabled={isAnswering}
       />
 
-      <button
-        onClick={handleSendMessage}
-        disabled={!inputValue.trim() || isAnswering}
-        className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#b04a2f] text-white transition-colors hover:bg-[#8a3820] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
-      >
-        <Send className="size-3.5" />
-      </button>
+      {isAnswering ? (
+        <button
+          onClick={onStop}
+          className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-gray-900 text-white transition-colors hover:bg-gray-700"
+          title="Stop generating"
+        >
+          <Square className="size-3" fill="currentColor" />
+        </button>
+      ) : (
+        <button
+          onClick={handleSendMessage}
+          disabled={!inputValue.trim()}
+          className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#b04a2f] text-white transition-colors hover:bg-[#8a3820] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
+        >
+          <Send className="size-3.5" />
+        </button>
+      )}
     </div>
   );
 }
