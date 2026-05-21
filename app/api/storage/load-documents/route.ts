@@ -14,10 +14,11 @@ export async function GET(request: NextRequest) {
     }
 
     const documents = await loadDocuments(userId);
+    console.log("[storage] Loaded", documents.length, "documents for", userId);
 
     return NextResponse.json({ success: true, documents });
   } catch (error) {
-    console.error("Load documents error:", error);
+    console.error("[storage] Load documents error:", error instanceof Error ? error.message : error);
     return NextResponse.json(
       {
         success: false,

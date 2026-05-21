@@ -14,10 +14,11 @@ export async function GET(request: NextRequest) {
     }
 
     const history = await loadChatHistory(userId);
+    console.log("[storage] Loaded", history.length, "messages for", userId);
 
     return NextResponse.json({ success: true, history });
   } catch (error) {
-    console.error("Load history error:", error);
+    console.error("[storage] Load history error:", error instanceof Error ? error.message : error);
     return NextResponse.json(
       {
         success: false,
