@@ -3,7 +3,7 @@ import { GoogleAuth } from "google-auth-library";
 
 const GCP_PROJECT = process.env.GCP_PROJECT_ID || "genai-poc-424806";
 const GCP_LOCATION = "us-central1";
-const EMBEDDING_MODEL = "text-embedding-004";
+const EMBEDDING_MODEL = "text-embedding-005";
 
 const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
 
