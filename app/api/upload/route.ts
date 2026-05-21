@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { processPDFDocument } from "@/lib/document-service";
+import { processPDFDocument, processDOCXDocument } from "@/lib/document-service";
 import { saveDocument } from "@/lib/bigquery-storage";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".doc"];
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,16 +24,17 @@ export async function POST(request: NextRequest) {
     const processedDocuments = [];
 
     for (const file of files) {
-      if (!file.name.toLowerCase().endsWith(".pdf")) {
-        continue;
-      }
+      const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+      if (!SUPPORTED_EXTENSIONS.includes(ext)) continue;
 
       const buffer = Buffer.from(await file.arrayBuffer());
       const documentId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-      const processed = await processPDFDocument(buffer, documentId, file.name);
+      const processed =
+        ext === ".pdf"
+          ? await processPDFDocument(buffer, documentId, file.name)
+          : await processDOCXDocument(buffer, documentId, file.name);
 
-      // Save to BigQuery
       await saveDocument({
         userId,
         documentId: processed.id,

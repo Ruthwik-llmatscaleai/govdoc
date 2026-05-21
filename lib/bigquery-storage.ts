@@ -8,6 +8,13 @@ const DATASET_ID = "govdoc_chat";
 const MESSAGES_TABLE = "chat_messages";
 const DOCUMENTS_TABLE = "chat_documents";
 
+let _initialized = false;
+async function ensureTables() {
+  if (_initialized) return;
+  await initializeBigQueryTables();
+  _initialized = true;
+}
+
 export interface ChatMessage {
   userId: string;
   messageId: string;
@@ -96,6 +103,7 @@ export async function initializeBigQueryTables() {
  * Save a chat message to BigQuery
  */
 export async function saveChatMessage(message: ChatMessage): Promise<void> {
+  await ensureTables();
   const dataset = bigquery.dataset(DATASET_ID);
   const table = dataset.table(MESSAGES_TABLE);
 
@@ -115,6 +123,7 @@ export async function saveChatMessage(message: ChatMessage): Promise<void> {
  * Load chat history for a user (last 50 messages)
  */
 export async function loadChatHistory(userId: string, limit: number = 50): Promise<ChatMessage[]> {
+  await ensureTables();
   const query = `
     SELECT
       userId,
@@ -150,6 +159,7 @@ export async function loadChatHistory(userId: string, limit: number = 50): Promi
  * Save a processed document to BigQuery
  */
 export async function saveDocument(document: StoredDocument): Promise<void> {
+  await ensureTables();
   const dataset = bigquery.dataset(DATASET_ID);
   const table = dataset.table(DOCUMENTS_TABLE);
 
@@ -169,6 +179,7 @@ export async function saveDocument(document: StoredDocument): Promise<void> {
  * Load all documents for a user
  */
 export async function loadDocuments(userId: string): Promise<StoredDocument[]> {
+  await ensureTables();
   const query = `
     SELECT
       userId,
@@ -228,7 +239,7 @@ export async function getAllChunks(userId: string): Promise<Array<{
  * Clear all data for a user
  */
 export async function clearUserData(userId: string): Promise<void> {
-  // Delete messages
+  await ensureTables();
   await bigquery.query({
     query: `DELETE FROM \`${DATASET_ID}.${MESSAGES_TABLE}\` WHERE userId = @userId`,
     params: { userId },

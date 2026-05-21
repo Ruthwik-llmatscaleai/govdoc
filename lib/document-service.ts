@@ -33,6 +33,17 @@ async function extractTextFromPDF(pdfBuffer: Buffer): Promise<{ text: string; pa
 }
 
 /**
+ * Extract text from DOCX buffer
+ */
+async function extractTextFromDOCX(docxBuffer: Buffer): Promise<{ text: string; pageCount: number }> {
+  const mammoth = require("mammoth");
+  const result = await mammoth.extractRawText({ buffer: docxBuffer });
+  const text: string = result.value;
+  const pageCount = Math.max(1, Math.ceil(text.length / 3000));
+  return { text, pageCount };
+}
+
+/**
  * Split text into chunks using LangChain's RecursiveCharacterTextSplitter
  */
 async function chunkText(text: string): Promise<string[]> {
@@ -121,16 +132,31 @@ export async function processPDFDocument(
   documentId: string,
   documentName: string
 ): Promise<ProcessedDocument> {
-  // Extract text from PDF
   const { text, pageCount } = await extractTextFromPDF(pdfBuffer);
+  return buildProcessedDocument(text, pageCount, documentId, documentName);
+}
 
-  // Chunk the text
+/**
+ * Main function to process a DOCX document
+ */
+export async function processDOCXDocument(
+  docxBuffer: Buffer,
+  documentId: string,
+  documentName: string
+): Promise<ProcessedDocument> {
+  const { text, pageCount } = await extractTextFromDOCX(docxBuffer);
+  return buildProcessedDocument(text, pageCount, documentId, documentName);
+}
+
+async function buildProcessedDocument(
+  text: string,
+  pageCount: number,
+  documentId: string,
+  documentName: string
+): Promise<ProcessedDocument> {
   const textChunks = await chunkText(text);
-
-  // Generate embeddings for all chunks
   const embeddings = await generateEmbeddings(textChunks);
 
-  // Create document chunks
   const chunks: DocumentChunk[] = textChunks.map((text, index) => ({
     documentId,
     documentName,
