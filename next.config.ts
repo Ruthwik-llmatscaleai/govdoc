@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   typescript: { ignoreBuildErrors: true },
-  serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
+  serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas", "pdf-parse"],
 };
 
 export default nextConfig;

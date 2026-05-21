@@ -1,9 +1,7 @@
-import { VoyageAIClient } from "voyageai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
-const voyage = new VoyageAIClient({
-  apiKey: process.env.VOYAGE_API_KEY!,
-});
+const VOYAGE_API_URL = "https://api.voyageai.com/v1/embeddings";
+const VOYAGE_API_KEY = process.env.VOYAGE_API_KEY!;
 
 export interface DocumentChunk {
   documentId: string;
@@ -48,42 +46,44 @@ async function chunkText(text: string): Promise<string[]> {
 }
 
 /**
+ * Call Voyage AI REST API for embeddings
+ */
+async function callVoyageAPI(input: string[], inputType: "document" | "query"): Promise<number[][]> {
+  const response = await fetch(VOYAGE_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${VOYAGE_API_KEY}`,
+    },
+    body: JSON.stringify({
+      input,
+      model: "voyage-2",
+      input_type: inputType,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Voyage AI API error: ${response.status} ${error}`);
+  }
+
+  const data = await response.json();
+  return data.data.map((item: { embedding: number[] }) => item.embedding);
+}
+
+/**
  * Generate embeddings for text chunks using Voyage AI
  */
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
-  const response = await voyage.embed({
-    input: texts,
-    model: "voyage-2",
-    inputType: "document", // Use 'document' for storing, 'query' for searching
-  });
-
-  if (!response.data || response.data.length === 0) {
-    throw new Error("No embeddings returned from Voyage AI");
-  }
-
-  return response.data.map((item) => {
-    if (!item.embedding) {
-      throw new Error("Missing embedding in response");
-    }
-    return item.embedding;
-  });
+  return callVoyageAPI(texts, "document");
 }
 
 /**
  * Generate query embedding using Voyage AI
  */
 export async function embedQuery(query: string): Promise<number[]> {
-  const response = await voyage.embed({
-    input: [query],
-    model: "voyage-2",
-    inputType: "query",
-  });
-
-  if (!response.data?.[0]?.embedding) {
-    throw new Error("No embedding returned from Voyage AI");
-  }
-
-  return response.data[0].embedding;
+  const embeddings = await callVoyageAPI([query], "query");
+  return embeddings[0]!;
 }
 
 /**
