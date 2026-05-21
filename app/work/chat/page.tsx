@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { ProcessedDocument } from "@/lib/document-service";
 import type { ChatMessage } from "@/lib/chat-service";
-import { FileText, Menu, X, Send, Paperclip } from "lucide-react";
+import { FileText, Menu, X, Send, Paperclip, Trash2 } from "lucide-react";
 
 // Hardcoded user for now - will use actual auth in production
 const USER_ID = "dev";
@@ -18,19 +18,18 @@ export default function SearchAskPage() {
   const [isLoading, setIsLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load data from BigQuery on mount
   useEffect(() => {
     async function loadData() {
       try {
-        // Load documents
         const docsResponse = await fetch(`/api/storage/load-documents?userId=${USER_ID}`);
         const docsData = await docsResponse.json();
         if (docsData.success) {
           setDocuments(docsData.documents);
         }
 
-        // Load chat history
         const historyResponse = await fetch(`/api/storage/load-history?userId=${USER_ID}`);
         const historyData = await historyResponse.json();
         if (historyData.success) {
@@ -51,6 +50,14 @@ export default function SearchAskPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory]);
 
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + "px";
+    }
+  }, [inputValue]);
+
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
@@ -70,7 +77,6 @@ export default function SearchAskPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Reload documents
         const docsResponse = await fetch(`/api/storage/load-documents?userId=${USER_ID}`);
         const docsData = await docsResponse.json();
         if (docsData.success) {
@@ -100,7 +106,6 @@ export default function SearchAskPage() {
       timestamp: new Date().toISOString(),
     };
 
-    // Save user message to BigQuery
     await fetch("/api/storage/save-message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -130,7 +135,6 @@ export default function SearchAskPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Save assistant message to BigQuery
         const assistantMessage = {
           ...data.answer,
           userId: USER_ID,
@@ -184,29 +188,29 @@ export default function SearchAskPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[var(--color-cream)]">
+      <div className="flex h-screen items-center justify-center bg-white">
         <div className="text-center">
-          <div className="mx-auto mb-4 size-12 animate-spin rounded-full border-4 border-[var(--color-line)] border-t-[var(--color-govdoc-primary)]" />
-          <p className="text-sm text-[var(--color-ink-mute)]">Loading...</p>
+          <div className="mx-auto mb-4 size-12 animate-spin rounded-full border-4 border-gray-200 border-t-amber-600" />
+          <p className="text-sm text-gray-500">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-[var(--color-cream)]">
+    <div className="flex h-screen bg-white">
       {/* Sidebar */}
       <div
-        className={`flex flex-col border-r border-[var(--color-line)] bg-[var(--color-paper)] transition-all ${
+        className={`flex flex-col border-r border-gray-200 bg-white transition-all ${
           sidebarOpen ? "w-[260px]" : "w-0"
         } overflow-hidden`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--color-line)] px-4 py-3">
-          <h2 className="text-sm font-medium text-[var(--color-ink)]">Search & Ask</h2>
+        <div className="flex items-center justify-between border-b border-gray-200 px-3 py-3">
+          <h2 className="text-sm font-medium text-gray-900">Documents</h2>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
+            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
             aria-label="Close sidebar"
           >
             <X className="size-4" />
@@ -214,26 +218,23 @@ export default function SearchAskPage() {
         </div>
 
         {/* Documents list */}
-        <div className="flex-1 overflow-y-auto px-3 py-4">
-          <div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-ink-faint)]">
-            Documents ({documents.length})
-          </div>
+        <div className="flex-1 overflow-y-auto px-3 py-3">
           {documents.length === 0 ? (
-            <p className="text-xs text-[var(--color-ink-mute)]">No documents uploaded yet</p>
+            <p className="text-xs text-gray-400">No documents yet</p>
           ) : (
             <div className="space-y-2">
               {documents.map((doc) => (
                 <div
                   key={doc.id}
-                  className="rounded border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-2"
+                  className="rounded-lg border border-gray-200 bg-gray-50 p-2.5 hover:bg-gray-100"
                 >
                   <div className="mb-1 flex items-start gap-2">
-                    <FileText className="size-4 shrink-0 text-[var(--color-govdoc-primary)]" />
+                    <FileText className="size-4 shrink-0 text-amber-600" />
                     <div className="min-w-0 flex-1">
-                      <div className="break-words text-xs font-medium text-[var(--color-ink)]">{doc.name}</div>
+                      <div className="break-words text-xs font-medium text-gray-900">{doc.name}</div>
                     </div>
                   </div>
-                  <div className="text-[10px] text-[var(--color-ink-faint)]">
+                  <div className="text-[10px] text-gray-500">
                     {doc.pageCount} pages • {doc.chunks.length} chunks
                   </div>
                 </div>
@@ -242,25 +243,26 @@ export default function SearchAskPage() {
           )}
         </div>
 
-        {/* Actions */}
+        {/* Clear button */}
         {documents.length > 0 && (
-          <div className="border-t border-[var(--color-line)] px-4 py-3">
+          <div className="border-t border-gray-200 p-3">
             <button
               onClick={handleClearAll}
-              className="w-full rounded border border-[var(--color-line)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-ink-mute)] hover:bg-[var(--color-cream-soft)]"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
             >
+              <Trash2 className="size-3.5" />
               Clear All
             </button>
           </div>
         )}
 
-        {/* User info at bottom */}
-        <div className="border-t border-[var(--color-line)] p-4">
+        {/* User info */}
+        <div className="border-t border-gray-200 p-3">
           <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-full bg-[var(--color-ink)] text-sm font-semibold text-white">
+            <div className="flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-xs font-semibold text-white">
               D
             </div>
-            <span className="text-sm font-medium text-[var(--color-ink)]">dev</span>
+            <span className="text-sm font-medium text-gray-700">dev</span>
           </div>
         </div>
       </div>
@@ -268,97 +270,88 @@ export default function SearchAskPage() {
       {/* Main chat area */}
       <div className="flex flex-1 flex-col">
         {/* Top bar */}
-        <div className="flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-paper)] px-5 py-3">
-          <div className="flex items-center gap-3">
-            {!sidebarOpen && (
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="text-[var(--color-ink-mute)] hover:text-[var(--color-ink)]"
-                aria-label="Open sidebar"
-              >
-                <Menu className="size-5" />
-              </button>
-            )}
-            <h1 className="text-sm font-medium text-[var(--color-ink)]">
-              {documents.length > 0 ? `${documents.length} document${documents.length > 1 ? "s" : ""} • ${totalChunks} chunks` : "Search & Ask"}
-            </h1>
-          </div>
+        <div className="flex items-center border-b border-gray-200 bg-white px-4 py-3">
+          {!sidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="mr-3 rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              aria-label="Open sidebar"
+            >
+              <Menu className="size-5" />
+            </button>
+          )}
+          <h1 className="text-sm font-medium text-gray-600">
+            {documents.length > 0 ? `${documents.length} document${documents.length > 1 ? "s" : ""} • ${totalChunks} chunks` : "Search & Ask"}
+          </h1>
         </div>
 
         {/* Messages area */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-white">
           {chatHistory.length === 0 ? (
             /* Welcome screen */
-            <div className="flex h-full flex-col items-center justify-center p-8">
+            <div className="flex h-full flex-col items-center justify-center px-4">
               <div className="w-full max-w-2xl text-center">
-                <div className="mb-6 flex size-16 items-center justify-center rounded-full bg-[var(--color-govdoc-primary)] text-2xl font-bold text-white mx-auto">
+                <div className="mb-8 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-2xl font-bold text-white mx-auto shadow-lg">
                   AI
                 </div>
-                <h2
-                  className="mb-3 text-3xl tracking-tight text-[var(--color-ink)]"
-                  style={{
-                    fontFamily: "var(--font-display)",
-                    fontWeight: 500,
-                    fontVariationSettings: '"opsz" 96',
-                  }}
-                >
+                <h2 className="mb-4 text-3xl font-normal text-gray-900">
                   How can I help you today?
                 </h2>
-                <p className="mb-8 text-sm text-[var(--color-ink-mute)]">
+                <p className="mb-8 text-base text-gray-500">
                   Upload PDFs using the paperclip icon below and ask questions about your documents
                 </p>
 
                 {documents.length > 0 && (
-                  <div className="rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-4">
-                    <p className="mb-2 text-sm font-medium text-[var(--color-govdoc-primary)]">
-                      ✓ {documents.length} document{documents.length > 1 ? "s" : ""} ready
-                    </p>
-                    <p className="text-xs text-[var(--color-ink-mute)]">Ask me anything about your uploaded files</p>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
+                    <div className="size-2 rounded-full bg-green-500"></div>
+                    {documents.length} document{documents.length > 1 ? "s" : ""} ready
                   </div>
                 )}
               </div>
             </div>
           ) : (
             /* Chat messages */
-            <div className="mx-auto w-full max-w-3xl space-y-6 p-6">
+            <div className="mx-auto w-full max-w-3xl space-y-8 px-4 py-8">
               {chatHistory.map((msg, index) => (
                 <div key={index} className="flex gap-4">
                   {/* Avatar */}
                   <div
                     className={`flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white ${
-                      msg.role === "user" ? "bg-[var(--color-ink)]" : "bg-[var(--color-govdoc-primary)]"
+                      msg.role === "user"
+                        ? "bg-gray-700"
+                        : "bg-gradient-to-br from-amber-400 to-orange-500"
                     }`}
                   >
                     {msg.role === "user" ? "D" : "AI"}
                   </div>
 
                   {/* Message content */}
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 text-xs font-medium text-[var(--color-ink-mute)]">
+                  <div className="min-w-0 flex-1 pt-1">
+                    <div className="mb-2 text-sm font-semibold text-gray-900">
                       {msg.role === "user" ? "You" : "Assistant"}
                     </div>
-                    <div className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--color-ink)]">
+                    <div className="whitespace-pre-wrap text-[15px] leading-7 text-gray-800">
                       {msg.content}
                     </div>
 
                     {/* Sources */}
                     {msg.sources && msg.sources.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        <div className="text-xs font-medium text-[var(--color-ink-mute)]">Sources:</div>
+                      <div className="mt-4 space-y-2">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Sources</div>
                         {msg.sources.map((source, i) => (
                           <div
                             key={i}
-                            className="rounded border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-2"
+                            className="rounded-lg border border-gray-200 bg-gray-50 p-3"
                           >
-                            <div className="mb-1 flex items-center justify-between">
-                              <span className="text-xs font-medium text-[var(--color-ink)]">
-                                {source.documentName} (Chunk {source.chunkIndex + 1})
+                            <div className="mb-1.5 flex items-center justify-between">
+                              <span className="text-xs font-medium text-gray-900">
+                                {source.documentName} · Chunk {source.chunkIndex + 1}
                               </span>
-                              <span className="text-[10px] text-[var(--color-ink-faint)]">
-                                {(source.score * 100).toFixed(1)}% match
+                              <span className="text-xs text-gray-500">
+                                {(source.score * 100).toFixed(0)}% match
                               </span>
                             </div>
-                            <p className="text-xs leading-relaxed text-[var(--color-ink-mute)]">{source.excerpt}</p>
+                            <p className="text-xs leading-relaxed text-gray-600">{source.excerpt}</p>
                           </div>
                         ))}
                       </div>
@@ -369,12 +362,16 @@ export default function SearchAskPage() {
 
               {isAnswering && (
                 <div className="flex gap-4">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-govdoc-primary)] text-sm font-semibold text-white">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-sm font-semibold text-white">
                     AI
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 text-xs font-medium text-[var(--color-ink-mute)]">Assistant</div>
-                    <div className="text-sm text-[var(--color-ink-mute)]">Thinking...</div>
+                  <div className="min-w-0 flex-1 pt-1">
+                    <div className="mb-2 text-sm font-semibold text-gray-900">Assistant</div>
+                    <div className="flex items-center gap-2 text-[15px] text-gray-400">
+                      <div className="size-1.5 animate-pulse rounded-full bg-gray-400"></div>
+                      <div className="size-1.5 animate-pulse rounded-full bg-gray-400" style={{ animationDelay: "0.2s" }}></div>
+                      <div className="size-1.5 animate-pulse rounded-full bg-gray-400" style={{ animationDelay: "0.4s" }}></div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -385,19 +382,19 @@ export default function SearchAskPage() {
         </div>
 
         {/* Input area */}
-        <div className="border-t border-[var(--color-line)] bg-[var(--color-paper)] p-5">
+        <div className="border-t border-gray-200 bg-white p-4">
           <div className="mx-auto w-full max-w-3xl">
-            <div className="relative flex items-end gap-2 rounded-xl border border-[var(--color-line)] bg-white p-2 focus-within:border-[var(--color-govdoc-primary)]">
+            <div className="relative flex items-end gap-2 rounded-2xl border border-gray-300 bg-white px-4 py-3 shadow-sm focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500">
               {/* Paperclip button */}
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex size-9 shrink-0 items-center justify-center rounded-lg text-[var(--color-ink-mute)] transition hover:bg-[var(--color-cream-soft)] hover:text-[var(--color-ink)]"
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
                 aria-label="Attach files"
                 disabled={isUploading}
                 title="Upload PDF documents"
               >
                 {isUploading ? (
-                  <div className="size-4 animate-spin rounded-full border-2 border-[var(--color-line)] border-t-[var(--color-govdoc-primary)]" />
+                  <div className="size-4 animate-spin rounded-full border-2 border-gray-300 border-t-amber-600" />
                 ) : (
                   <Paperclip className="size-5" />
                 )}
@@ -413,11 +410,12 @@ export default function SearchAskPage() {
 
               {/* Text input */}
               <textarea
+                ref={textareaRef}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about your documents..."
-                className="max-h-[200px] min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2 text-sm text-[var(--color-ink)] placeholder-[var(--color-ink-faint)] focus:outline-none"
+                placeholder="Message..."
+                className="max-h-[200px] min-h-[24px] flex-1 resize-none bg-transparent text-[15px] text-gray-900 placeholder-gray-400 focus:outline-none"
                 rows={1}
                 disabled={isAnswering}
               />
@@ -426,15 +424,15 @@ export default function SearchAskPage() {
               <button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || isAnswering}
-                className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[var(--color-govdoc-primary)] text-white transition hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gray-900 text-white transition hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
                 aria-label="Send message"
               >
                 <Send className="size-4" />
               </button>
             </div>
-            <p className="mt-2 text-center text-[10px] text-[var(--color-ink-faint)]">
+            <p className="mt-2 text-center text-xs text-gray-400">
               {documents.length > 0
-                ? `${totalChunks} chunks loaded • Press Enter to send • Shift+Enter for new line`
+                ? `${totalChunks} chunks loaded`
                 : "Upload documents using the paperclip icon to get started"}
             </p>
           </div>
