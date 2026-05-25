@@ -37,10 +37,10 @@ export function LoginForm() {
             htmlFor="email"
             className="font-mono text-[10.5px] font-medium uppercase tracking-[0.18em] text-[var(--color-ink-soft)]"
           >
-            Agency Email
+            Work Email
           </label>
-          <span className="font-mono text-[9.5px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)]">
-            Required
+          <span className="font-mono text-[9.5px] uppercase tracking-[0.1em] text-[#2d8c4a]">
+            ✓ Verified
           </span>
         </div>
         <div className="relative border border-[var(--color-line-paper)] bg-[var(--color-field-bg)] transition-all hover:border-[#d4d2c7] focus-within:border-[var(--color-ink)] focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(10,10,10,0.06)]">
@@ -125,14 +125,14 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={busy}
-        className="group relative mt-2 flex cursor-pointer items-center justify-center gap-3 overflow-hidden border-none bg-[var(--color-govdoc-primary)] px-6 py-[18px] text-[16px] font-medium tracking-[0.005em] text-white shadow-[0_1px_0_rgba(255,255,255,0.18)_inset,0_1px_2px_rgba(138,56,32,0.4),0_8px_20px_rgba(176,74,47,0.22)] transition-all hover:-translate-y-px hover:bg-[var(--color-govdoc-deep)] hover:shadow-[0_1px_0_rgba(255,255,255,0.18)_inset,0_2px_4px_rgba(138,56,32,0.4),0_14px_28px_rgba(176,74,47,0.3)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
+        className="group relative mt-2 flex cursor-pointer items-center justify-center gap-3 overflow-hidden rounded-[4px] border-none bg-[#1a3a1a] px-6 py-[18px] text-[16px] font-medium tracking-[0.005em] text-white shadow-[0_1px_0_rgba(255,255,255,0.10)_inset,0_1px_2px_rgba(26,58,26,0.4),0_8px_20px_rgba(26,58,26,0.22)] transition-all hover:-translate-y-px hover:bg-[#244d24] hover:shadow-[0_1px_0_rgba(255,255,255,0.10)_inset,0_2px_4px_rgba(26,58,26,0.4),0_14px_28px_rgba(26,58,26,0.3)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
         style={{ fontFamily: "var(--font-display)" }}
       >
         <span
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),transparent_40%)]"
         />
-        <span>{busy ? "Signing in…" : "Sign in with SSO"}</span>
+        <span>{busy ? "Signing in…" : "Sign In"}</span>
         <span className="inline-flex transition-transform group-hover:translate-x-1">
           <svg
             width="18"
@@ -147,6 +147,26 @@ export function LoginForm() {
           </svg>
         </span>
       </button>
+
+      {/* Trust card */}
+      <div className="mt-8 flex items-start gap-4 rounded-[4px] border border-[var(--color-line-paper)] bg-[var(--color-field-bg)] px-5 py-4">
+        <span className="mt-0.5 flex-shrink-0 text-[#2d8c4a]">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.75">
+            <path d="M4 9.5l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+        <div className="flex-1 text-[12px] leading-[1.5] text-[var(--color-ink-soft)]">
+          <span>Every decision is <em className="italic">cited, reasoned, and auditable</em>.</span>
+          <br />
+          <span className="text-[var(--color-ink-mute)]">Built on Anthropic Claude — no black box.</span>
+        </div>
+        <a
+          href="#"
+          className="flex-shrink-0 self-center font-mono text-[9.5px] uppercase tracking-[0.12em] text-[var(--color-ink-soft)] hover:text-[var(--color-ink)]"
+        >
+          Learn More →
+        </a>
+      </div>
     </form>
   );
 }

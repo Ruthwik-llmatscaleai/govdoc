@@ -147,13 +147,49 @@ export default function LoginPage() {
 
       {/* ============ RIGHT ============ */}
       <section className="relative flex flex-col bg-[var(--color-paper)] px-6 py-9 sm:px-10 lg:px-16">
-        <div className="flex items-center justify-end border-b border-[var(--color-line-paper)] pb-6 font-mono text-[10.5px] uppercase tracking-[0.12em] text-[var(--color-ink-mute)]">
-          <span>v 1.0.0</span>
+        {/* Three-column header */}
+        <div className="grid grid-cols-3 gap-6 border-b border-[var(--color-line-paper)] pb-7">
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-mute)]">01</span>
+            <span
+              className="text-[var(--color-ink)]"
+              style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 400, fontVariationSettings: '"opsz" 96' }}
+            >
+              Reads.
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-mute)]">
+              Government<br />Documents
+            </span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-mute)]">02</span>
+            <span
+              className="text-[var(--color-ink)]"
+              style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 400, fontVariationSettings: '"opsz" 96' }}
+            >
+              Checks.
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-mute)]">
+              Against<br />Policy
+            </span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-mute)]">03</span>
+            <span
+              className="text-[var(--color-ink)]"
+              style={{ fontFamily: "var(--font-display)", fontSize: 28, fontWeight: 400, fontVariationSettings: '"opsz" 96' }}
+            >
+              Decides.
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-mute)]">
+              Pass / Fail<br />With Audit
+            </span>
+          </div>
         </div>
 
         <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center py-10">
           <div className="mb-6 flex items-center gap-2.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)] before:h-px before:w-[18px] before:bg-[var(--color-ink-faint)] before:content-['']">
-            Secure Portal
+            🔒 Secure Portal
           </div>
 
           <h2
@@ -173,6 +209,8 @@ export default function LoginPage() {
               continue.
             </em>
           </h2>
+
+          <div className="mb-7 h-px w-full bg-[var(--color-line-paper)]" />
 
           <LoginForm />
         </div>
