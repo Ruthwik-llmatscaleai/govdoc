@@ -64,7 +64,7 @@ export default function LoginPage() {
           </div>
 
           {/* Document Analysis Panel */}
-          <div className="flex-1 overflow-hidden rounded-[4px] border border-[var(--color-line)]">
+          <div className="flex-1 rounded-[4px] border border-[var(--color-line)]">
             {/* Panel header */}
             <div className="flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-cream-soft)] px-5 py-3">
               <div className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-[var(--color-ink-soft)]">
@@ -78,9 +78,9 @@ export default function LoginPage() {
             </div>
 
             {/* Panel body: two columns */}
-            <div className="grid h-full grid-cols-[1fr_1fr]">
+            <div className="grid grid-cols-[1fr_1fr]">
               {/* Document excerpt */}
-              <div className="relative border-r border-[var(--color-line)] bg-white p-5">
+              <div className="relative min-h-[340px] border-r border-[var(--color-line)] bg-white p-5 pb-16">
                 <div className="mb-4 font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
                   — Excerpt · Page 3 of 7
                 </div>
