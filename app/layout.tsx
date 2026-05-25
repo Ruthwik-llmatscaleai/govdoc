@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter_Tight, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Tinos, Inter_Tight, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
@@ -7,6 +7,14 @@ const fraunces = Fraunces({
   subsets: ["latin"],
   axes: ["opsz"],
   variable: "--font-fraunces",
+  display: "swap",
+});
+
+const tinos = Tinos({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-tinos",
   display: "swap",
 });
 
@@ -31,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${interTight.variable} ${jetbrainsMono.variable}`}
+      className={`${fraunces.variable} ${tinos.variable} ${interTight.variable} ${jetbrainsMono.variable}`}
     >
       <body>
         <Providers>{children}</Providers>

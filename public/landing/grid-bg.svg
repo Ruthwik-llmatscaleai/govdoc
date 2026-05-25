@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56">
+  <rect width="56" height="56" fill="none"/>
+  <!-- Minor grid lines (every 14px) -->
+  <line x1="14" y1="0" x2="14" y2="56" stroke="rgba(216,210,191,0.24)" stroke-width="0.5"/>
+  <line x1="28" y1="0" x2="28" y2="56" stroke="rgba(216,210,191,0.24)" stroke-width="0.5"/>
+  <line x1="42" y1="0" x2="42" y2="56" stroke="rgba(216,210,191,0.24)" stroke-width="0.5"/>
+  <line x1="0" y1="14" x2="56" y2="14" stroke="rgba(216,210,191,0.24)" stroke-width="0.5"/>
+  <line x1="0" y1="28" x2="56" y2="28" stroke="rgba(216,210,191,0.24)" stroke-width="0.5"/>
+  <line x1="0" y1="42" x2="56" y2="42" stroke="rgba(216,210,191,0.24)" stroke-width="0.5"/>
+  <!-- Major grid lines (edges = every 56px when tiled) -->
+  <line x1="0" y1="0" x2="56" y2="0" stroke="rgba(216,210,191,0.58)" stroke-width="1"/>
+  <line x1="0" y1="0" x2="0" y2="56" stroke="rgba(216,210,191,0.58)" stroke-width="1"/>
+</svg>
