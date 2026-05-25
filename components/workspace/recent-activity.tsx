@@ -12,7 +12,8 @@ export function RecentActivity({ items }: RecentActivityProps) {
       data-testid="recent-activity"
     >
       <div className="mb-4 flex items-center justify-between">
-        <div className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-mute)]">
+        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-mute)]">
+          <span className="inline-block h-2 w-2 rounded-full bg-[var(--color-govdoc-primary)]" />
           Recent Activity · Last 24H
         </div>
         <Link
