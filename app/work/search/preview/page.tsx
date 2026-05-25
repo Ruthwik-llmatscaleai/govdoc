@@ -1,9 +1,9 @@
-import { WorkBreadcrumbs } from "@/components/work/page-shell";
-import { PreviewRubricTabs } from "@/components/work/rubric/preview-tabs";
 import { loadCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-merged";
 import { loadCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-merged";
 import { loadRowRubric } from "@/lib/usecases/row-appraisal/rubric-merged";
 import { listRubrics } from "@/lib/usecases/rubrics-store";
+import { ReviewRubricsClient } from "@/components/work/rubric/review-rubrics-client";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -17,72 +17,107 @@ export default async function PreviewRubricsPage() {
     listRubrics("row-appraisal"),
   ]);
 
-  return (
-    <div>
-      <WorkBreadcrumbs
-        crumbs={[
-          { label: "Workspace", href: "/workspace" },
-          { label: "Search & Ask", href: "/work/search" },
-          { label: "Rubric Tools", href: "/work/search" },
-          { label: "Review Rubrics" },
-        ]}
-      />
+  const cmgcCount = cmgc.questions.length;
+  const cmgcSections = new Set(cmgc.questions.map((q) => q.section)).size;
 
-      {/* Page header — bespoke (we need the read-only meta column on the right). */}
-      <header className="mb-7 grid grid-cols-[auto_1fr] items-start gap-6 border-b border-[var(--color-line)] pb-6 lg:grid-cols-[auto_1fr_auto]">
-        <div className="flex size-11 shrink-0 items-center justify-center bg-[var(--color-govdoc-primary)] text-white">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-            strokeLinecap="square"
-            strokeLinejoin="round"
-            className="size-5"
-          >
-            <path d="M3 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3z" />
-            <path d="M21 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z" />
-          </svg>
-        </div>
-        <div className="space-y-2.5">
-          <div className="font-mono text-[10.5px] font-medium uppercase tracking-[0.18em] text-[var(--color-ink-soft)]">
-            Rubric · Preview
+  return (
+    <div className="min-h-full">
+      {/* Breadcrumbs */}
+      <nav className="mb-8 flex items-center gap-2.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
+        <Link
+          href="/workspace"
+          className="text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
+        >
+          Workspace
+        </Link>
+        <span className="opacity-60">/</span>
+        <Link
+          href="/work/search"
+          className="text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
+        >
+          Rubrics
+        </Link>
+        <span className="opacity-60">/</span>
+        <span className="font-medium text-[var(--color-ink)]">Review Rubrics</span>
+      </nav>
+
+      {/* Section label */}
+      <div className="mb-4 flex items-center gap-3 font-mono text-[10.5px] uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
+        <span className="text-[var(--color-line)]">━━━</span>
+        <span>02</span>
+        <span>Rubrics · Preview</span>
+      </div>
+
+      {/* Header area */}
+      <header className="mb-8 border-b border-[var(--color-line)] pb-7">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto]">
+          {/* Left: Title + description */}
+          <div className="space-y-4">
+            <div className="flex items-start gap-4">
+              <h1
+                className="leading-[1.05] tracking-[-0.025em] text-[var(--color-ink)]"
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 400,
+                  fontSize: "clamp(36px, 4vw, 52px)",
+                  fontVariationSettings: '"opsz" 96',
+                }}
+              >
+                Review{" "}
+                <em
+                  className="text-[var(--color-govdoc-primary)]"
+                  style={{ fontStyle: "italic", fontWeight: 300 }}
+                >
+                  Rubrics.
+                </em>
+              </h1>
+            </div>
+            <p className="max-w-[64ch] text-[14px] leading-[1.6] text-[var(--color-ink-mute)]">
+              A read-only view of the rubric GovDoc applies for each review type. For
+              inspection only — questions, scoring tiers, and section weights cannot be
+              modified from this screen.
+            </p>
           </div>
-          <h1
-            className="leading-none tracking-[-0.025em] text-[var(--color-ink)]"
-            style={{
-              fontFamily: "var(--font-display)",
-              fontWeight: 400,
-              fontSize: "clamp(32px, 3.6vw, 44px)",
-              fontVariationSettings: '"opsz" 96',
-            }}
-          >
-            Review{" "}
-            <em
-              className="text-[var(--color-govdoc-primary)]"
-              style={{ fontStyle: "italic", fontWeight: 300 }}
-            >
-              Rubrics
-            </em>
-          </h1>
-          <p className="max-w-[56ch] text-[14px] leading-[1.5] text-[var(--color-ink-mute)]">
-            Read-only preview of the criteria the AI applies for each review type.
-          </p>
+
+          {/* Right: Badge + version info */}
+          <div className="flex flex-col items-start gap-3 lg:items-end">
+            <span className="inline-flex items-center gap-2 border border-[var(--color-ink)] px-3 py-1.5 font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--color-ink)]">
+              <span>◆</span> Read-Only
+            </span>
+            <div className="flex flex-col gap-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)] lg:items-end">
+              <span>
+                Version{" "}
+                <strong className="font-medium text-[var(--color-ink)]">1.0.0</strong>
+              </span>
+              <span>
+                Updated{" "}
+                <strong className="font-medium text-[var(--color-ink)]">09 May 2026</strong>
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="col-span-full flex flex-col items-start gap-1.5 pt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)] lg:col-span-1 lg:items-end lg:pt-2">
-          <span className="inline-flex items-center gap-1.5 border border-[var(--color-line)] bg-[var(--color-paper)] px-2.5 py-1 text-[var(--color-ink-soft)]">
-            <span className="size-[5px] rounded-full bg-[#2d8c4a]" /> Read-Only
-          </span>
+
+        {/* Stats row */}
+        <div className="mt-5 flex flex-wrap items-center gap-6 font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
           <span>
-            Version <strong className="font-medium text-[var(--color-ink)]">1.0.0</strong>
+            <strong className="font-semibold text-[var(--color-ink)]">{String(cmgcCount).padStart(2, "0")}</strong>{" "}
+            Questions
           </span>
+          <span className="text-[var(--color-line)]">|</span>
           <span>
-            Updated <strong className="font-medium text-[var(--color-ink)]">09 May 2026</strong>
+            <strong className="font-semibold text-[var(--color-ink)]">{String(cmgcSections).padStart(2, "0")}</strong>{" "}
+            Sections
+          </span>
+          <span className="text-[var(--color-line)]">|</span>
+          <span>
+            <strong className="font-semibold text-[var(--color-ink)]">v1.0</strong>{" "}
+            <span className="normal-case">(09 May 2026)</span>
           </span>
         </div>
       </header>
 
-      <PreviewRubricTabs
+      {/* Interactive client component with tabs + sections */}
+      <ReviewRubricsClient
         cmgc={cmgc}
         cucp={cucp}
         row={row}
