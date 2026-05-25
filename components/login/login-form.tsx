@@ -30,11 +30,11 @@ export function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5">
-      {/* Email */}
+      {/* Email / Username */}
       <div className="relative">
         <div className="mb-2.5 flex items-baseline justify-between">
           <label
-            htmlFor="email"
+            htmlFor="username"
             className="font-mono text-[10.5px] font-medium uppercase tracking-[0.18em] text-[var(--color-ink-soft)]"
           >
             Work Email
@@ -51,11 +51,11 @@ export function LoginForm() {
             </svg>
           </span>
           <input
-            id="email"
-            name="email"
+            id="username"
+            name="username"
             type="text"
             inputMode="email"
-            placeholder="name@agency.gov"
+            placeholder="Jothi@LLMatScale.AI"
             autoComplete="username"
             required
             value={email}
