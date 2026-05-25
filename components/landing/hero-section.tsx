@@ -1,8 +1,7 @@
-import Link from "next/link";
-
 export function HeroSection() {
   return (
-    <section className="relative bg-[var(--color-cream)] px-6 py-20 lg:px-10 lg:py-32">
+    <section className="relative bg-[var(--color-cream)] px-6 py-20 lg:px-10 lg:py-28">
+      {/* Subtle grid overlay */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -12,23 +11,17 @@ export function HeroSection() {
           backgroundSize: "64px 64px",
         }}
       />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at 30% 100%, rgba(45,80,22,0.04), transparent 70%), radial-gradient(ellipse 50% 40% at 70% 0%, rgba(10,10,10,0.03), transparent 60%)",
-        }}
-      />
 
-      <div className="relative z-10 mx-auto max-w-[1100px] text-center">
-        <div className="mb-8 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-ink-mute)]">
-          <span className="text-[var(--color-govdoc-primary)]">◆</span> Policy Compliance Evaluation ·
-          Powered by Agentic AI <span className="text-[var(--color-govdoc-primary)]">◆</span>
+      <div className="relative z-10 mx-auto max-w-[1200px]">
+        {/* Section number prefix */}
+        <div className="mb-8 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
+          <span className="inline-block h-px w-8 bg-[var(--color-ink-faint)]" />
+          <span>00 | Welcome · GovDoc Platform</span>
         </div>
 
+        {/* Title — LEFT ALIGNED */}
         <h1
-          className="mb-6 leading-[0.92] tracking-[-0.038em] text-[var(--color-ink)]"
+          className="mb-6 max-w-[900px] leading-[0.92] tracking-[-0.038em] text-[var(--color-ink)]"
           style={{
             fontFamily: "var(--font-display)",
             fontWeight: 400,
@@ -43,34 +36,30 @@ export function HeroSection() {
           >
             beyond
           </em>{" "}
-          Microsoft 365 Copilot.
+          Microsoft 365 Copilot
+          <span className="inline-block h-[0.15em] w-[0.15em] translate-y-[-0.1em] bg-[var(--color-govdoc-primary)]" />
         </h1>
 
+        {/* Subheading — LEFT ALIGNED */}
         <p
-          className="mb-10 leading-[1.15] tracking-[-0.015em] text-[var(--color-ink-soft)]"
+          className="max-w-[700px] leading-[1.3] tracking-[-0.015em] text-[var(--color-ink-mute)]"
           style={{
             fontFamily: "var(--font-display)",
             fontWeight: 400,
             fontSize: "clamp(20px, 2.2vw, 28px)",
             fontVariationSettings: '"opsz" 72',
+            fontStyle: "italic",
           }}
         >
           Deterministic responses{" "}
-          <em
-            className="text-[var(--color-govdoc-primary)]"
-            style={{ fontStyle: "italic", fontWeight: 300 }}
+          <strong
+            className="text-[var(--color-ink)]"
+            style={{ fontStyle: "italic", fontWeight: 600 }}
           >
             at low cost
-          </em>{" "}
+          </strong>{" "}
           — built to handle any complex document.
         </p>
-
-        <Link
-          href="/login"
-          className="inline-block rounded bg-[var(--color-govdoc-primary)] px-8 py-4 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-white transition-colors hover:bg-[var(--color-govdoc-deep)]"
-        >
-          ◆ Document Intelligence · Done Right
-        </Link>
       </div>
     </section>
   );

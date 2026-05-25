@@ -2,7 +2,6 @@ import { PageHeader } from "@/components/shared/page-header";
 import { PageFooter } from "@/components/shared/page-footer";
 import { HeroSection } from "@/components/landing/hero-section";
 import { ProcessFlow } from "@/components/landing/process-flow";
-import { ThreeColumn } from "@/components/landing/three-column";
 import { ComparisonTable } from "@/components/landing/comparison-table";
 
 export function LandingPage() {
@@ -12,7 +11,6 @@ export function LandingPage() {
       <main className="flex-1">
         <HeroSection />
         <ProcessFlow />
-        <ThreeColumn />
         <ComparisonTable />
       </main>
       <PageFooter />
