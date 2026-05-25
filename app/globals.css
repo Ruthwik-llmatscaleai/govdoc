@@ -5,12 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* GovDoc design system — terracotta + warm cream, matching the static mocks
-     in /tmp/archive-ui (cream paper, ink-on-cream, accent terracotta). */
-  --color-govdoc-primary: #b04a2f;
-  --color-govdoc-deep: #8a3820;
+  /* GovDoc design system — dark forest green + warm cream */
+  --color-govdoc-primary: #2d5016;
+  --color-govdoc-deep: #1a3a1a;
   --color-govdoc-tint: #f5efe2;
-  --color-govdoc-accent: oklch(0.78 0.13 75);
+  --color-govdoc-accent: #3d6b2e;
 
   /* Mock palette tokens (cream / paper / ink) */
   --color-cream: #f5efe2;
@@ -24,7 +23,7 @@
   --color-line-soft: #ece8de;
   --color-line-paper: #e8e5dc;
   --color-field-bg: #f7f4ec;
-  --color-accent-soft: rgba(176, 74, 47, 0.08);
+  --color-accent-soft: rgba(45, 80, 22, 0.08);
 
   --font-sans: var(--font-inter-tight, "Inter Tight"), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: var(--font-fraunces, "Fraunces"), "Iowan Old Style", "Charter", "Georgia", serif;
@@ -102,7 +101,7 @@
   --card-foreground: oklch(0.22 0.015 60);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.22 0.015 60);
-  --primary: oklch(0.62 0.14 38);
+  --primary: oklch(0.35 0.12 140);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.95 0.018 75);
   --secondary-foreground: oklch(0.25 0.02 60);
@@ -113,7 +112,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.90 0.012 70);
   --input: oklch(0.90 0.012 70);
-  --ring: oklch(0.62 0.14 38);
+  --ring: oklch(0.35 0.12 140);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);

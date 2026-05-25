@@ -653,7 +653,7 @@ function InputBox({
   onQuickAction: (action: string) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-paper)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all focus-within:border-[var(--color-govdoc-primary)] focus-within:shadow-[0_0_0_1px_rgba(176,74,47,0.12)]">
+    <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-paper)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all focus-within:border-[var(--color-govdoc-primary)] focus-within:shadow-[0_0_0_1px_rgba(45,80,22,0.12)]">
       {/* Quick action chips */}
       <div className="flex items-center gap-1.5 border-b border-[var(--color-line)] px-3.5 py-2">
         {[
