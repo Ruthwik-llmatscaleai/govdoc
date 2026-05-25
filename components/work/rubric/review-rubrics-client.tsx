@@ -52,9 +52,6 @@ export function ReviewRubricsClient({
     new Set(["A"]),
   );
 
-  const cmgcCount = cmgcData.questions.length;
-  const cucpCount = cucpData.l2.length + cucpData.l3.length;
-  const rowCount = Object.keys(rowData).length;
 
   // Group CMGC questions by section
   const bySection = new Map<string, { name: string; qs: RubricQuestion[] }>();
@@ -126,20 +123,20 @@ export function ReviewRubricsClient({
           active={activeTab === "cmgc-pde"}
           onClick={() => { setActiveTab("cmgc-pde"); setExpandedSections(new Set(["A"])); }}
           label="Validate Project"
-          count={cmgcCount}
+          count={25}
           accent
         />
         <TabBtn
           active={activeTab === "row-appraisal"}
           onClick={() => { setActiveTab("row-appraisal"); setExpandedSections(new Set()); }}
           label="Validate Appraisal"
-          count={rowCount}
+          count={12}
         />
         <TabBtn
           active={activeTab === "cucp-reevals"}
           onClick={() => { setActiveTab("cucp-reevals"); setExpandedSections(new Set()); }}
           label="Validate Narrative"
-          count={cucpCount}
+          count={12}
         />
       </div>
 
@@ -307,9 +304,9 @@ export function ReviewRubricsClient({
                             </span>
                           </div>
                           <dl className="mt-2.5 ml-[36px] flex flex-col gap-1.5">
-                            <OptionRow letter="A" text={q.option_a} />
-                            <OptionRow letter="B" text={q.option_b} />
-                            <OptionRow letter="C" text={q.option_c} />
+                            <OptionRow letter="A" text={q.option_a} checked={true} />
+                            <OptionRow letter="B" text={q.option_b} checked={false} />
+                            <OptionRow letter="C" text={q.option_c} checked={false} />
                           </dl>
                         </li>
                       ))}
@@ -491,15 +488,14 @@ export function ReviewRubricsClient({
   );
 }
 
-function OptionRow({ letter, text }: { letter: "A" | "B" | "C"; text: string }) {
+function OptionRow({ letter, text, checked = false }: { letter: "A" | "B" | "C"; text: string; checked?: boolean }) {
   return (
-    <div className="grid grid-cols-[20px_1fr] items-baseline gap-2.5">
-      <span className="font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--color-govdoc-primary)]">
-        {letter}
-      </span>
-      <span className="text-[12.5px] leading-[1.5] text-[var(--color-ink-soft)]">
-        {text}
-      </span>
+    <div className="flex items-center gap-3 py-1 text-left">
+      <div className={`flex size-[18px] shrink-0 items-center justify-center rounded-full border ${checked ? "bg-[#107e54] border-[#107e54] text-white" : "border-[var(--color-line)] bg-white text-transparent"}`}>
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 8.5l3.5 3.5 6.5-7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </div>
+      <span className="font-mono text-[11px] font-bold text-[var(--color-ink-faint)]">{letter}</span>
+      <span className="text-[13px] leading-[1.5] text-[var(--color-ink-soft)]">{text}</span>
     </div>
   );
 }

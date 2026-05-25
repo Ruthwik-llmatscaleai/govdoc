@@ -5,15 +5,26 @@ const PUBLIC = ["/", "/login", "/api/auth/login", "/api/auth/logout", "/api/heal
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", pathname);
+
   if (PUBLIC.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    return NextResponse.next();
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
   const cookie = req.cookies.get("govdoc_session")?.value;
   const session = await verifySession(cookie);
   if (!session) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
-  return NextResponse.next();
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export const config = {

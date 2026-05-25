@@ -5,8 +5,10 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* ============ TOP BANNER ============ */}
-      <div className="w-full bg-[#e8e3d4] py-2 text-center font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-ink-soft)]">
-        ◆ Policy Compliance Evaluation · Powered by Agentic AI ◆
+      <div className="flex w-full items-center justify-center gap-1.5 bg-[#0a0a0a] py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-[#4ade80]">
+        <span>●</span>
+        <span>Policy Compliance Evaluation · Powered by Agentic AI</span>
+        <span>●</span>
       </div>
 
       {/* ============ HEADER BAR ============ */}
@@ -149,10 +151,15 @@ export default function LoginPage() {
                     <span className="inline-flex size-5 items-center justify-center rounded-full bg-[var(--color-govdoc-primary)] font-mono text-[8px] font-bold text-white">03</span>
                     <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-ink-mute)]">Verdict</span>
                   </div>
-                  <div className="rounded-[3px] bg-[#1a3a1a] px-4 py-3 font-mono text-[11px] leading-[1.6] text-[#c8e6c0]">
-                    Procedural <em className="italic">breach</em>{" "}
-                    <em className="italic">confirmed</em>. Recommend<br />
-                    Tier-2 review.
+                  <div className="rounded-[3px] bg-[#0a0a0a] px-4 py-3 text-[13px] leading-[1.6] text-white/90">
+                    <span style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
+                      Procedural <em className="italic text-[var(--color-govdoc-accent)]">breach</em>{" "}
+                      <em className="italic">confirmed</em>. Recommend
+                    </span>
+                    <br />
+                    <span style={{ fontFamily: "var(--font-display)", fontWeight: 400 }}>
+                      Tier-2 review.
+                    </span>
                   </div>
                 </div>
               </div>
@@ -256,8 +263,27 @@ export default function LoginPage() {
       </div>
 
       {/* ============ FULL PAGE FOOTER ============ */}
-      <footer className="w-full border-t border-[var(--color-line)] bg-[var(--color-cream-soft)] px-8 py-3 text-center font-mono text-[9.5px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-        © 2026 LLMatScale.AI &nbsp;&nbsp; Confidential &amp; Proprietary &nbsp;&nbsp; Authorized Use Only &nbsp;&nbsp; 🔒 TLS 1.3 &nbsp; ✓ MFA &nbsp; FedRAMP · CJIS · SOC 2
+      <footer className="w-full border-t border-[#1a1a1a] bg-[#0a0a0a]">
+        <div className="flex items-center justify-between px-8 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-white/50">
+          <div className="flex items-center gap-x-4">
+            <span>© 2026 LLMATSCALE.AI</span>
+            <span className="text-white/20">|</span>
+            <span>Confidential &amp; Proprietary</span>
+          </div>
+          <span className="text-white/40">Authorized Use Only</span>
+          <div className="flex items-center gap-x-4">
+            <span className="inline-flex items-center gap-1.5">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/60"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+              TLS 1.3
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/60"><path d="M3 8.5l3.5 3.5 6.5-7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              MFA
+            </span>
+            <span className="text-white/20">|</span>
+            <span>FedRAMP · CJIS · SOC 2</span>
+          </div>
+        </div>
       </footer>
     </div>
   );

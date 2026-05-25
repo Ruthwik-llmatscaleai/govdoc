@@ -14,35 +14,36 @@ export function CapabilityCard({ number, icon: Icon, title, accent, description,
   return (
     <Link
       href={href as any}
-      className="capability-card group relative flex flex-col rounded-lg border-2 border-[var(--color-line)] bg-white p-6 transition-all hover:border-[var(--color-govdoc-primary)] hover:shadow-lg"
+      className="group relative flex flex-col border border-[var(--color-line)] bg-white p-6 transition-all hover:border-[var(--color-govdoc-primary)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)]"
     >
-      <div className="absolute right-6 top-6 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
-        {number}
-      </div>
-
-      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--color-cream)]">
-        <Icon className="h-6 w-6 text-[var(--color-ink)]" />
+      <div className="mb-5 flex items-start justify-between">
+        <div className="flex size-10 items-center justify-center bg-[var(--color-ink)] text-[var(--color-cream)]">
+          <Icon className="size-[18px]" strokeWidth={1.6} />
+        </div>
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
+          {number}
+        </span>
       </div>
 
       <h3
-        className="mb-3 leading-tight tracking-[-0.015em] text-[var(--color-ink)]"
+        className="mb-2 leading-tight tracking-[-0.015em] text-[var(--color-ink)]"
         style={{
           fontFamily: "var(--font-display)",
-          fontSize: "22px",
-          fontWeight: 400,
+          fontSize: "20px",
+          fontWeight: 500,
           fontVariationSettings: '"opsz" 72',
         }}
       >
-        {title}{" "}
+        {title}{title ? " " : ""}
         <em
           className="text-[var(--color-govdoc-primary)]"
-          style={{ fontStyle: "italic", fontWeight: 300 }}
+          style={{ fontStyle: "italic", fontWeight: 400 }}
         >
           {accent}
         </em>
       </h3>
 
-      <p className="text-sm leading-relaxed text-[var(--color-ink-mute)]">{description}</p>
+      <p className="text-[13px] leading-[1.5] text-[var(--color-ink-mute)]">{description}</p>
     </Link>
   );
 }

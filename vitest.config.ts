@@ -8,7 +8,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./tests/setup.ts"],
-    exclude: [...configDefaults.exclude, "tests/smoke/**", "tests/e2e/**"],
+    exclude: [...configDefaults.exclude, "tests/smoke/**", "tests/e2e/**", ".next/**"],
     coverage: {
       provider: "v8",
       thresholds: {

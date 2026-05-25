@@ -60,7 +60,7 @@ if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
   IS_DIRTY=1
 fi
 
-if [[ "$IS_DIRTY" -eq 1 && "$ALLOW_DIRTY" -eq 0 ]]; then
+if [[ "$IS_DIRTY" -eq 1 && "$ALLOW_DIRTY" -eq 0 && "$DRY_RUN" -eq 0 ]]; then
   cat >&2 <<EOF
 ERROR: working tree is dirty. Refusing to deploy.
 

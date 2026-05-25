@@ -12,15 +12,15 @@ export function RecentActivity({ items }: RecentActivityProps) {
       data-testid="recent-activity"
     >
       <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-mute)]">
-          <span className="inline-block h-2 w-2 rounded-full bg-[var(--color-govdoc-primary)]" />
-          Recent Activity · Last 24H
+        <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-ink-mute)]">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#107e54]" />
+          RECENT ACTIVITY - LAST 24H
         </div>
         <Link
           href="/work/audit"
-          className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-govdoc-primary)] hover:underline"
+          className="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-ink-soft)] hover:underline flex items-center gap-1"
         >
-          View All →
+          VIEW ALL →
         </Link>
       </div>
 
@@ -42,17 +42,19 @@ function ActivityItem({ item }: { item: RecentActivityItem }) {
   const timeAgo = formatTimeAgo(item.timestamp);
 
   return (
-    <div className="flex items-start gap-3 text-sm">
+    <div className="flex items-center gap-3">
       <span
-        className="mt-0.5 rounded px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider"
-        style={{ background: badge.bg, color: badge.color }}
+        className="shrink-0 rounded px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider border"
+        style={{ background: badge.bg, color: badge.color, borderColor: badge.border }}
       >
         {item.status}
       </span>
-      <div className="flex-1">
-        <div className="text-[var(--color-ink)]">{item.documentName}</div>
-        <div className="text-xs text-[var(--color-ink-faint)]">{timeAgo}</div>
-      </div>
+      <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-[var(--color-ink)]">
+        {item.documentName}
+      </span>
+      <span className="shrink-0 font-mono text-[10px] text-[var(--color-ink-faint)]">
+        {timeAgo}
+      </span>
     </div>
   );
 }
@@ -60,11 +62,11 @@ function ActivityItem({ item }: { item: RecentActivityItem }) {
 function getBadge(status: string) {
   switch (status) {
     case "PASS":
-      return { bg: "#d1fae5", color: "#065f46" };
+      return { bg: "#e2f9ee", border: "#b2f2d2", color: "#107e54" };
     case "FAIL":
-      return { bg: "#fee2e2", color: "#991b1b" };
+      return { bg: "#fff1f1", border: "#ffd1d1", color: "#c72c2c" };
     default:
-      return { bg: "#fef3c7", color: "#92400e" };
+      return { bg: "#faf4f1", border: "#f4d4ca", color: "#b04a2f" };
   }
 }
 

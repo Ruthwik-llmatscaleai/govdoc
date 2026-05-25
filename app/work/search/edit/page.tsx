@@ -229,8 +229,8 @@ const TOTAL_QUESTIONS = SECTIONS.reduce((sum, s) => sum + s.questions.length, 0)
 
 const TABS = [
   { label: "Manage Project", count: TOTAL_QUESTIONS },
-  { label: "Manage Appraisal", count: 0 },
-  { label: "Manage Narrative", count: 0 },
+  { label: "Manage Appraisal", count: 6 },
+  { label: "Manage Narrative", count: 11 },
 ];
 
 const VERSION_HISTORY = [
@@ -259,8 +259,19 @@ export default function ManageRubricsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-cream)]">
-      <div className="mx-auto max-w-[1200px] px-8 py-10">
+    <div className="relative min-h-full">
+      {/* Subtle grid overlay */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(10,10,10,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(10,10,10,0.03) 1px, transparent 1px)",
+          backgroundSize: "64px 64px",
+        }}
+      />
+
+      <div className="relative z-10">
         {/* Breadcrumbs */}
         <nav className="mb-7 flex items-center gap-2.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
           <Link
@@ -283,7 +294,7 @@ export default function ManageRubricsPage() {
         {/* Section label */}
         <div className="mb-5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-[var(--color-ink-mute)]">
           <span className="mr-2 text-[var(--color-line)]">━━━</span>
-          03&nbsp;&nbsp;RUBRICS&nbsp;&middot;&nbsp;MANAGE
+          01&nbsp;&nbsp;RUBRICS&nbsp;&middot;&nbsp;MANAGE
         </div>
 
         {/* Header row: title + badge + version info */}
@@ -306,7 +317,7 @@ export default function ManageRubricsPage() {
                 Rubrics.
               </em>
             </h1>
-            <p className="max-w-[62ch] text-[15px] leading-[1.6] text-[var(--color-ink-mute)]">
+            <p className="max-w-[62ch] text-[14.5px] leading-[1.6] text-[var(--color-ink-mute)]">
               Build and refine the scoring rubrics GovDoc applies to each review type. Add
               questions, set weights, adjust options &mdash;{" "}
               <strong className="font-semibold text-[var(--color-ink-soft)]">
@@ -318,15 +329,15 @@ export default function ManageRubricsPage() {
 
           <div className="shrink-0 space-y-2 text-right">
             {/* Admin badge */}
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-emerald-700">
-              <span className="text-emerald-500">&#9670;</span>
-              ADMIN&nbsp;&middot;&nbsp;EDIT MODE
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-emerald-700">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              ACTIVE&nbsp;&middot;&nbsp;EDIT MODE
             </span>
             {/* Version info */}
-            <div className="space-y-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)]">
-              <div>EDITING V1.0.0</div>
-              <div>LAST SAVED 09 MAY 2026</div>
-              <div>AUTHOR: JOTHI</div>
+            <div className="space-y-0.5 font-mono text-[9.5px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)]">
+              <div>VERSION: v1.0.0</div>
+              <div>LAST SAVED: 09 MAY 2026</div>
+              <div>STATUS: DRAFT</div>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { getRecentActivity } from "@/lib/bigquery-recent-activity";
 import { TopBar } from "@/components/shell/top-bar";
 import { CapabilityGrid } from "@/components/workspace/capability-grid";
 import { RecentActivity } from "@/components/workspace/recent-activity";
+import { PageFooter } from "@/components/shared/page-footer";
 
 function displayName(user: string): string {
   const head = user.split(/[.@_-]/)[0] ?? user;
@@ -12,12 +13,12 @@ function displayName(user: string): string {
 }
 
 function formatDate(): string {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date());
+  const d = new Date();
+  const weekday = d.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+  const day = d.getDate().toString().padStart(2, "0");
+  const month = d.toLocaleDateString("en-US", { month: "long" }).toUpperCase();
+  const year = d.getFullYear();
+  return `${weekday}, ${day} ${month} ${year}`;
 }
 
 export default async function WorkspacePage() {
@@ -30,15 +31,26 @@ export default async function WorkspacePage() {
   const recentActivity = await getRecentActivity(session.user);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--color-cream)]">
+    <div className="relative flex min-h-screen flex-col bg-[var(--color-cream)]">
+      {/* Subtle grid overlay */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(10,10,10,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(10,10,10,0.03) 1px, transparent 1px)",
+          backgroundSize: "64px 64px",
+        }}
+      />
+
       <TopBar user={session.user} />
 
-      <main className="mx-auto w-full max-w-[1400px] flex-1 px-6 pb-16 pt-10 lg:px-10 lg:pt-14">
+      <main className="relative z-10 mx-auto w-full max-w-[1400px] flex-1 px-6 pb-16 pt-10 lg:px-10 lg:pt-14">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px]">
           <div>
             <header className="mb-8">
-              <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-mute)]">
-                Workspace · {dateStamp}
+              <div className="mb-3 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
+                <span>━━━ WORKSPACE · {dateStamp}</span>
               </div>
               <h1
                 className="leading-[1.02] tracking-[-0.025em] text-[var(--color-ink)]"
@@ -51,23 +63,15 @@ export default async function WorkspacePage() {
               >
                 Welcome back,{" "}
                 <em
-                  className="text-[var(--color-govdoc-primary)]"
+                  className="text-[#b04a2f]"
                   style={{ fontStyle: "italic", fontWeight: 300 }}
                 >
                   {name}.
                 </em>
               </h1>
-              <p
-                className="mt-4 max-w-[600px] leading-relaxed text-[var(--color-ink-soft)]"
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "clamp(16px, 1.5vw, 18px)",
-                  fontWeight: 400,
-                  fontVariationSettings: '"opsz" 72',
-                }}
-              >
-                Pick a capability to run. Each one reads documents, applies policy, and produces an auditable
-                decision — every step cited and traceable.
+              <p className="mt-4 max-w-[600px] text-[15px] leading-[1.6] text-[var(--color-ink-mute)]">
+                Pick a capability to run. Each one reads documents, applies policy, and produces an
+                auditable decision — every step cited and traceable.
               </p>
             </header>
 
@@ -111,24 +115,7 @@ export default async function WorkspacePage() {
         </div>
       </main>
 
-      <footer className="border-t border-[var(--color-line)] bg-[var(--color-paper)]">
-        <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-2 px-6 py-6 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)] md:flex-row md:items-center md:justify-between lg:px-10">
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <span>© 2026 LLM at Scale.AI</span>
-            <Sep />
-            <span>Confidential &amp; Proprietary</span>
-            <Sep />
-            <span>Authorized Use Only</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-            <span>Privacy</span>
-            <span>Terms</span>
-            <span>Section 508</span>
-            <span>Support</span>
-            <span>v 1.0.0</span>
-          </div>
-        </div>
-      </footer>
+      <PageFooter />
     </div>
   );
 }
@@ -147,6 +134,3 @@ function FilterButton({ children, active = false }: { children: React.ReactNode;
   );
 }
 
-function Sep() {
-  return <span aria-hidden className="text-[var(--color-ink-faint)]/60">·</span>;
-}

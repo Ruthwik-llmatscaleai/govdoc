@@ -57,6 +57,38 @@ function formatTime(timestamp: string): string {
   return `${h12}:${m} ${ampm}`;
 }
 
+/** Formats text inside obligations card (bolds action verbs, italicizes durations like 'no less than 7 years') */
+function formatObligationText(text: string): React.ReactNode {
+  const durationPattern = /(no less than \d+ years|no less than \w+ years)/gi;
+  const actionWordsPattern = /\b(retain|maintaining|maintain|preserves|preserve|documenting|document|submitting|submit|publishing|publish|reporting|report|notifying|notify|reviewing|review|auditing|audit|verifying|verify|complying|comply|store|storing|keep|keeping|disclose|disclosing|provide|providing|assess|assessing|evaluation|evaluating|evaluate|implement|implementing|monitoring|monitor|shall|must)\b/gi;
+
+  const parts = text.split(durationPattern);
+  return parts.map((part, i) => {
+    if (i % 2 === 1) {
+      return (
+        <em key={i} className="font-serif italic font-medium text-[var(--color-ink)]">
+          {part}
+        </em>
+      );
+    }
+    const subParts = part.split(actionWordsPattern);
+    return (
+      <span key={i}>
+        {subParts.map((subPart, j) => {
+          if (j % 2 === 1) {
+            return (
+              <strong key={j} className="font-semibold text-[var(--color-ink)]">
+                {subPart}
+              </strong>
+            );
+          }
+          return subPart;
+        })}
+      </span>
+    );
+  });
+}
+
 /** Detect numbered list items in assistant content and render as structured card */
 function extractKeyObligations(content: string): { intro: string; title: string; items: { num: string; text: string }[]; outro: string } | null {
   const lines = content.split("\n");
@@ -66,11 +98,11 @@ function extractKeyObligations(content: string): { intro: string; title: string;
   let lastIdx = -1;
 
   for (let i = 0; i < lines.length; i++) {
-    const match = lines[i].match(numberedPattern);
+    const match = lines[i]!.match(numberedPattern);
     if (match) {
       if (firstIdx === -1) firstIdx = i;
       lastIdx = i;
-      items.push({ num: match[1].padStart(2, "0"), text: match[2].trim() });
+      items.push({ num: match[1]!.padStart(2, "0"), text: match[2]!.trim() });
     }
   }
 
@@ -79,7 +111,7 @@ function extractKeyObligations(content: string): { intro: string; title: string;
   // Find a heading-like line before the list
   let title = "KEY OBLIGATIONS";
   for (let i = firstIdx - 1; i >= Math.max(0, firstIdx - 3); i--) {
-    const line = lines[i].trim();
+    const line = lines[i]!.trim();
     if (line && (line.includes("obligation") || line.includes("Obligation") || line.includes("KEY") || line.toUpperCase() === line) && line.length < 80) {
       title = line.replace(/^[#*\-_]+/, "").trim().toUpperCase();
       break;
@@ -110,6 +142,9 @@ export default function SearchAskPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const [selectedModel, setSelectedModel] = useState("Claude Opus");
+  const [citationsEnabled, setCitationsEnabled] = useState(true);
 
   useEffect(() => {
     async function loadData() {
@@ -319,14 +354,14 @@ export default function SearchAskPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[calc(100vh-140px)] items-center justify-center">
+      <div className="flex h-full items-center justify-center bg-[var(--color-paper)]">
         <div className="size-8 animate-spin rounded-full border-[3px] border-[var(--color-line)] border-t-[var(--color-govdoc-primary)]" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-140px)] overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-paper)] transition-colors">
+    <div className="flex h-full w-full overflow-hidden bg-[var(--color-paper)] transition-colors">
       {/* ─── LEFT SIDEBAR ─── */}
       <aside className="flex w-[220px] flex-col border-r border-[var(--color-line)] bg-[var(--color-cream)]">
         {/* Sidebar header */}
@@ -424,11 +459,22 @@ export default function SearchAskPage() {
       </aside>
 
       {/* ─── MAIN CHAT AREA ─── */}
-      <main className="flex flex-1 flex-col overflow-hidden bg-[var(--color-paper)]">
+      <main className="relative flex flex-1 flex-col overflow-hidden bg-[var(--color-paper)]">
+        {/* Subtle grid overlay */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(10,10,10,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(10,10,10,0.03) 1px, transparent 1px)",
+            backgroundSize: "64px 64px",
+          }}
+        />
+
         {/* Top bar */}
-        <div className="flex items-center justify-between border-b border-[var(--color-line)] px-5 py-2.5">
+        <div className="relative z-10 flex items-center justify-between border-b border-[var(--color-line)] px-5 py-2.5 bg-[var(--color-paper)]">
           <div className="flex items-center gap-3">
-            <span className="rounded-full border border-emerald-700/30 bg-emerald-700/5 px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+            <span className="rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-2.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider text-[var(--color-ink-mute)]">
               02 · Search & Ask
             </span>
             <span className="text-[13px] font-medium text-[var(--color-ink)]">
@@ -436,8 +482,8 @@ export default function SearchAskPage() {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
-              <span className={`size-1.5 rounded-full ${isAnswering ? "animate-pulse bg-emerald-500" : "bg-emerald-600"}`} />
+            <span className="flex items-center gap-1.5 rounded-full border border-[#e8c4b9] bg-[#faf4f1]/60 px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-[#b04a2f]">
+              <span className={`size-1.5 rounded-full bg-[#b04a2f] ${isAnswering ? "animate-pulse" : ""}`} />
               Session Active
             </span>
             <button className="flex size-6 items-center justify-center rounded text-[var(--color-ink-faint)] transition-colors hover:bg-[var(--color-cream)] hover:text-[var(--color-ink)]" title="Share">
@@ -470,7 +516,7 @@ export default function SearchAskPage() {
                 <button
                   key={suggestion}
                   onClick={() => setInputValue(suggestion)}
-                  className="rounded-xl border border-[var(--color-line)] bg-[var(--color-paper)] px-4 py-3 text-left text-[12px] leading-relaxed text-[var(--color-ink-mute)] transition-all hover:-translate-y-0.5 hover:text-[var(--color-ink)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
+                  className="rounded-lg border border-[var(--color-line)] bg-[var(--color-cream-soft)]/50 px-5 py-4 text-left text-[13px] leading-relaxed text-[var(--color-ink-soft)] transition-all hover:border-[var(--color-govdoc-primary)] hover:bg-[var(--color-paper)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
                 >
                   {suggestion}
                 </button>
@@ -508,6 +554,10 @@ export default function SearchAskPage() {
                 fileInputRef={fileInputRef}
                 textareaRef={textareaRef}
                 onQuickAction={handleQuickAction}
+                selectedModel={selectedModel}
+                setSelectedModel={setSelectedModel}
+                citationsEnabled={citationsEnabled}
+                setCitationsEnabled={setCitationsEnabled}
               />
             </div>
           </div>
@@ -519,51 +569,57 @@ export default function SearchAskPage() {
                 {chatHistory.map((msg, i) =>
                   msg.role === "user" ? (
                     /* ─── USER MESSAGE ─── */
-                    <div key={i} className="group flex flex-col items-end">
-                      {/* Name + time */}
-                      <div className="mb-1.5 flex items-center gap-2 pr-1">
-                        <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--color-ink-mute)]">
-                          {USER_NAME}
-                        </span>
-                        <span className="font-mono text-[10px] text-[var(--color-ink-faint)]">
-                          · {formatTime(msg.timestamp)}
-                        </span>
+                    <div key={i} className="group flex items-start gap-3 justify-end">
+                      <div className="flex flex-col items-end">
+                        {/* Name + time */}
+                        <div className="mb-1.5 flex items-center gap-2 pr-1">
+                          <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--color-ink-mute)]">
+                            {USER_NAME}
+                          </span>
+                          <span className="font-mono text-[10px] text-[var(--color-ink-faint)]">
+                            · {formatTime(msg.timestamp)}
+                          </span>
+                        </div>
+                        {editingIdx === i ? (
+                          <div className="flex w-full max-w-[min(80%,56ch)] flex-col gap-2">
+                            <textarea
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="w-full resize-none rounded-2xl border border-[var(--color-govdoc-primary)] bg-[var(--color-paper)] px-4 py-2.5 text-[13px] leading-[1.65] text-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-govdoc-primary)]"
+                              rows={3}
+                              autoFocus
+                              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleEditSubmit(i); } if (e.key === "Escape") handleEditCancel(); }}
+                            />
+                            <div className="flex justify-end gap-1.5">
+                              <button onClick={handleEditCancel} className="rounded-md px-2.5 py-1 text-[11px] text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
+                              <button onClick={() => handleEditSubmit(i)} className="rounded-md bg-[var(--color-govdoc-primary)] px-2.5 py-1 text-[11px] text-white hover:bg-[var(--color-govdoc-deep)]">Send</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-2">
+                            <button
+                              onClick={() => handleEditStart(i, msg.content)}
+                              className="mt-2 flex size-6 shrink-0 items-center justify-center rounded-md text-[var(--color-ink-faint)] opacity-0 transition-opacity hover:bg-[var(--color-cream)] hover:text-[var(--color-ink-mute)] group-hover:opacity-100"
+                              title="Edit message"
+                            >
+                              <Pencil className="size-3" />
+                            </button>
+                            <div className="max-w-[min(80%,56ch)] rounded-2xl rounded-br-sm bg-[#0a0a0a] px-5 py-3 text-[13px] leading-[1.7] text-white">
+                              {msg.content}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      {editingIdx === i ? (
-                        <div className="flex w-full max-w-[min(80%,56ch)] flex-col gap-2">
-                          <textarea
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            className="w-full resize-none rounded-2xl border border-[var(--color-govdoc-primary)] bg-[var(--color-paper)] px-4 py-2.5 text-[13px] leading-[1.65] text-[var(--color-ink)] focus:outline-none focus:ring-1 focus:ring-[var(--color-govdoc-primary)]"
-                            rows={3}
-                            autoFocus
-                            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleEditSubmit(i); } if (e.key === "Escape") handleEditCancel(); }}
-                          />
-                          <div className="flex justify-end gap-1.5">
-                            <button onClick={handleEditCancel} className="rounded-md px-2.5 py-1 text-[11px] text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
-                            <button onClick={() => handleEditSubmit(i)} className="rounded-md bg-[var(--color-govdoc-primary)] px-2.5 py-1 text-[11px] text-white hover:bg-[var(--color-govdoc-deep)]">Send</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-start gap-2">
-                          <button
-                            onClick={() => handleEditStart(i, msg.content)}
-                            className="mt-2 flex size-6 shrink-0 items-center justify-center rounded-md text-[var(--color-ink-faint)] opacity-0 transition-opacity hover:bg-[var(--color-cream)] hover:text-[var(--color-ink-mute)] group-hover:opacity-100"
-                            title="Edit message"
-                          >
-                            <Pencil className="size-3" />
-                          </button>
-                          <div className="max-w-[min(80%,56ch)] rounded-2xl rounded-br-sm bg-[#0a0a0a] px-5 py-3 text-[13px] leading-[1.7] text-white">
-                            {msg.content}
-                          </div>
-                        </div>
-                      )}
+                      {/* Black User avatar */}
+                      <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[#0a0a0a] font-mono text-[11px] font-bold text-white">
+                        {USER_NAME[0]?.toUpperCase() ?? "J"}
+                      </div>
                     </div>
                   ) : (
                     /* ─── ASSISTANT MESSAGE ─── */
                     <div key={i} className="group flex items-start gap-3">
                       {/* Green G avatar */}
-                      <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-700 font-mono text-[11px] font-bold text-white">
+                      <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[#107e54] font-mono text-[11px] font-bold text-white">
                         G
                       </div>
                       <div className="flex-1 text-[13px] leading-[1.7] text-[var(--color-ink)]">
@@ -594,15 +650,15 @@ export default function SearchAskPage() {
                                   </div>
                                 )}
                                 {/* Key obligations card */}
-                                <div className="mb-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-4">
-                                  <div className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--color-ink-mute)]">
+                                <div className="mb-4 rounded-r-lg border border-[var(--color-line)] border-l-4 border-l-[#b04a2f] bg-[var(--color-cream-soft)] p-4">
+                                  <div className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[#b04a2f]">
                                     ━━━ {structured.title}
                                   </div>
                                   <div className="space-y-2.5">
                                     {structured.items.map((item, idx) => (
                                       <div key={idx} className="flex gap-3">
-                                        <span className="shrink-0 font-mono text-[12px] font-bold text-[var(--color-govdoc-primary)]">{item.num}</span>
-                                        <span className="text-[13px] leading-[1.6] text-[var(--color-ink)]">{item.text}</span>
+                                        <span className="shrink-0 font-mono text-[12px] font-bold text-[#b04a2f]">{item.num}</span>
+                                        <span className="text-[13px] leading-[1.65] text-[var(--color-ink)]">{formatObligationText(item.text)}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -676,7 +732,7 @@ export default function SearchAskPage() {
                 {/* Streaming indicator */}
                 {isAnswering && (
                   <div className="flex items-start gap-3">
-                    <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-700 font-mono text-[11px] font-bold text-white">
+                    <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[#107e54] font-mono text-[11px] font-bold text-white">
                       G
                     </div>
                     <div className="flex flex-col gap-2 pt-1">
@@ -738,6 +794,10 @@ export default function SearchAskPage() {
                   fileInputRef={fileInputRef}
                   textareaRef={textareaRef}
                   onQuickAction={handleQuickAction}
+                  selectedModel={selectedModel}
+                  setSelectedModel={setSelectedModel}
+                  citationsEnabled={citationsEnabled}
+                  setCitationsEnabled={setCitationsEnabled}
                 />
               </div>
             </div>
@@ -749,7 +809,7 @@ export default function SearchAskPage() {
 }
 
 /** Renders text content with inline citation references as green pills */
-function ContentWithCitations({ content, sources }: { content: string; sources?: ChatMessage["sources"] }) {
+function ContentWithCitations({ content }: { content: string; sources?: ChatMessage["sources"] }) {
   // Look for citation patterns like [Gov §11130] or [CCR §15.04]
   const citationPattern = /\[([^\]]+)\]/g;
   const parts: (string | { citation: string })[] = [];
@@ -760,7 +820,7 @@ function ContentWithCitations({ content, sources }: { content: string; sources?:
     if (match.index > lastIndex) {
       parts.push(content.slice(lastIndex, match.index));
     }
-    parts.push({ citation: match[1] });
+    parts.push({ citation: match[1]! });
     lastIndex = match.index + match[0].length;
   }
   if (lastIndex < content.length) {
@@ -801,6 +861,10 @@ function InputBox({
   fileInputRef,
   textareaRef,
   onQuickAction,
+  selectedModel,
+  setSelectedModel,
+  citationsEnabled,
+  setCitationsEnabled,
 }: {
   inputValue: string;
   setInputValue: (v: string) => void;
@@ -813,11 +877,15 @@ function InputBox({
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   onQuickAction: (action: string) => void;
+  selectedModel: string;
+  setSelectedModel: (v: string) => void;
+  citationsEnabled: boolean;
+  setCitationsEnabled: (v: boolean) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-paper)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all focus-within:border-[var(--color-govdoc-primary)] focus-within:shadow-[0_0_0_1px_rgba(45,80,22,0.12)]">
+    <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-paper)] shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all focus-within:border-[var(--color-govdoc-primary)] focus-within:shadow-[0_4px_16px_rgba(0,0,0,0.04)] relative z-10">
       {/* Quick action chips */}
-      <div className="flex items-center gap-1.5 border-b border-[var(--color-line)] px-3.5 py-2">
+      <div className="flex items-center gap-2 border-b border-[var(--color-line)] px-4 py-2 bg-[var(--color-cream-soft)]/20">
         {[
           { label: "Summarize", icon: "📝" },
           { label: "Compare", icon: "📊" },
@@ -827,7 +895,7 @@ function InputBox({
           <button
             key={chip.label}
             onClick={() => onQuickAction(chip.label)}
-            className="flex items-center gap-1 rounded-md border border-[var(--color-line)] bg-[var(--color-cream)] px-2 py-1 text-[11px] font-medium text-[var(--color-ink-soft)] transition-colors hover:border-[var(--color-ink-faint)] hover:text-[var(--color-ink)]"
+            className="flex items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-[var(--color-paper)] px-3 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-[var(--color-ink-mute)] transition-all hover:bg-[var(--color-cream-soft)] hover:text-[var(--color-ink)]"
           >
             <span className="text-[10px]">{chip.icon}</span>
             {chip.label}
@@ -905,10 +973,39 @@ function InputBox({
             ↵ SEND · ⇧↵ NEW LINE
           </span>
         </div>
-        <span className="flex items-center gap-1.5 rounded-full bg-emerald-700/10 px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider text-emerald-700">
-          <span className="size-1.5 rounded-full bg-emerald-600" />
-          Claude Opus · Citations On
-        </span>
+        
+        <div className="flex items-center gap-2">
+          {/* Model selector dropdown */}
+          <div className="relative">
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              className="appearance-none cursor-pointer rounded-full border border-emerald-700/20 bg-emerald-700/5 hover:bg-emerald-700/10 px-3 py-1 pr-6 font-mono text-[9px] font-bold uppercase tracking-wider text-emerald-800 focus:outline-none focus:ring-1 focus:ring-emerald-700/30"
+            >
+              <option value="Claude Opus">Claude Opus</option>
+              <option value="Claude Sonnet">Claude Sonnet</option>
+              <option value="GPT-4o">GPT-4o</option>
+              <option value="Gemini Flash">Gemini Flash</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-emerald-800">
+              <svg width="6" height="4" viewBox="0 0 6 4" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 1l2 2 2-2"/></svg>
+            </div>
+          </div>
+
+          {/* Citations toggle */}
+          <button
+            type="button"
+            onClick={() => setCitationsEnabled(!citationsEnabled)}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[9px] font-bold uppercase tracking-wider transition-colors ${
+              citationsEnabled
+                ? "border-emerald-700/20 bg-emerald-700/5 text-emerald-800 hover:bg-emerald-700/10"
+                : "border-[var(--color-line)] bg-[var(--color-cream-soft)] text-[var(--color-ink-faint)] hover:bg-[var(--color-line)]"
+            }`}
+          >
+            <span className={`size-1.5 rounded-full ${citationsEnabled ? "bg-emerald-600" : "bg-[var(--color-ink-faint)]"}`} />
+            Citations: {citationsEnabled ? "On" : "Off"}
+          </button>
+        </div>
       </div>
     </div>
   );
