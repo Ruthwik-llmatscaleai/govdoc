@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { ProcessedDocument } from "@/lib/document-service";
 import type { ChatMessage } from "@/lib/chat-service";
-import { FileText, Send, Paperclip, Plus, X, Square, RotateCcw, Copy, Check, Pencil, Search, Settings, FolderOpen, Mic, FileUp, ThumbsUp } from "lucide-react";
+import { FileText, Send, Paperclip, Plus, X, Square, RotateCcw, Copy, Check, Pencil, Search, Settings, FolderOpen, Mic, FileUp, ThumbsUp, Share2, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const USER_ID = "dev";
+const USER_NAME = "JOTHI";
 
 /** Group messages by relative date */
 function groupByDate(messages: ChatMessage[]): { label: string; messages: ChatMessage[] }[] {
@@ -47,6 +48,50 @@ function timeAgo(timestamp: string): string {
   return `${days}d ago`;
 }
 
+function formatTime(timestamp: string): string {
+  const d = new Date(timestamp);
+  const h = d.getHours();
+  const m = d.getMinutes().toString().padStart(2, "0");
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${m} ${ampm}`;
+}
+
+/** Detect numbered list items in assistant content and render as structured card */
+function extractKeyObligations(content: string): { intro: string; title: string; items: { num: string; text: string }[]; outro: string } | null {
+  const lines = content.split("\n");
+  const numberedPattern = /^\s*(\d+)[.)]\s+(.+)/;
+  const items: { num: string; text: string }[] = [];
+  let firstIdx = -1;
+  let lastIdx = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(numberedPattern);
+    if (match) {
+      if (firstIdx === -1) firstIdx = i;
+      lastIdx = i;
+      items.push({ num: match[1].padStart(2, "0"), text: match[2].trim() });
+    }
+  }
+
+  if (items.length < 2) return null;
+
+  // Find a heading-like line before the list
+  let title = "KEY OBLIGATIONS";
+  for (let i = firstIdx - 1; i >= Math.max(0, firstIdx - 3); i--) {
+    const line = lines[i].trim();
+    if (line && (line.includes("obligation") || line.includes("Obligation") || line.includes("KEY") || line.toUpperCase() === line) && line.length < 80) {
+      title = line.replace(/^[#*\-_]+/, "").trim().toUpperCase();
+      break;
+    }
+  }
+
+  const intro = lines.slice(0, firstIdx).filter((l) => l.trim()).join("\n");
+  const outro = lines.slice(lastIdx + 1).filter((l) => l.trim()).join("\n");
+
+  return { intro, title: `${title} · ${items.length} FOUND`, items, outro };
+}
+
 export default function SearchAskPage() {
   const [documents, setDocuments] = useState<ProcessedDocument[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -59,6 +104,8 @@ export default function SearchAskPage() {
   const [editValue, setEditValue] = useState("");
   const [thinkingPhase, setThinkingPhase] = useState("");
   const [sidebarSearch, setSidebarSearch] = useState("");
+  const [responseTimes, setResponseTimes] = useState<Record<number, number>>({});
+  const [sendTimestamp, setSendTimestamp] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -146,6 +193,7 @@ export default function SearchAskPage() {
     setInputValue("");
     setIsAnswering(true);
     setThinkingPhase("Searching documents...");
+    setSendTimestamp(Date.now());
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -160,6 +208,10 @@ export default function SearchAskPage() {
       });
       const data = await response.json();
       if (data.success) {
+        const elapsed = sendTimestamp ? (Date.now() - (sendTimestamp || Date.now())) / 1000 : 0;
+        const answerIdx = newHistory.length;
+        setResponseTimes((prev) => ({ ...prev, [answerIdx]: elapsed }));
+
         await fetch("/api/storage/save-message", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -184,6 +236,7 @@ export default function SearchAskPage() {
       setIsAnswering(false);
       setThinkingPhase("");
       abortRef.current = null;
+      setSendTimestamp(null);
     }
   };
 
@@ -204,6 +257,7 @@ export default function SearchAskPage() {
       });
       setChatHistory([]);
       setDocuments([]);
+      setResponseTimes({});
     } catch {
       alert("Failed to start new chat.");
     }
@@ -259,6 +313,10 @@ export default function SearchAskPage() {
     : userMessages;
   const groupedHistory = groupByDate(filteredUserMessages);
 
+  const sessionTitle = chatHistory.length > 0
+    ? (chatHistory.find((m) => m.role === "user")?.content.slice(0, 40) || "Chat Session")
+    : "New Session";
+
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-140px)] items-center justify-center">
@@ -269,15 +327,15 @@ export default function SearchAskPage() {
 
   return (
     <div className="flex h-[calc(100vh-140px)] overflow-hidden rounded-xl border border-[var(--color-line)] bg-[var(--color-paper)] transition-colors">
-      {/* Sidebar */}
-      <aside className="flex w-[272px] flex-col border-r border-[var(--color-line)] bg-[var(--color-cream)]">
+      {/* ─── LEFT SIDEBAR ─── */}
+      <aside className="flex w-[220px] flex-col border-r border-[var(--color-line)] bg-[var(--color-cream)]">
         {/* Sidebar header */}
         <div className="flex items-center justify-between border-b border-[var(--color-line)] px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="flex size-6 items-center justify-center rounded bg-[var(--color-govdoc-primary)] font-mono text-[10px] font-bold text-white">
-              Q
+            <div className="flex size-6 items-center justify-center rounded bg-[var(--color-govdoc-primary)] text-white">
+              <Search className="size-3" />
             </div>
-            <span className="font-[var(--font-sans)] text-[13px] font-semibold text-[var(--color-ink)]">Search & Ask</span>
+            <span className="text-[14px] font-semibold text-[var(--color-ink)]">Search & Ask</span>
           </div>
           <button className="flex size-6 items-center justify-center rounded text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-line)]">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M2 7h10M2 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
@@ -333,10 +391,14 @@ export default function SearchAskPage() {
               {group.messages.map((msg, i) => (
                 <div
                   key={`${group.label}-${i}`}
-                  className="mb-0.5 cursor-pointer rounded-md px-3 py-2 transition-colors hover:bg-[var(--color-paper)]"
+                  className={`mb-0.5 cursor-pointer rounded-md px-3 py-2 transition-colors ${
+                    i === 0 && group.label === "TODAY"
+                      ? "bg-[var(--color-cream-soft)]"
+                      : "hover:bg-[var(--color-paper)]"
+                  }`}
                 >
                   <div className="truncate text-[13px] text-[var(--color-ink-soft)]">
-                    {msg.content.slice(0, 36)}{msg.content.length > 36 ? "..." : ""}
+                    {msg.content.slice(0, 32)}{msg.content.length > 32 ? "..." : ""}
                   </div>
                   <div className="mt-0.5 font-mono text-[10px] text-[var(--color-ink-faint)]">
                     {timeAgo(msg.timestamp)}
@@ -361,40 +423,36 @@ export default function SearchAskPage() {
         </div>
       </aside>
 
-      {/* Main */}
+      {/* ─── MAIN CHAT AREA ─── */}
       <main className="flex flex-1 flex-col overflow-hidden bg-[var(--color-paper)]">
-        {/* Top header bar */}
+        {/* Top bar */}
         <div className="flex items-center justify-between border-b border-[var(--color-line)] px-5 py-2.5">
           <div className="flex items-center gap-3">
-            <span className="rounded-full bg-emerald-700/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+            <span className="rounded-full border border-emerald-700/30 bg-emerald-700/5 px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
               02 · Search & Ask
             </span>
             <span className="text-[13px] font-medium text-[var(--color-ink)]">
-              {chatHistory.length > 0
-                ? (chatHistory.find((m) => m.role === "user")?.content.slice(0, 40) || "Chat Session")
-                : "New Session"}
+              {sessionTitle}
             </span>
           </div>
           <div className="flex items-center gap-3">
-            {isAnswering && (
-              <span className="flex items-center gap-1.5 rounded-full bg-emerald-700/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
-                <span className="size-1.5 animate-pulse rounded-full bg-emerald-600" />
-                Session Active
-              </span>
-            )}
-            {!isAnswering && chatHistory.length > 0 && (
-              <span className="flex items-center gap-1.5 rounded-full bg-[var(--color-cream)] px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--color-ink-mute)]">
-                <span className="size-1.5 rounded-full bg-[var(--color-ink-faint)]" />
-                Session Idle
-              </span>
-            )}
+            <span className="flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+              <span className={`size-1.5 rounded-full ${isAnswering ? "animate-pulse bg-emerald-500" : "bg-emerald-600"}`} />
+              Session Active
+            </span>
+            <button className="flex size-6 items-center justify-center rounded text-[var(--color-ink-faint)] transition-colors hover:bg-[var(--color-cream)] hover:text-[var(--color-ink)]" title="Share">
+              <Share2 className="size-3.5" />
+            </button>
+            <button className="flex size-6 items-center justify-center rounded text-[var(--color-ink-faint)] transition-colors hover:bg-[var(--color-cream)] hover:text-[var(--color-ink)]" title="Download">
+              <Download className="size-3.5" />
+            </button>
           </div>
         </div>
 
         {chatHistory.length === 0 ? (
-          /* Empty state */
+          /* ─── EMPTY STATE ─── */
           <div className="flex flex-1 flex-col items-center justify-center px-4">
-            <h1 className="mb-1 font-[var(--font-display)] text-2xl font-semibold tracking-tight text-[var(--color-ink)]">
+            <h1 className="mb-1 text-2xl font-semibold tracking-tight text-[var(--color-ink)]" style={{ fontFamily: "var(--font-display)" }}>
               What can I help with?
             </h1>
             <p className="mb-8 text-[13px] text-[var(--color-ink-mute)]">
@@ -454,13 +512,23 @@ export default function SearchAskPage() {
             </div>
           </div>
         ) : (
-          /* Conversation active */
+          /* ─── CONVERSATION ACTIVE ─── */
           <>
             <div className="flex-1 overflow-y-auto">
-              <div className="mx-auto flex w-full max-w-[720px] flex-col gap-6 px-4 py-8">
+              <div className="mx-auto flex w-full max-w-[760px] flex-col gap-8 px-4 py-8">
                 {chatHistory.map((msg, i) =>
                   msg.role === "user" ? (
-                    <div key={i} className="group flex justify-end gap-2">
+                    /* ─── USER MESSAGE ─── */
+                    <div key={i} className="group flex flex-col items-end">
+                      {/* Name + time */}
+                      <div className="mb-1.5 flex items-center gap-2 pr-1">
+                        <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--color-ink-mute)]">
+                          {USER_NAME}
+                        </span>
+                        <span className="font-mono text-[10px] text-[var(--color-ink-faint)]">
+                          · {formatTime(msg.timestamp)}
+                        </span>
+                      </div>
                       {editingIdx === i ? (
                         <div className="flex w-full max-w-[min(80%,56ch)] flex-col gap-2">
                           <textarea
@@ -477,56 +545,99 @@ export default function SearchAskPage() {
                           </div>
                         </div>
                       ) : (
-                        <>
+                        <div className="flex items-start gap-2">
                           <button
                             onClick={() => handleEditStart(i, msg.content)}
-                            className="flex size-6 shrink-0 items-center justify-center self-center rounded-md text-[var(--color-ink-faint)] opacity-0 transition-opacity hover:bg-[var(--color-cream)] hover:text-[var(--color-ink-mute)] group-hover:opacity-100"
+                            className="mt-2 flex size-6 shrink-0 items-center justify-center rounded-md text-[var(--color-ink-faint)] opacity-0 transition-opacity hover:bg-[var(--color-cream)] hover:text-[var(--color-ink-mute)] group-hover:opacity-100"
                             title="Edit message"
                           >
                             <Pencil className="size-3" />
                           </button>
-                          <div className="max-w-[min(80%,56ch)] rounded-2xl rounded-br-sm bg-[var(--color-ink)] px-4 py-2.5 text-[13px] leading-[1.65] text-white">
-                            <div className="mb-1 flex items-center justify-between">
-                              <span className="font-mono text-[9px] font-semibold uppercase tracking-wider text-white/60">You</span>
-                              <span className="font-mono text-[9px] text-white/40">{timeAgo(msg.timestamp)}</span>
-                            </div>
+                          <div className="max-w-[min(80%,56ch)] rounded-2xl rounded-br-sm bg-[#0a0a0a] px-5 py-3 text-[13px] leading-[1.7] text-white">
                             {msg.content}
                           </div>
-                        </>
+                        </div>
                       )}
                     </div>
                   ) : (
+                    /* ─── ASSISTANT MESSAGE ─── */
                     <div key={i} className="group flex items-start gap-3">
+                      {/* Green G avatar */}
                       <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-700 font-mono text-[11px] font-bold text-white">
                         G
                       </div>
-                      <div className="flex-1 text-[13px] leading-[1.65] text-[var(--color-ink)]">
-                        {/* Assistant header */}
-                        <div className="mb-1.5 flex items-center gap-2">
+                      <div className="flex-1 text-[13px] leading-[1.7] text-[var(--color-ink)]">
+                        {/* Assistant header: name + time + response time */}
+                        <div className="mb-2 flex items-center gap-2">
                           <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--color-ink-mute)]">GovDoc</span>
-                          <span className="font-mono text-[10px] text-[var(--color-ink-faint)]">{timeAgo(msg.timestamp)}</span>
+                          <span className="font-mono text-[10px] text-[var(--color-ink-faint)]">· {formatTime(msg.timestamp)}</span>
+                          {responseTimes[i] != null && (
+                            <span className="font-mono text-[10px] text-[var(--color-ink-faint)]">
+                              · Answered in {responseTimes[i].toFixed(1)}s
+                            </span>
+                          )}
+                          {isAnswering && i === chatHistory.length - 1 && (
+                            <span className="font-mono text-[10px] text-emerald-600">· Streaming</span>
+                          )}
                         </div>
-                        <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:mb-1 prose-headings:mt-3 prose-headings:text-[var(--color-ink)] prose-code:rounded prose-code:bg-[var(--color-cream)] prose-code:px-1 prose-code:py-0.5 prose-code:text-[12px] prose-pre:rounded-lg prose-pre:bg-[var(--color-cream)]">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                        </div>
+
+                        {/* Content: try structured format first */}
+                        {(() => {
+                          const structured = extractKeyObligations(msg.content);
+                          if (structured) {
+                            return (
+                              <div>
+                                {/* Intro text with inline citations */}
+                                {structured.intro && (
+                                  <div className="mb-4">
+                                    <ContentWithCitations content={structured.intro} sources={msg.sources} />
+                                  </div>
+                                )}
+                                {/* Key obligations card */}
+                                <div className="mb-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-cream-soft)] p-4">
+                                  <div className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--color-ink-mute)]">
+                                    ━━━ {structured.title}
+                                  </div>
+                                  <div className="space-y-2.5">
+                                    {structured.items.map((item, idx) => (
+                                      <div key={idx} className="flex gap-3">
+                                        <span className="shrink-0 font-mono text-[12px] font-bold text-[var(--color-govdoc-primary)]">{item.num}</span>
+                                        <span className="text-[13px] leading-[1.6] text-[var(--color-ink)]">{item.text}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                {/* Outro text */}
+                                {structured.outro && (
+                                  <div>
+                                    <ContentWithCitations content={structured.outro} sources={msg.sources} />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                          // Fallback: markdown rendering
+                          return (
+                            <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:mb-1 prose-headings:mt-3 prose-headings:text-[var(--color-ink)] prose-code:rounded prose-code:bg-[var(--color-cream)] prose-code:px-1 prose-code:py-0.5 prose-code:text-[12px] prose-pre:rounded-lg prose-pre:bg-[var(--color-cream)]">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                            </div>
+                          );
+                        })()}
+
                         {/* Citation pills */}
                         {msg.sources && msg.sources.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-1.5">
                             {msg.sources.map((source, si) => (
-                              <span key={si} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-800 px-2.5 py-1 text-[11px] font-medium text-white">
+                              <span key={si} className="inline-flex items-center gap-1 rounded-full bg-emerald-800/90 px-2.5 py-0.5 text-[10px] font-medium text-white">
                                 <FileText className="size-2.5" />
                                 {source.documentName} · p.{source.chunkIndex + 1}
                               </span>
                             ))}
                           </div>
                         )}
-                        {/* Source count + action buttons */}
-                        <div className="mt-2.5 flex items-center gap-2">
-                          {msg.sources && msg.sources.length > 0 && (
-                            <span className="font-mono text-[10px] text-[var(--color-ink-faint)]">
-                              {msg.sources.length} source{msg.sources.length !== 1 ? "s" : ""} cited · audit-logged
-                            </span>
-                          )}
+
+                        {/* Action buttons + source count */}
+                        <div className="mt-3 flex items-center gap-3">
                           <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                             <button
                               onClick={() => handleCopy(msg.content, i)}
@@ -551,18 +662,28 @@ export default function SearchAskPage() {
                               <ThumbsUp className="size-3" />
                             </button>
                           </div>
+                          {msg.sources && msg.sources.length > 0 && (
+                            <span className="font-mono text-[10px] text-[var(--color-ink-faint)]">
+                              {msg.sources.length} source{msg.sources.length !== 1 ? "s" : ""} cited · audit-logged
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
                   ),
                 )}
 
+                {/* Streaming indicator */}
                 {isAnswering && (
                   <div className="flex items-start gap-3">
                     <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-700 font-mono text-[11px] font-bold text-white">
                       G
                     </div>
                     <div className="flex flex-col gap-2 pt-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[var(--color-ink-mute)]">GovDoc</span>
+                        <span className="font-mono text-[10px] text-emerald-600">· Streaming</span>
+                      </div>
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5">
                           <div className="size-1.5 animate-pulse rounded-full bg-emerald-600" />
@@ -585,9 +706,9 @@ export default function SearchAskPage() {
               </div>
             </div>
 
-            {/* Bottom input */}
+            {/* ─── BOTTOM INPUT AREA ─── */}
             <div className="border-t border-[var(--color-line)] bg-[var(--color-paper)] px-4 py-3">
-              <div className="mx-auto w-full max-w-[720px]">
+              <div className="mx-auto w-full max-w-[760px]">
                 {documents.length > 0 && (
                   <div className="mb-3 flex flex-wrap gap-2">
                     {documents.map((doc) => {
@@ -624,6 +745,47 @@ export default function SearchAskPage() {
         )}
       </main>
     </div>
+  );
+}
+
+/** Renders text content with inline citation references as green pills */
+function ContentWithCitations({ content, sources }: { content: string; sources?: ChatMessage["sources"] }) {
+  // Look for citation patterns like [Gov §11130] or [CCR §15.04]
+  const citationPattern = /\[([^\]]+)\]/g;
+  const parts: (string | { citation: string })[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = citationPattern.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(content.slice(lastIndex, match.index));
+    }
+    parts.push({ citation: match[1] });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < content.length) {
+    parts.push(content.slice(lastIndex));
+  }
+
+  if (parts.length === 0) {
+    return <span>{content}</span>;
+  }
+
+  return (
+    <span>
+      {parts.map((part, i) =>
+        typeof part === "string" ? (
+          <span key={i}>{part}</span>
+        ) : (
+          <span
+            key={i}
+            className="mx-0.5 inline-flex items-center rounded-full bg-emerald-800/90 px-2 py-0.5 text-[10px] font-medium text-white"
+          >
+            {part.citation}
+          </span>
+        ),
+      )}
+    </span>
   );
 }
 
