@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/features/auth/mock-session";
-import { getUseCase } from "@/lib/usecases/registry";
+import { getUseCase } from "@/features/usecases/registry";
 import { sseStream } from "@/lib/sse/stream";
 import { makeLlmRouter } from "@/lib/llm/router";
-import type { StepContext, StepEvent } from "@/lib/usecases/types";
+import type { StepContext, StepEvent } from "@/features/usecases/types";
 import { logger } from "@/lib/logger";
-import { EMPTY_PRECEDENTS } from "@/lib/usecases/cucp-reevals/memory/precedents";
-import { getDefaultRubricId, loadRubric } from "@/lib/usecases/rubrics-store";
+import { EMPTY_PRECEDENTS } from "@/features/usecases/cucp-reevals/memory/precedents";
+import { getDefaultRubricId, loadRubric } from "@/features/rubrics/store";
 
 function getCookie(req: Request, name: string): string | undefined {
   const cookie = req.headers.get("cookie") ?? "";

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { StepEvent, HumanInput } from "@/lib/usecases/types";
+import type { StepEvent, HumanInput } from "@/features/usecases/types";
 
 type StageState = {
   id: string;

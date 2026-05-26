@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/features/auth/mock-session";
 import { resolveLevelDecision } from "@/lib/runs/level-rendezvous";
-import type { L2OverridePayload, L3OverridePayload } from "@/lib/usecases/cucp-reevals/memory/staged";
+import type { L2OverridePayload, L3OverridePayload } from "@/features/usecases/cucp-reevals/memory/staged";
 
 function getCookie(req: Request, name: string): string | undefined {
   const cookie = req.headers.get("cookie") ?? "";

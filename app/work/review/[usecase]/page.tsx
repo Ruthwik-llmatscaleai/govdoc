@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { usePipelineStore } from "@/store/use-pipeline";
-import { getUseCaseMetadata } from "@/lib/usecases/metadata";
+import { getUseCaseMetadata } from "@/features/usecases/metadata";
 import {
   WorkBreadcrumbs,
   WorkCard,
@@ -30,13 +30,13 @@ import { ScoreTable } from "@/components/work/cmgc/score-table";
 import { CmgcRubricView } from "@/components/work/rubric/cmgc-rubric-view";
 import { RubricPreviewSlideDown } from "@/components/work/rubric/rubric-preview-slide-down";
 import { RubricSelectorInline, type RubricSelection } from "@/components/work/rubric/rubric-selector-card";
-import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
-import type { UseCaseId } from "@/lib/usecases/types";
+import type { CmgcRubricData } from "@/features/usecases/cmgc-pde/rubric-data";
+import type { UseCaseId } from "@/features/usecases/types";
 import { RecommendationCard } from "@/components/work/cmgc/recommendation-card";
 import { MethodRanking } from "@/components/work/cmgc/method-ranking";
 import { HiflWizard, type HiflOverrideEntry } from "@/components/work/cmgc/hifl-wizard";
 import type { OverrideCardQuestion } from "@/components/work/cmgc/override-card";
-import { RUBRIC_QUESTIONS } from "@/lib/usecases/cmgc-pde/rubric";
+import { RUBRIC_QUESTIONS } from "@/features/usecases/cmgc-pde/rubric";
 import { useOverridesStore } from "@/store/use-overrides";
 import { InputsForm as CucpInputsForm } from "@/components/work/cucp/inputs-form";
 import { CucpStepper } from "@/components/work/cucp/cucp-stepper";
@@ -44,10 +44,10 @@ import { ReportView } from "@/components/work/cucp/report-view";
 import type { L2Row } from "@/components/work/cucp/l2-classifications-table";
 import { InputsForm as RowInputsForm } from "@/components/work/row/inputs-form";
 import { RowResultTabs } from "@/components/work/row/result-tabs";
-import { composeCmgcResult } from "@/lib/usecases/cmgc-pde/compose-result";
-import { composeCmgcReport } from "@/lib/usecases/cmgc-pde/compose-report";
-import type { Level1Data, Level2Data, Level3Data } from "@/lib/usecases/cucp-reevals/types";
-import type { RowRunResult } from "@/lib/usecases/row-appraisal/types";
+import { composeCmgcResult } from "@/features/usecases/cmgc-pde/compose-result";
+import { composeCmgcReport } from "@/features/usecases/cmgc-pde/compose-report";
+import type { Level1Data, Level2Data, Level3Data } from "@/features/usecases/cucp-reevals/types";
+import type { RowRunResult } from "@/features/usecases/row-appraisal/types";
 
 type RouteParams = { usecase: string };
 

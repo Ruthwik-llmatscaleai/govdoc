@@ -1,4 +1,4 @@
-import type { MultiMethodResult } from "@/lib/usecases/cmgc-pde/types";
+import type { MultiMethodResult } from "@/features/usecases/cmgc-pde/types";
 
 type Props = { multiMethod: MultiMethodResult };
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/features/auth/mock-session";
-import { loadPrecedents, deletePrecedent } from "@/lib/usecases/cucp-reevals/memory/store";
-import type { Level } from "@/lib/usecases/cucp-reevals/memory/precedents";
+import { loadPrecedents, deletePrecedent } from "@/features/usecases/cucp-reevals/memory/store";
+import type { Level } from "@/features/usecases/cucp-reevals/memory/precedents";
 
 function getCookie(req: Request, name: string): string | undefined {
   const cookie = req.headers.get("cookie") ?? "";

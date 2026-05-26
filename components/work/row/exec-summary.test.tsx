@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ExecSummary } from "./exec-summary";
-import type { EvaluationResult } from "@/lib/usecases/row-appraisal/types";
+import type { EvaluationResult } from "@/features/usecases/row-appraisal/types";
 
 function r(category: string, score: number, comments = "Comments"): EvaluationResult {
   return {

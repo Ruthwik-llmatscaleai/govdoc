@@ -1,6 +1,6 @@
 "use client";
-import type { EvaluationResult } from "@/lib/usecases/row-appraisal/types";
-import rubricSchema from "@/lib/usecases/row-appraisal/assets/rubric_schema.json";
+import type { EvaluationResult } from "@/features/usecases/row-appraisal/types";
+import rubricSchema from "@/features/usecases/row-appraisal/assets/rubric_schema.json";
 import { STATUS_TONE } from "./status-tone";
 
 type RuleStatus = "Pass" | "Fail" | "N/A";

@@ -3,9 +3,14 @@ import { AppLogo } from "@/components/brand/app-logo";
 
 interface PageHeaderProps {
   showAuth?: boolean;
+  variant?: "landing" | "app";
 }
 
-export function PageHeader({ showAuth = true }: PageHeaderProps) {
+export function PageHeader({ showAuth = true, variant = "landing" }: PageHeaderProps) {
+  const headerStyles = variant === "landing"
+    ? "sticky top-0 z-50 border-b border-[#d8d0bc] bg-[#efeadd]"
+    : "flex w-full items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-paper)] px-8 py-3";
+
   return (
     <>
       {/* Top Banner */}
@@ -16,8 +21,9 @@ export function PageHeader({ showAuth = true }: PageHeaderProps) {
       </div>
 
       {/* Header Bar */}
-      <header className="sticky top-0 z-50 border-b border-[#d8d0bc] bg-[#efeadd]">
-        <div className="mx-auto flex h-20 max-w-[1400px] items-center justify-between px-6 lg:px-10 lg:pr-4">
+      <header className={headerStyles}>
+        {variant === "landing" ? (
+          <div className="mx-auto flex h-20 max-w-[1400px] items-center justify-between px-6 lg:px-10 lg:pr-4">
           {/* Left: Logo + Title */}
           <div className="flex items-center gap-4">
             <AppLogo size={50} />
@@ -64,6 +70,18 @@ export function PageHeader({ showAuth = true }: PageHeaderProps) {
             </div>
           )}
         </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <AppLogo size={32} />
+            <span className="text-[var(--color-govdoc-primary)]">◆</span>
+            <span
+              className="text-[18px] tracking-[-0.01em] text-[var(--color-ink)]"
+              style={{ fontFamily: "var(--font-display)", fontWeight: 400, fontVariationSettings: '"opsz" 96' }}
+            >
+              Policy Compliance · Agentic AI
+            </span>
+          </div>
+        )}
       </header>
     </>
   );

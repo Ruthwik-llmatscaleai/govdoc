@@ -5,10 +5,10 @@ import { CmgcRubricEdit } from "./cmgc-rubric-edit";
 import { CucpRubricEdit } from "./cucp-rubric-edit";
 import { RowRubricEdit } from "./row-rubric-edit";
 import { EditTabContent } from "./edit-tab-content";
-import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
-import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-data";
-import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-data";
-import type { RubricsManifestEntry } from "@/lib/usecases/rubrics-store";
+import type { CmgcRubricData } from "@/features/usecases/cmgc-pde/rubric-data";
+import type { CucpRubricData } from "@/features/usecases/cucp-reevals/rubric-data";
+import type { RowRubricData } from "@/features/usecases/row-appraisal/rubric-data";
+import type { RubricsManifestEntry } from "@/features/rubrics/store";
 
 type TabValue = "cmgc-pde" | "row-appraisal" | "cucp-reevals";
 

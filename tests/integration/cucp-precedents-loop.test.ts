@@ -4,11 +4,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { level2Step } from "@/lib/usecases/cucp-reevals/pipeline/level-2-step";
-import { __setStoreRootForTests } from "@/lib/usecases/cucp-reevals/memory/store";
+import { level2Step } from "@/features/usecases/cucp-reevals/pipeline/level-2-step";
+import { __setStoreRootForTests } from "@/features/usecases/cucp-reevals/memory/store";
 import { resolveLevelDecision, __clearLevelRendezvous } from "@/lib/runs/level-rendezvous";
-import type { StepContext, StepEvent } from "@/lib/usecases/types";
-import { EMPTY_PRECEDENTS } from "@/lib/usecases/cucp-reevals/memory/precedents";
+import type { StepContext, StepEvent } from "@/features/usecases/types";
+import { EMPTY_PRECEDENTS } from "@/features/usecases/cucp-reevals/memory/precedents";
 
 let root: string;
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ScoreSummary } from "./score-summary";
-import type { EvaluationResult } from "@/lib/usecases/row-appraisal/types";
+import type { EvaluationResult } from "@/features/usecases/row-appraisal/types";
 
 function makeResult(status: EvaluationResult["status"], score: number): EvaluationResult {
   return { category: "Test", score, criteria_met: "", evidence: "", status, comments: "" };

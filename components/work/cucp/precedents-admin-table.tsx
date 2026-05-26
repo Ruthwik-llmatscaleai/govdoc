@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import type { Level, Precedent } from "@/lib/usecases/cucp-reevals/memory/precedents";
+import type { Level, Precedent } from "@/features/usecases/cucp-reevals/memory/precedents";
 
 export function PrecedentsAdminTable({
   level,

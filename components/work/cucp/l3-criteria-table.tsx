@@ -1,7 +1,7 @@
 "use client";
 import { cn } from "@/lib/utils";
 import { STATUS_TONE, type RowStatus } from "../row/status-tone";
-import type { Criterion } from "@/lib/usecases/cucp-reevals/types";
+import type { Criterion } from "@/features/usecases/cucp-reevals/types";
 
 export type L3OverrideMap = Record<
   string,

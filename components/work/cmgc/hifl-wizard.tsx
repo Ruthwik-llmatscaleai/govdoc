@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { StepBar } from "@/components/work/shared/step-bar";
 import { OverrideCard } from "./override-card";
 import type { OverrideCardQuestion } from "./override-card";
-import type { Rating } from "@/lib/usecases/cmgc-pde/rubric";
+import type { Rating } from "@/features/usecases/cmgc-pde/rubric";
 import { ReportView } from "@/components/work/cucp/report-view";
 
 export type HiflOverrideEntry = {

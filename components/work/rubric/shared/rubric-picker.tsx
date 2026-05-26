@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import type { RubricsManifestEntry } from "@/lib/usecases/rubrics-store";
+import type { RubricsManifestEntry } from "@/features/rubrics/store";
 
 type Props = {
   rubrics: readonly RubricsManifestEntry[];

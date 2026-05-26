@@ -9,8 +9,8 @@ import {
   __setStoreRootForTests,
   commitStagedPrecedents,
   loadPrecedents,
-} from "@/lib/usecases/cucp-reevals/memory/store";
-import type { PrecedentsByLevel } from "@/lib/usecases/cucp-reevals/memory/precedents";
+} from "@/features/usecases/cucp-reevals/memory/store";
+import type { PrecedentsByLevel } from "@/features/usecases/cucp-reevals/memory/precedents";
 
 let root: string;
 

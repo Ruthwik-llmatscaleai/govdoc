@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { ComponentType } from "react";
-import type { RubricsManifestEntry } from "@/lib/usecases/rubrics-store";
+import type { RubricsManifestEntry } from "@/features/rubrics/store";
 import { RubricPicker } from "./shared/rubric-picker";
 import { CreateRubricDialog, type CreateRubricInput } from "./shared/create-rubric-dialog";
 import { ConfirmDialog, type ConfirmRequest } from "./shared/confirm-dialog";

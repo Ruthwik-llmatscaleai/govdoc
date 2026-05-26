@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, CheckCircle2, HardHat, MapPin } from "lucide-react";
-import { USE_CASES_BY_TILE } from "@/lib/usecases/registry";
-import type { UseCaseId } from "@/lib/usecases/types";
+import { USE_CASES_BY_TILE } from "@/features/usecases/registry";
+import type { UseCaseId } from "@/features/usecases/types";
 import { WorkBreadcrumbs, WorkPageHeader } from "@/components/work/page-shell";
 import { USE_CASE_FAMILY } from "@/components/work/use-case-tone";
 

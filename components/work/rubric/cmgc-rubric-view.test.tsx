@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { CmgcRubricView } from "./cmgc-rubric-view";
-import { RUBRIC_QUESTIONS, SECTION_WEIGHTS } from "@/lib/usecases/cmgc-pde/rubric";
+import { RUBRIC_QUESTIONS, SECTION_WEIGHTS } from "@/features/usecases/cmgc-pde/rubric";
 
 describe("CmgcRubricView", () => {
   it("renders one section header per distinct section in the rubric", () => {

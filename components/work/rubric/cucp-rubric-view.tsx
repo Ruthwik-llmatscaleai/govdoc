@@ -1,7 +1,7 @@
 "use client";
-import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-data";
-import { defaultCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-data";
-import type { CucpL3Criterion } from "@/lib/usecases/cucp-reevals/rubric";
+import type { CucpRubricData } from "@/features/usecases/cucp-reevals/rubric-data";
+import { defaultCucpRubric } from "@/features/usecases/cucp-reevals/rubric-data";
+import type { CucpL3Criterion } from "@/features/usecases/cucp-reevals/rubric";
 import { RubricShell } from "./shared/rubric-shell";
 import { RubricSection } from "./shared/rubric-section";
 

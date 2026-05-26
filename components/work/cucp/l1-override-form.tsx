@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import type { ExtractedFact, L1FactField, L1Override } from "@/lib/usecases/cucp-reevals/types";
+import type { ExtractedFact, L1FactField, L1Override } from "@/features/usecases/cucp-reevals/types";
 
 const FIELDS: readonly L1FactField[] = ["When", "Where", "Who", "What", "Why", "Magnitude"];
 const NON_FACT_TARGETS = ["Firm Name", "Narrative Declared PNW", "Specific Incident Detail"] as const;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { L1FactsTable } from "./l1-facts-table";
-import type { ExtractedFact } from "@/lib/usecases/cucp-reevals/types";
+import type { ExtractedFact } from "@/features/usecases/cucp-reevals/types";
 
 const facts: ExtractedFact[] = [
   {

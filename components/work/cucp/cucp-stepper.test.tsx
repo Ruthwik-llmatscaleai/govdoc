@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { CucpStepper } from "./cucp-stepper";
-import type { ExtractedFact, Criterion } from "@/lib/usecases/cucp-reevals/types";
+import type { ExtractedFact, Criterion } from "@/features/usecases/cucp-reevals/types";
 
 const facts: ExtractedFact[] = [
   {

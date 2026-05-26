@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { RowResultTabs } from "./result-tabs";
-import type { EvaluationResult } from "@/lib/usecases/row-appraisal/types";
+import type { EvaluationResult } from "@/features/usecases/row-appraisal/types";
 
 const resultsWithFailure: EvaluationResult[] = [
   { category: "Title Page", score: 5, status: "✅ Pass", criteria_met: "", evidence: "", comments: "ok" },

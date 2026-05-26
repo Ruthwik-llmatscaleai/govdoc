@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { RecommendationCard } from "./recommendation-card";
-import { mockRunResult } from "@/lib/usecases/cmgc-pde/scoring/fixtures";
+import { mockRunResult } from "@/features/usecases/cmgc-pde/scoring/fixtures";
 
 describe("RecommendationCard", () => {
   it("displays the recommended method as a heading", () => {

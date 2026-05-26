@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MethodRanking } from "./method-ranking";
-import { mockRunResult } from "@/lib/usecases/cmgc-pde/scoring/fixtures";
+import { mockRunResult } from "@/features/usecases/cmgc-pde/scoring/fixtures";
 
 describe("MethodRanking", () => {
   it("renders all 6 methods", () => {

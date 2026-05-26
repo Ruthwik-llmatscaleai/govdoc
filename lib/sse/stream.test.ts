@@ -2,7 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { sseStream } from "./stream";
 import { collectSseEvents } from "@/tests/utils/sse";
-import type { StepEvent } from "@/lib/usecases/types";
+import type { StepEvent } from "@/features/usecases/types";
 
 describe("sseStream", () => {
   it("streams generator events as text/event-stream", async () => {

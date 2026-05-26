@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import type { Rating } from "@/lib/usecases/cmgc-pde/rubric";
+import type { Rating } from "@/features/usecases/cmgc-pde/rubric";
 
 export type OverrideCardQuestion = {
   question_id: string;

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-data";
-import { defaultRowRubric } from "@/lib/usecases/row-appraisal/rubric-data";
+import type { RowRubricData } from "@/features/usecases/row-appraisal/rubric-data";
+import { defaultRowRubric } from "@/features/usecases/row-appraisal/rubric-data";
 import { RubricShell } from "./shared/rubric-shell";
 import { RubricSection } from "./shared/rubric-section";
 import { RubricEditorCard, type EditorField } from "./shared/rubric-editor-card";

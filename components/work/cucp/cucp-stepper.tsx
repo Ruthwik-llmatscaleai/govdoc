@@ -13,7 +13,7 @@ import { L3CriteriaTable } from "./l3-criteria-table";
 import { L3OverrideForm, type L3OverridePayload } from "./l3-override-form";
 import { L1OverrideForm } from "./l1-override-form";
 import { RequestInfoBanner } from "./request-info-banner";
-import type { ExtractedFact, Criterion, L1Override } from "@/lib/usecases/cucp-reevals/types";
+import type { ExtractedFact, Criterion, L1Override } from "@/features/usecases/cucp-reevals/types";
 
 type StepId = "l1" | "l2" | "l3" | "done";
 

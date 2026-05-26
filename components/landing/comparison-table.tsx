@@ -1,7 +1,7 @@
 export function ComparisonTable() {
   return (
     <section className="px-6 py-16 lg:px-10 lg:py-20">
-      <div className="ml-[3%] max-w-[900px] lg:ml-[3.5%]">
+      <div className="ml-[3%] mr-[3%] max-w-[900px] lg:ml-[3.5%] lg:mr-[3.5%]">
         <div className="rounded-[13px] border border-[#d8d0bc] bg-[#f7f2e5] px-8 py-10 shadow-[0_1px_0_rgba(255,255,255,0.55)_inset,0_7px_18px_rgba(26,29,24,0.04)] lg:px-14 lg:py-14">
           {/* Section label */}
           <div className="mb-6 font-mono text-[9px] font-extrabold uppercase tracking-[0.45em] text-[#8c8b7d]">

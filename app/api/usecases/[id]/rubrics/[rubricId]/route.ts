@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/features/auth/mock-session";
-import { deleteRubric, listRubrics } from "@/lib/usecases/rubrics-store";
+import { deleteRubric, listRubrics } from "@/features/rubrics/store";
 
 const KNOWN_IDS = new Set(["cmgc-pde", "cucp-reevals", "row-appraisal"]);
 

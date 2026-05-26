@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { isValidVersionId, computeNextVersionId, type VersionBump } from "@/lib/usecases/version-id";
+import { isValidVersionId, computeNextVersionId, type VersionBump } from "@/features/rubrics/version";
 
 export type SaveMode = "new" | "overwrite";
 

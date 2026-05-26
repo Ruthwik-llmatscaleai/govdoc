@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/features/auth/mock-session";
-import { loadCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-merged";
-import { loadCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-merged";
-import { loadRowRubric } from "@/lib/usecases/row-appraisal/rubric-merged";
-import { buildCmgcRubricXlsx } from "@/lib/usecases/cmgc-pde/exporters/rubric-xlsx";
-import { buildCucpRubricXlsx } from "@/lib/usecases/cucp-reevals/exporters/rubric-xlsx";
-import { buildRowRubricXlsx } from "@/lib/usecases/row-appraisal/exporters/rubric-xlsx";
+import { loadCmgcRubric } from "@/features/usecases/cmgc-pde/rubric-merged";
+import { loadCucpRubric } from "@/features/usecases/cucp-reevals/rubric-merged";
+import { loadRowRubric } from "@/features/usecases/row-appraisal/rubric-merged";
+import { buildCmgcRubricXlsx } from "@/features/usecases/cmgc-pde/exporters/rubric-xlsx";
+import { buildCucpRubricXlsx } from "@/features/usecases/cucp-reevals/exporters/rubric-xlsx";
+import { buildRowRubricXlsx } from "@/features/usecases/row-appraisal/exporters/rubric-xlsx";
 
 const KNOWN_IDS = new Set(["cmgc-pde", "cucp-reevals", "row-appraisal"]);
 const XLSX_CONTENT_TYPE =

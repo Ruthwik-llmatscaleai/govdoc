@@ -5,9 +5,9 @@ import { http, HttpResponse } from "msw";
 import { mswServer } from "@/tests/mocks/server";
 import { POST as runPOST } from "@/app/api/usecases/[id]/run/route";
 import { signSession } from "@/features/auth/mock-session";
-import { VALID_CATEGORIES } from "@/lib/usecases/row-appraisal/data/valid-categories";
-import type { StepEvent } from "@/lib/usecases/types";
-import type { RowRunResult } from "@/lib/usecases/row-appraisal/types";
+import { VALID_CATEGORIES } from "@/features/usecases/row-appraisal/data/valid-categories";
+import type { StepEvent } from "@/features/usecases/types";
+import type { RowRunResult } from "@/features/usecases/row-appraisal/types";
 
 beforeAll(() => {
   process.env.GOVDOC_SESSION_SECRET =

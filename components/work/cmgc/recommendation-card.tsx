@@ -1,4 +1,4 @@
-import type { RecommendationResult } from "@/lib/usecases/cmgc-pde/types";
+import type { RecommendationResult } from "@/features/usecases/cmgc-pde/types";
 
 type Props = { recommendation: RecommendationResult };
 

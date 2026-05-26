@@ -1,4 +1,4 @@
-import type { UseCaseId } from "@/lib/usecases/types";
+import type { UseCaseId } from "@/features/usecases/types";
 
 export type UseCaseTone = "blue" | "indigo" | "green";
 

@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ScoreTable } from "./score-table";
 import { useOverridesStore } from "@/store/use-overrides";
-import { mockRatings } from "@/lib/usecases/cmgc-pde/scoring/fixtures";
-import type { CmgcRating } from "@/lib/usecases/cmgc-pde/types";
+import { mockRatings } from "@/features/usecases/cmgc-pde/scoring/fixtures";
+import type { CmgcRating } from "@/features/usecases/cmgc-pde/types";
 
 beforeEach(() => {
   useOverridesStore.getState().clear();

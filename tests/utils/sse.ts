@@ -1,4 +1,4 @@
-import type { StepEvent } from "@/lib/usecases/types";
+import type { StepEvent } from "@/features/usecases/types";
 
 export async function collectSseEvents(res: Response): Promise<StepEvent[]> {
   if (!res.body) throw new Error("No response body");

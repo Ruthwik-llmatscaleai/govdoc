@@ -8,7 +8,7 @@ import { signSession } from "@/features/auth/mock-session";
 import {
   __setRubricsStoreRootForTests,
   saveRubric,
-} from "@/lib/usecases/rubrics-store";
+} from "@/features/rubrics/store";
 
 let root: string;
 

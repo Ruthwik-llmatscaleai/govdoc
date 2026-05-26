@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/features/auth/mock-session";
-import { createRubric, saveRubric, listRubrics } from "@/lib/usecases/rubrics-store";
-import { validateRubricShape } from "@/lib/usecases/rubric-shape";
+import { createRubric, saveRubric, listRubrics } from "@/features/rubrics/store";
+import { validateRubricShape } from "@/features/rubrics/shape";
 
 const KNOWN_IDS = new Set(["cmgc-pde", "cucp-reevals", "row-appraisal"]);
 const MAX_BYTES = 256 * 1024;

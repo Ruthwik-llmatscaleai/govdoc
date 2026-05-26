@@ -26,10 +26,10 @@ export function TopBar({ user, variant = "workspace" }: Props) {
   return (
     <>
       {/* Top announcement banner */}
-      <div className="w-full bg-[#0a0a0a] py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-[#4ade80] flex items-center justify-center gap-1.5">
-        <span>●</span>
-        <span>Policy Compliance Evaluation · Powered by Agentic AI</span>
-        <span>●</span>
+      <div className="flex w-full items-center justify-center gap-3 bg-[#0a0d0b] py-2.5 font-mono text-[11.5px] font-normal uppercase tracking-[0.3em] text-white">
+        <span className="inline-block h-2 w-2 rounded-full bg-[#5f9b72] shadow-[0_0_0_4px_rgba(95,155,114,0.18)]" />
+        <span>Policy Compliance Evaluation<span className="mx-4">·</span>Powered by Agentic AI</span>
+        <span className="inline-block h-2 w-2 rounded-full bg-[#5f9b72] shadow-[0_0_0_4px_rgba(95,155,114,0.18)]" />
       </div>
 
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-paper)] px-8 py-[14px]">

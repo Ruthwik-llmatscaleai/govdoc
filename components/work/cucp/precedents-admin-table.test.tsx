@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { PrecedentsAdminTable } from "./precedents-admin-table";
-import type { Precedent } from "@/lib/usecases/cucp-reevals/memory/precedents";
+import type { Precedent } from "@/features/usecases/cucp-reevals/memory/precedents";
 
 const sample: Precedent[] = [
   { target: "X", correction: "Y", human_reasoning: "Z reason long enough" },

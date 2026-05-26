@@ -1,4 +1,4 @@
-import type { UseCaseId } from "@/lib/usecases/types";
+import type { UseCaseId } from "@/features/usecases/types";
 import { CmgcRubricView } from "./cmgc-rubric-view";
 import { CucpRubricView } from "./cucp-rubric-view";
 import { RowRubricView } from "./row-rubric-view";

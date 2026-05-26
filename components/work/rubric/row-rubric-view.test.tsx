@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RowRubricView } from "./row-rubric-view";
-import rubricSchema from "@/lib/usecases/row-appraisal/assets/rubric_schema.json";
+import rubricSchema from "@/features/usecases/row-appraisal/assets/rubric_schema.json";
 
 describe("RowRubricView", () => {
   it("renders a section per category in the schema", () => {

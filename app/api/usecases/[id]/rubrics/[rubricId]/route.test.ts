@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { DELETE } from "./route";
 import { POST as POST_LIST } from "../route";
 import { signSession } from "@/features/auth/mock-session";
-import { __setRubricsStoreRootForTests } from "@/lib/usecases/rubrics-store";
+import { __setRubricsStoreRootForTests } from "@/features/rubrics/store";
 
 let root: string;
 

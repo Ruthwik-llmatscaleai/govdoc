@@ -2,7 +2,7 @@
 import { use, useEffect, useState } from "react";
 import { WorkBreadcrumbs, WorkCard, WorkPageHeader } from "@/components/work/page-shell";
 import { PrecedentsAdminTable } from "@/components/work/cucp/precedents-admin-table";
-import type { PrecedentsByLevel } from "@/lib/usecases/cucp-reevals/memory/precedents";
+import type { PrecedentsByLevel } from "@/features/usecases/cucp-reevals/memory/precedents";
 
 export default function Page({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params);

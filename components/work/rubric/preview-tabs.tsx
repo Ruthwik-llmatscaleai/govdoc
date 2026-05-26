@@ -4,10 +4,10 @@ import { CmgcRubricView } from "./cmgc-rubric-view";
 import { CucpRubricView } from "./cucp-rubric-view";
 import { RowRubricView } from "./row-rubric-view";
 import { PreviewTabContent } from "./preview-tab-content";
-import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
-import type { CucpRubricData } from "@/lib/usecases/cucp-reevals/rubric-data";
-import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-data";
-import type { RubricsManifestEntry } from "@/lib/usecases/rubrics-store";
+import type { CmgcRubricData } from "@/features/usecases/cmgc-pde/rubric-data";
+import type { CucpRubricData } from "@/features/usecases/cucp-reevals/rubric-data";
+import type { RowRubricData } from "@/features/usecases/row-appraisal/rubric-data";
+import type { RubricsManifestEntry } from "@/features/rubrics/store";
 
 type Props = {
   cmgc: CmgcRubricData;

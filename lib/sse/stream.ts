@@ -1,4 +1,4 @@
-import type { StepEvent } from "@/lib/usecases/types";
+import type { StepEvent } from "@/features/usecases/types";
 
 export function sseStream(gen: () => AsyncGenerator<StepEvent>): Response {
   const enc = new TextEncoder();

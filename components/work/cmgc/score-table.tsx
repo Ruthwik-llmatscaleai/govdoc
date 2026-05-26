@@ -1,7 +1,7 @@
 "use client";
 import { useOverridesStore } from "@/store/use-overrides";
-import type { CmgcRating } from "@/lib/usecases/cmgc-pde/types";
-import type { Rating } from "@/lib/usecases/cmgc-pde/rubric";
+import type { CmgcRating } from "@/features/usecases/cmgc-pde/types";
+import type { Rating } from "@/features/usecases/cmgc-pde/rubric";
 
 type Props = {
   ratings: CmgcRating[];

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifySession } from "@/features/auth/mock-session";
-import { getUseCase } from "@/lib/usecases/registry";
+import { getUseCase } from "@/features/usecases/registry";
 import { logger } from "@/lib/logger";
 
 function getCookie(req: Request, name: string): string | undefined {

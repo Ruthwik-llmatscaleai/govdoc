@@ -1,38 +1,11 @@
-import { AppLogo } from "@/components/brand/app-logo";
 import { LoginForm } from "@/components/login/login-form";
+import { PageHeader } from "@/components/shared/page-header";
+import { PageFooter } from "@/components/shared/page-footer";
 
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col">
-      {/* ============ TOP BANNER ============ */}
-      <div className="flex w-full items-center justify-center gap-1.5 bg-[#0a0a0a] py-2.5 text-center font-mono text-[9px] uppercase tracking-[0.2em] text-[#4ade80]">
-        <span>●</span>
-        <span>Policy Compliance Evaluation · Powered by Agentic AI</span>
-        <span>●</span>
-      </div>
-
-      {/* ============ HEADER BAR ============ */}
-      <header className="flex w-full items-center justify-between border-b border-[var(--color-line)] px-8 py-3">
-        <div className="flex items-center gap-3">
-          <AppLogo size={32} />
-          <span className="text-[var(--color-govdoc-primary)]">◆</span>
-          <span
-            className="text-[18px] tracking-[-0.01em] text-[var(--color-ink)]"
-            style={{ fontFamily: "var(--font-display)", fontWeight: 400, fontVariationSettings: '"opsz" 96' }}
-          >
-            Policy Compliance · Agentic AI
-          </span>
-        </div>
-        <div className="flex items-center gap-6">
-          <span className="font-mono text-[11px] tracking-[0.04em] text-[var(--color-ink-mute)]">
-            Reads. Checks. Decides.
-          </span>
-          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-line)] px-3 py-1 font-mono text-[9.5px] uppercase tracking-[0.1em] text-[var(--color-ink-mute)]">
-            <span className="inline-block size-1.5 rounded-full bg-[#2d8c4a]" />
-            v 1.0.0 Stable
-          </span>
-        </div>
-      </header>
+      <PageHeader showAuth={false} variant="app" />
 
       {/* ============ MAIN CONTENT ============ */}
       <div className="grid flex-1 grid-cols-1 lg:grid-cols-[55fr_45fr]">
@@ -88,20 +61,20 @@ export default function LoginPage() {
                 </div>
                 <div className="text-[12.5px] leading-[1.7] text-[var(--color-ink-soft)]">
                   <p className="mb-3">
-                    The complainant, <span className="border-b border-[var(--color-govdoc-primary)] text-[var(--color-ink)]">a California resident</span>, alleges that on{" "}
-                    <span className="border-b border-[var(--color-govdoc-primary)] text-[var(--color-ink)]">March 14, 2026</span>, the Department failed to process their application within the statutory window of{" "}
-                    <span className="border-b border-[var(--color-govdoc-primary)] text-[var(--color-ink)]">45 business days</span> as required under{" "}
-                    <span className="border-b border-[var(--color-govdoc-primary)] text-[var(--color-ink)]">Gov Code §11130</span>.
+                    The complainant, <span className="rounded-sm bg-[rgba(43,77,58,0.12)] px-0.5 text-[var(--color-ink)]">a California resident</span>, alleges that on{" "}
+                    <span className="rounded-sm bg-[rgba(43,77,58,0.12)] px-0.5 text-[var(--color-ink)]">March 14, 2026</span>, the Department failed to process their application within the statutory window of{" "}
+                    <span className="rounded-sm bg-[rgba(43,77,58,0.12)] px-0.5 text-[var(--color-ink)]">45 business days</span> as required under{" "}
+                    <span className="rounded-sm bg-[rgba(43,77,58,0.12)] px-0.5 text-[var(--color-ink)]">Gov Code §11130</span>.
                   </p>
                   <p className="mb-3">
                     The Department&apos;s records indicate the application was received on{" "}
-                    <span className="border-b border-[var(--color-govdoc-primary)] text-[var(--color-ink)]">January 22, 2026</span>, placing the resolution deadline at{" "}
-                    <span className="border-b border-[var(--color-govdoc-primary)] text-[var(--color-ink)]">March 26, 2026</span> — twelve days after the alleged non-action.
+                    <span className="rounded-sm bg-[rgba(43,77,58,0.12)] px-0.5 text-[var(--color-ink)]">January 22, 2026</span>, placing the resolution deadline at{" "}
+                    <span className="rounded-sm bg-[rgba(43,77,58,0.12)] px-0.5 text-[var(--color-ink)]">March 26, 2026</span> — twelve days after the alleged non-action.
                   </p>
                   <p>
                     On review, the file shows{" "}
-                    <span className="border-b border-[var(--color-govdoc-primary)] text-[var(--color-ink)]">no acknowledgment letter</span> issued between Jan 22 and Apr 04, constituting a procedural breach under{" "}
-                    <span className="border-b border-[var(--color-govdoc-primary)] text-[var(--color-ink)]">CCR Title 2 §15.04(b)</span>.{" "}
+                    <span className="rounded-sm bg-[rgba(43,77,58,0.12)] px-0.5 text-[var(--color-ink)]">no acknowledgment letter</span> issued between Jan 22 and Apr 04, constituting a procedural breach under{" "}
+                    <span className="rounded-sm bg-[rgba(43,77,58,0.12)] px-0.5 text-[var(--color-ink)]">CCR Title 2 §15.04(b)</span>.{" "}
                     <span className="inline-block h-3 w-2 bg-[var(--color-govdoc-primary)]" />
                   </p>
                 </div>
@@ -262,29 +235,7 @@ export default function LoginPage() {
         </section>
       </div>
 
-      {/* ============ FULL PAGE FOOTER ============ */}
-      <footer className="w-full border-t border-[#1a1a1a] bg-[#0a0a0a]">
-        <div className="flex items-center justify-between px-8 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-white/50">
-          <div className="flex items-center gap-x-4">
-            <span>© 2026 LLMATSCALE.AI</span>
-            <span className="text-white/20">|</span>
-            <span>Confidential &amp; Proprietary</span>
-          </div>
-          <span className="text-white/40">Authorized Use Only</span>
-          <div className="flex items-center gap-x-4">
-            <span className="inline-flex items-center gap-1.5">
-              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/60"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
-              TLS 1.3
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white/60"><path d="M3 8.5l3.5 3.5 6.5-7" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              MFA
-            </span>
-            <span className="text-white/20">|</span>
-            <span>FedRAMP · CJIS · SOC 2</span>
-          </div>
-        </div>
-      </footer>
+      <PageFooter />
     </div>
   );
 }

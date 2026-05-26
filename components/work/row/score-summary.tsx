@@ -1,5 +1,5 @@
 "use client";
-import type { EvaluationResult } from "@/lib/usecases/row-appraisal/types";
+import type { EvaluationResult } from "@/features/usecases/row-appraisal/types";
 
 export function ScoreSummary({ results }: { results: EvaluationResult[] }) {
   const counts = { pass: 0, warning: 0, fail: 0, na: 0, error: 0 };

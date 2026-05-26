@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { L1OverrideForm } from "./l1-override-form";
-import type { ExtractedFact } from "@/lib/usecases/cucp-reevals/types";
+import type { ExtractedFact } from "@/features/usecases/cucp-reevals/types";
 
 const facts: ExtractedFact[] = [
   { id: "fact_1", when: "2018", where: "CA", who: "owner", what: "loan", why: "", magnitude: "", demographic_flag: false, source_quote: "" },

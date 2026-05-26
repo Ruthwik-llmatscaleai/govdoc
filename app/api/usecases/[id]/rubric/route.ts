@@ -5,10 +5,10 @@ import {
   resetRubricContent,
   getDefaultRubricId,
   listRubrics,
-} from "@/lib/usecases/rubrics-store";
-import { loadCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-merged";
-import { loadCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-merged";
-import { loadRowRubric } from "@/lib/usecases/row-appraisal/rubric-merged";
+} from "@/features/rubrics/store";
+import { loadCmgcRubric } from "@/features/usecases/cmgc-pde/rubric-merged";
+import { loadCucpRubric } from "@/features/usecases/cucp-reevals/rubric-merged";
+import { loadRowRubric } from "@/features/usecases/row-appraisal/rubric-merged";
 
 const KNOWN_IDS = new Set(["cmgc-pde", "cucp-reevals", "row-appraisal"]);
 

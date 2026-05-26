@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import type { CmgcRubricData } from "@/lib/usecases/cmgc-pde/rubric-data";
-import { defaultCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-data";
-import type { RubricQuestion } from "@/lib/usecases/cmgc-pde/rubric";
+import type { CmgcRubricData } from "@/features/usecases/cmgc-pde/rubric-data";
+import { defaultCmgcRubric } from "@/features/usecases/cmgc-pde/rubric-data";
+import type { RubricQuestion } from "@/features/usecases/cmgc-pde/rubric";
 import { RubricShell } from "./shared/rubric-shell";
 import { RubricSection } from "./shared/rubric-section";
 import {

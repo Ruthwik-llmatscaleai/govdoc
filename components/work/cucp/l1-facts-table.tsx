@@ -1,5 +1,5 @@
 "use client";
-import type { ExtractedFact } from "@/lib/usecases/cucp-reevals/types";
+import type { ExtractedFact } from "@/features/usecases/cucp-reevals/types";
 
 // Column headers verbatim from caltrans/app.py:722-728 (col_rename map):
 //   id → Fact #, when → When, where → Where, who → Who, what → What,

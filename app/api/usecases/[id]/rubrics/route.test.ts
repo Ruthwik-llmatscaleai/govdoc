@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { GET, POST } from "./route";
 import { signSession } from "@/features/auth/mock-session";
-import { __setRubricsStoreRootForTests } from "@/lib/usecases/rubrics-store";
+import { __setRubricsStoreRootForTests } from "@/features/rubrics/store";
 
 let root: string;
 

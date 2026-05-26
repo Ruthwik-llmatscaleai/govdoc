@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { CucpRubricView } from "./cucp-rubric-view";
-import { CUCP_L3_CRITERIA } from "@/lib/usecases/cucp-reevals/rubric";
+import { CUCP_L3_CRITERIA } from "@/features/usecases/cucp-reevals/rubric";
 
 describe("CucpRubricView", () => {
   it("renders the Mandatory Eligibility section using PDF-style headings", () => {

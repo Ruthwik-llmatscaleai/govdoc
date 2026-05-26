@@ -1,6 +1,6 @@
 "use client";
 import { Tabs } from "@base-ui/react/tabs";
-import type { EvaluationResult } from "@/lib/usecases/row-appraisal/types";
+import type { EvaluationResult } from "@/features/usecases/row-appraisal/types";
 import { ScoreSummary } from "./score-summary";
 import { ExecSummary } from "./exec-summary";
 import { ActionItems } from "./action-items";

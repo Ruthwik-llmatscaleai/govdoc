@@ -1,5 +1,5 @@
-import type { RowRubricData } from "@/lib/usecases/row-appraisal/rubric-data";
-import { defaultRowRubric } from "@/lib/usecases/row-appraisal/rubric-data";
+import type { RowRubricData } from "@/features/usecases/row-appraisal/rubric-data";
+import { defaultRowRubric } from "@/features/usecases/row-appraisal/rubric-data";
 import { RubricShell } from "./shared/rubric-shell";
 import { RubricSection } from "./shared/rubric-section";
 

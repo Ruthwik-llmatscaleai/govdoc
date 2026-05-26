@@ -106,7 +106,7 @@ function DocumentCard() {
     <div className="flex flex-col items-center gap-2">
       <div className="relative h-[300px] w-full max-w-[210px]">
         {/* Drop shadow */}
-        <div className="absolute inset-0 translate-x-2 translate-y-3 rounded-sm bg-black/8" />
+        <div className="absolute inset-0 translate-x-1 translate-y-2 rounded-sm bg-black/10" />
         {/* Page body */}
         <svg viewBox="0 0 200 290" className="relative w-full" aria-hidden="true">
           {/* Main page */}

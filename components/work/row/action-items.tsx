@@ -1,5 +1,5 @@
 "use client";
-import type { EvaluationResult } from "@/lib/usecases/row-appraisal/types";
+import type { EvaluationResult } from "@/features/usecases/row-appraisal/types";
 
 type Priority = "HIGH" | "MEDIUM" | "LOW";
 

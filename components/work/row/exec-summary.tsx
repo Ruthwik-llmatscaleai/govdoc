@@ -1,5 +1,5 @@
 "use client";
-import type { EvaluationResult } from "@/lib/usecases/row-appraisal/types";
+import type { EvaluationResult } from "@/features/usecases/row-appraisal/types";
 import { STATUS_TONE, statusFromScore } from "./status-tone";
 
 export function ExecSummary({ results }: { results: EvaluationResult[] }) {

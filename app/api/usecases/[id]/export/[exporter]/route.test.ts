@@ -3,7 +3,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { POST } from "./route";
 import { signSession } from "@/features/auth/mock-session";
-import { mockRunResult } from "@/lib/usecases/cmgc-pde/scoring/fixtures";
+import { mockRunResult } from "@/features/usecases/cmgc-pde/scoring/fixtures";
 
 beforeAll(() => {
   process.env.GOVDOC_SESSION_SECRET ??= "test-secret-32-bytes-min-for-hs256-jose";

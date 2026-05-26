@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { L3CriteriaTable } from "./l3-criteria-table";
-import type { Criterion } from "@/lib/usecases/cucp-reevals/types";
+import type { Criterion } from "@/features/usecases/cucp-reevals/types";
 
 const passCriterion: Criterion = {
   s_no: 1,

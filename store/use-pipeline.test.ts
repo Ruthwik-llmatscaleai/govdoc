@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { usePipelineStore } from "./use-pipeline";
-import type { StepEvent } from "@/lib/usecases/types";
+import type { StepEvent } from "@/features/usecases/types";
 
 beforeEach(() => usePipelineStore.getState().reset());
 afterEach(() => vi.unstubAllGlobals());

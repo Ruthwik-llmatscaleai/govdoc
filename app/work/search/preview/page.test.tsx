@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { PreviewRubricTabs } from "@/components/work/rubric/preview-tabs";
-import { defaultCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-merged";
-import { defaultCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-merged";
-import { defaultRowRubric } from "@/lib/usecases/row-appraisal/rubric-merged";
+import { defaultCmgcRubric } from "@/features/usecases/cmgc-pde/rubric-merged";
+import { defaultCucpRubric } from "@/features/usecases/cucp-reevals/rubric-merged";
+import { defaultRowRubric } from "@/features/usecases/row-appraisal/rubric-merged";
 
 describe("PreviewRubricTabs", () => {
   const defaultManifest = [

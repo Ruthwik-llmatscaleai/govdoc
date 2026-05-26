@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ResultsTable } from "./results-table";
-import { VALID_CATEGORIES } from "@/lib/usecases/row-appraisal/data/valid-categories";
-import type { EvaluationResult } from "@/lib/usecases/row-appraisal/types";
+import { VALID_CATEGORIES } from "@/features/usecases/row-appraisal/data/valid-categories";
+import type { EvaluationResult } from "@/features/usecases/row-appraisal/types";
 
 const CYCLING_SCORES = [-1, 5, 1, 3];
 

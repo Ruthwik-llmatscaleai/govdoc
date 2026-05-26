@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import type { RubricsManifestEntry } from "@/lib/usecases/rubrics-store";
+import type { RubricsManifestEntry } from "@/features/rubrics/store";
 
 export type CreateRubricInput = {
   id: string;
