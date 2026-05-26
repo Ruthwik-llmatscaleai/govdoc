@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
 import { POST } from "./route";
-import { signSession } from "@/lib/auth/mock-session";
+import { signSession } from "@/features/auth/mock-session";
 // @ts-expect-error -- TS6133: collectSseEvents used in future happy-path tests (Plans 2/3/4)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { collectSseEvents } from "@/tests/utils/sse";

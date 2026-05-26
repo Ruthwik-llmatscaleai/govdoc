@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/mock-session";
+import { verifySession } from "@/features/auth/mock-session";
 import { loadPrecedents, deletePrecedent } from "@/lib/usecases/cucp-reevals/memory/store";
 import type { Level } from "@/lib/usecases/cucp-reevals/memory/precedents";
 

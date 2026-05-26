@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/mock-session";
+import { verifySession } from "@/features/auth/mock-session";
 import { createRubric, saveRubric, listRubrics } from "@/lib/usecases/rubrics-store";
 import { validateRubricShape } from "@/lib/usecases/rubric-shape";
 

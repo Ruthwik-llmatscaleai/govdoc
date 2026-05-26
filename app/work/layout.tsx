@@ -1,6 +1,6 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { verifySession } from "@/lib/auth/mock-session";
+import { verifySession } from "@/features/auth/mock-session";
 import { TopBar } from "@/components/shell/top-bar";
 import { PageFooter } from "@/components/shared/page-footer";
 

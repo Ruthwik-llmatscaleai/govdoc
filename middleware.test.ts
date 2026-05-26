@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
-import { signSession } from "@/lib/auth/mock-session";
+import { signSession } from "@/features/auth/mock-session";
 import { middleware } from "./middleware";
 
 beforeEach(() => {

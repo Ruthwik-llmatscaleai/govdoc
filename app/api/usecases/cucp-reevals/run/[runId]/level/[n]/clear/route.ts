@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/mock-session";
+import { verifySession } from "@/features/auth/mock-session";
 import { resolveLevelDecision } from "@/lib/runs/level-rendezvous";
 
 function getCookie(req: Request, name: string): string | undefined {

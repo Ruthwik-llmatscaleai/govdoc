@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/mock-session";
+import { verifySession } from "@/features/auth/mock-session";
 import { loadCmgcRubric } from "@/lib/usecases/cmgc-pde/rubric-merged";
 import { loadCucpRubric } from "@/lib/usecases/cucp-reevals/rubric-merged";
 import { loadRowRubric } from "@/lib/usecases/row-appraisal/rubric-merged";

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { POST } from "./route";
-import { signSession } from "@/lib/auth/mock-session";
+import { signSession } from "@/features/auth/mock-session";
 import { waitForHumanResponse, __clearRendezvous } from "@/lib/runs/needs-input-rendezvous";
 
 beforeEach(() => {

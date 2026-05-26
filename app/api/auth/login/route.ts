@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { signSession } from "@/lib/auth/mock-session";
+import { signSession } from "@/features/auth/mock-session";
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { username?: string; password?: string } | null;

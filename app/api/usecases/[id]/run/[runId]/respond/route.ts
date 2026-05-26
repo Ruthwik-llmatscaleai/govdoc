@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/mock-session";
+import { verifySession } from "@/features/auth/mock-session";
 import { resolveHumanResponse } from "@/lib/runs/needs-input-rendezvous";
 
 function getCookie(req: Request, name: string): string | undefined {

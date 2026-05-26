@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { GET, POST } from "./route";
-import { signSession } from "@/lib/auth/mock-session";
+import { signSession } from "@/features/auth/mock-session";
 import { __setRubricsStoreRootForTests } from "@/lib/usecases/rubrics-store";
 
 let root: string;

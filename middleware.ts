@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { verifySession } from "@/lib/auth/mock-session";
+import { verifySession } from "@/features/auth/mock-session";
 
 const PUBLIC = ["/", "/login", "/api/auth/login", "/api/auth/logout", "/api/health"];
 

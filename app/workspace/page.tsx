@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { verifySession } from "@/lib/auth/mock-session";
+import { verifySession } from "@/features/auth/mock-session";
 import { getRecentActivity } from "@/lib/bigquery-recent-activity";
 import { TopBar } from "@/components/shell/top-bar";
 import { CapabilityGrid } from "@/components/workspace/capability-grid";

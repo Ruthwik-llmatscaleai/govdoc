@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DELETE } from "./route";
 import { POST as POST_LIST } from "../route";
-import { signSession } from "@/lib/auth/mock-session";
+import { signSession } from "@/features/auth/mock-session";
 import { __setRubricsStoreRootForTests } from "@/lib/usecases/rubrics-store";
 
 let root: string;

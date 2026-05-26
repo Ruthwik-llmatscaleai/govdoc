@@ -4,7 +4,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach } from "vitest";
 import { http, HttpResponse } from "msw";
 import { mswServer } from "@/tests/mocks/server";
 import { POST as runPOST } from "@/app/api/usecases/[id]/run/route";
-import { signSession } from "@/lib/auth/mock-session";
+import { signSession } from "@/features/auth/mock-session";
 import { VALID_CATEGORIES } from "@/lib/usecases/row-appraisal/data/valid-categories";
 import type { StepEvent } from "@/lib/usecases/types";
 import type { RowRunResult } from "@/lib/usecases/row-appraisal/types";

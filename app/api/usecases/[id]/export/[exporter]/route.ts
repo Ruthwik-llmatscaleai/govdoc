@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/mock-session";
+import { verifySession } from "@/features/auth/mock-session";
 import { getUseCase } from "@/lib/usecases/registry";
 import { logger } from "@/lib/logger";
 
