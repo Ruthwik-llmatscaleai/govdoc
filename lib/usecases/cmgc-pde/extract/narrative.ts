@@ -1,5 +1,5 @@
 import mammoth from "mammoth";
-import { extractTextFromPdf } from "@/lib/extract/pdf";
+import { extractTextFromPdf } from "@/lib/files/pdf";
 
 const STOP_KEYWORDS = [
   "Project Risk Assessment",
@@ -39,4 +39,4 @@ export async function extractMultiDocContext(
   return parts.join("\n\n");
 }
 
-export { extractTextFromPdf } from "@/lib/extract/pdf";
+export { extractTextFromPdf } from "@/lib/files/pdf";

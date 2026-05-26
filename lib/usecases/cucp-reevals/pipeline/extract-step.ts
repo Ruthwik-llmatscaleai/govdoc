@@ -1,5 +1,5 @@
 import type { PipelineStep, StepEvent } from "@/lib/usecases/types";
-import { extractTextFromPdf } from "@/lib/extract/pdf";
+import { extractTextFromPdf } from "@/lib/files/pdf";
 import { parseFirmRevenuesFromXlsx } from "@/lib/usecases/cucp-reevals/extract/revenue-xlsx";
 
 export const extractStep: PipelineStep<FormData> = {

@@ -1,1 +1,1 @@
-export { extractTextFromPdf } from "@/lib/extract/pdf";
+export { extractTextFromPdf } from "@/lib/files/pdf";

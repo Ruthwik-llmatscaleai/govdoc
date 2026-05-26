@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { extractStep } from "./extract-step";
 import type { StepContext } from "@/lib/usecases/types";
 
-vi.mock("@/lib/extract/pdf", () => ({
+vi.mock("@/lib/files/pdf", () => ({
   extractTextFromPdf: vi.fn(async () => "narrative body text"),
 }));
 vi.mock("@/lib/usecases/cucp-reevals/extract/revenue-xlsx", () => ({
