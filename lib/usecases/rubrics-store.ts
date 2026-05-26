@@ -19,7 +19,7 @@ export type RubricsManifest = {
 let storeRoot: string | null = null;
 
 function rootDir(): string {
-  return storeRoot ?? join(process.cwd(), "data", "rubrics");
+  return storeRoot ?? join(process.cwd(), "artifacts", "rubrics");
 }
 
 export function __setRubricsStoreRootForTests(root: string | null): void {
@@ -174,8 +174,8 @@ async function writeManifest(
 }
 
 // One-way migration from the legacy single-file layout
-// (`data/rubrics/<usecase>.json`) to the per-rubric directory layout
-// (`data/rubrics/<usecase>/default.json` + `manifest.json`). Idempotent: if
+// (`artifacts/rubrics/<usecase>.json`) to the per-rubric directory layout
+// (`artifacts/rubrics/<usecase>/default.json` + `manifest.json`). Idempotent: if
 // the new directory already has a manifest, this is a no-op.
 async function migrateLegacyIfNeeded(usecaseId: string): Promise<void> {
   if (existsSync(manifestFile(usecaseId))) return;

@@ -24,7 +24,7 @@ export const EMPTY_PRECEDENTS: PrecedentsByLevel = {
 
 // Per-run staged state — adds L1-only channels (field overrides + LIFO action log
 // for Undo) on top of the precedents map. These do not persist to disk; they
-// only commit to data/cucp-precedents/<projectId>.json at /finalize.
+// only commit to artifacts/precedents/<projectId>.json at /finalize.
 //
 // The L1-only fields are optional so existing test fixtures and steps that only
 // touch precedents don't have to mention them. The level-1 step lazily

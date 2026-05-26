@@ -49,10 +49,10 @@ AGENTS.md
 docs/superpowers/
 
 # Per-project CUCP institutional-memory precedents (created at runtime, not in repo).
-data/cucp-precedents/
+artifacts/precedents/
 
 # Per-usecase rubric edits saved via /work/search/edit (created at runtime, not in repo).
-data/rubrics/
+artifacts/rubrics/
 .superpowers/
 .designs/
 service_account.json

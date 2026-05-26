@@ -16,7 +16,7 @@ const KEY: Record<Level, keyof PrecedentsByLevel> = {
 let storeRoot: string | null = null;
 function rootDir(): string {
   if (storeRoot) return storeRoot;
-  return join(process.cwd(), "data", "cucp-precedents");
+  return join(process.cwd(), "artifacts", "precedents");
 }
 
 export function __setStoreRootForTests(root: string | null): void {
