@@ -62,29 +62,29 @@ function PipelineIllustration() {
         <span className="flex-1 text-center">03 · Decides</span>
       </div>
 
-      <div className="flex items-start gap-3 lg:gap-5">
+      <div className="flex items-center gap-3 lg:gap-5">
         {/* Column 1: READS */}
-        <div className="flex flex-1 flex-col items-center gap-4">
+        <div className="flex flex-1 flex-col items-center">
           <DocumentCard />
         </div>
 
         {/* Arrow 1 */}
-        <div className="flex-shrink-0 pt-[140px]">
+        <div className="flex-shrink-0">
           <FlowArrow />
         </div>
 
         {/* Column 2: CHECKS */}
-        <div className="flex flex-1 flex-col items-center gap-4">
+        <div className="flex flex-1 flex-col items-center">
           <EngineCard />
         </div>
 
         {/* Arrow 2 */}
-        <div className="flex-shrink-0 pt-[140px]">
+        <div className="flex-shrink-0">
           <FlowArrow />
         </div>
 
         {/* Column 3: DECIDES */}
-        <div className="flex flex-1 flex-col items-center gap-4">
+        <div className="flex flex-1 flex-col items-center">
           <VerdictCard />
         </div>
       </div>

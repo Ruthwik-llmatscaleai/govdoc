@@ -482,8 +482,8 @@ export default function SearchAskPage() {
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 rounded-full border border-[#e8c4b9] bg-[#faf4f1]/60 px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-[#b04a2f]">
-              <span className={`size-1.5 rounded-full bg-[#b04a2f] ${isAnswering ? "animate-pulse" : ""}`} />
+            <span className="flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50/60 px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-emerald-700">
+              <span className={`size-1.5 rounded-full bg-emerald-600 ${isAnswering ? "animate-pulse" : ""}`} />
               Session Active
             </span>
             <button className="flex size-6 items-center justify-center rounded text-[var(--color-ink-faint)] transition-colors hover:bg-[var(--color-cream)] hover:text-[var(--color-ink)]" title="Share">
@@ -650,14 +650,14 @@ export default function SearchAskPage() {
                                   </div>
                                 )}
                                 {/* Key obligations card */}
-                                <div className="mb-4 rounded-r-lg border border-[var(--color-line)] border-l-4 border-l-[#b04a2f] bg-[var(--color-cream-soft)] p-4">
-                                  <div className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[#b04a2f]">
+                                <div className="mb-4 rounded-r-lg border border-[var(--color-line)] border-l-4 border-l-[#2b4d3a] bg-[var(--color-cream-soft)] p-4">
+                                  <div className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-[#2b4d3a]">
                                     ━━━ {structured.title}
                                   </div>
                                   <div className="space-y-2.5">
                                     {structured.items.map((item, idx) => (
                                       <div key={idx} className="flex gap-3">
-                                        <span className="shrink-0 font-mono text-[12px] font-bold text-[#b04a2f]">{item.num}</span>
+                                        <span className="shrink-0 font-mono text-[12px] font-bold text-[#2b4d3a]">{item.num}</span>
                                         <span className="text-[13px] leading-[1.65] text-[var(--color-ink)]">{formatObligationText(item.text)}</span>
                                       </div>
                                     ))}

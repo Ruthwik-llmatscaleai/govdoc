@@ -56,7 +56,7 @@ export default async function PreviewRubricsPage() {
         {/* Section label */}
         <div className="mb-4 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
           <span className="text-[var(--color-line)]">━━━</span>
-          <span>01</span>
+          <span>02</span>
           <span>Rubrics · Preview</span>
         </div>
 
@@ -120,6 +120,22 @@ export default async function PreviewRubricsPage() {
             </div>
           </div>
         </header>
+
+      {/* Meta tag bar */}
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <span className="rounded border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-white">
+          Rubric Validate Project
+        </span>
+        <span className="rounded border border-[var(--color-line)] bg-[var(--color-paper)] px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--color-ink-mute)]">
+          Sections <strong className="font-bold text-[var(--color-ink)]">{String(cmgcSections).padStart(2, "0")}</strong>
+        </span>
+        <span className="rounded border border-[var(--color-line)] bg-[var(--color-paper)] px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--color-ink-mute)]">
+          Scale <strong className="font-bold text-[var(--color-ink)]">A / B / C</strong>
+        </span>
+        <span className="rounded border border-[var(--color-line)] bg-[var(--color-paper)] px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--color-ink-mute)]">
+          Delivery Methods <strong className="font-bold text-[var(--color-ink)]">08</strong>
+        </span>
+      </div>
 
       {/* Interactive client component with tabs + sections */}
       <ReviewRubricsClient

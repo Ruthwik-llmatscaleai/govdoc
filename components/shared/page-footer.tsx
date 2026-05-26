@@ -8,15 +8,22 @@ export function PageFooter() {
           <span>Confidential &amp; Proprietary</span>
         </div>
         <span className="text-[#e9e2ce]">Authorized Use Only</span>
-        <div className="flex items-center gap-x-5">
+        <div className="flex items-center gap-x-4">
           <span className="inline-flex items-center gap-1.5">
             <svg width="10" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#aaa898]"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
             TLS 1.3
           </span>
-          <span className="text-[#5f6158]">|</span>
-          <span className="text-[#a14435]">MFA</span>
-          <span className="text-[#5f6158]">|</span>
-          <span>FedRAMP · CJIS · SOC 2</span>
+          <span className="text-[#5f6158]">·</span>
+          <span className="inline-flex items-center gap-1">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#5f9b72]"><path d="M3 8.5l3.5 3.5 6.5-7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            MFA
+          </span>
+          <span className="text-[#5f6158]">·</span>
+          <span>FedRAMP</span>
+          <span className="text-[#5f6158]">·</span>
+          <span>CJIS</span>
+          <span className="text-[#5f6158]">·</span>
+          <span>SOC 2</span>
         </div>
       </div>
     </footer>

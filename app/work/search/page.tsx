@@ -193,8 +193,8 @@ export default function SearchAskPage() {
                     <path d="m14 7 3 3" />
                   </svg>
                 </div>
-                <span className="rounded-full border border-[#e8c4b9] bg-[#faf4f1] px-3 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-[#b04a2f]">
-                  ADMIN - GOVERNED
+                <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-emerald-700">
+                  ADMIN · GOVERNED
                 </span>
               </div>
 
@@ -275,12 +275,12 @@ export default function SearchAskPage() {
             {/* Footer */}
             <div className="flex items-center justify-between border-t border-[var(--color-line)] px-7 py-4 bg-[var(--color-cream-soft)]/20">
               <div className="flex gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e8c4b9] bg-[#faf4f1]/50 px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-[#b04a2f]">
-                  <span className="size-[5px] rounded-full bg-[#b04a2f]" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50/50 px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-emerald-700">
+                  <span className="size-[5px] rounded-full bg-emerald-600" />
                   ADMIN
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e8c4b9] bg-[#faf4f1]/50 px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-[#b04a2f]">
-                  <span className="size-[5px] rounded-full bg-[#b04a2f]" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50/50 px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-emerald-700">
+                  <span className="size-[5px] rounded-full bg-emerald-600" />
                   AUDIT-LOG
                 </span>
               </div>

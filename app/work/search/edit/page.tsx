@@ -294,7 +294,7 @@ export default function ManageRubricsPage() {
         {/* Section label */}
         <div className="mb-5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-[var(--color-ink-mute)]">
           <span className="mr-2 text-[var(--color-line)]">━━━</span>
-          01&nbsp;&nbsp;RUBRICS&nbsp;&middot;&nbsp;MANAGE
+          03&nbsp;&nbsp;RUBRICS&nbsp;&middot;&nbsp;MANAGE
         </div>
 
         {/* Header row: title + badge + version info */}
@@ -335,9 +335,9 @@ export default function ManageRubricsPage() {
             </span>
             {/* Version info */}
             <div className="space-y-0.5 font-mono text-[9.5px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)]">
-              <div>VERSION: v1.0.0</div>
-              <div>LAST SAVED: 09 MAY 2026</div>
-              <div>STATUS: DRAFT</div>
+              <div>EDITING: <span className="font-bold text-[var(--color-ink-soft)]">V1.0.0</span></div>
+              <div>LAST SAVED: <span className="font-bold text-[var(--color-ink-soft)]">09 MAY 2026</span></div>
+              <div>AUTHOR: <span className="font-bold text-[var(--color-ink-soft)]">JOTHI</span></div>
             </div>
           </div>
         </div>
@@ -415,11 +415,9 @@ export default function ManageRubricsPage() {
                     <div className="text-[14px] font-semibold text-[var(--color-ink)]">
                       {section.title}
                     </div>
-                    {isExpanded && (
-                      <div className="mt-0.5 text-[12px] text-[var(--color-ink-mute)]">
-                        {section.description}
-                      </div>
-                    )}
+                    <div className="mt-0.5 text-[12px] text-[var(--color-ink-mute)]">
+                      {section.description}
+                    </div>
                   </div>
                   <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-ink-faint)]">
                     {section.questions.length} QUESTIONS&nbsp;&middot;&nbsp;{section.weight}%
@@ -451,7 +449,7 @@ export default function ManageRubricsPage() {
                       {section.questions.map((q, qi) => {
                         const qNum = String(qi + 1).padStart(2, "0");
                         return (
-                          <div key={q.id} className="py-4">
+                          <div key={q.id} className="group/question py-4">
                             <div className="flex items-start gap-3">
                               <span className="mt-0.5 font-mono text-[11px] font-bold text-[var(--color-ink-faint)]">
                                 {qNum}
@@ -474,7 +472,7 @@ export default function ManageRubricsPage() {
                                   ))}
                                 </div>
                               </div>
-                              <div className="flex shrink-0 items-center gap-1.5">
+                              <div className="flex shrink-0 items-center gap-1.5 opacity-0 transition-opacity group-hover/question:opacity-100">
                                 <button className="inline-flex items-center gap-1 rounded border border-[var(--color-line)] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-cream)]">
                                   <Pencil className="size-2.5" />
                                   Edit
