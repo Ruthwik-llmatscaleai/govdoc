@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { processPDFDocument, processDOCXDocument, processDOCDocument } from "@/lib/document-service";
+import { processPDFDocument, processDOCXDocument, processDOCDocument } from "@/features/search-ask/documents";
 import { saveDocument } from "@/lib/bigquery-storage";
 
 export const runtime = "nodejs";

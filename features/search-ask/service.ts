@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { embedQuery, findTopKChunks, type DocumentChunk } from "./document-service";
+import { embedQuery, findTopKChunks, type DocumentChunk } from "./documents";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,

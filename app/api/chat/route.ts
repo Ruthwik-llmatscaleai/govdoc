@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { answerQuestion } from "@/lib/chat-service";
-import type { ChatMessage } from "@/lib/chat-service";
+import { answerQuestion } from "@/features/search-ask/service";
+import type { ChatMessage } from "@/features/search-ask/service";
 import { getAllChunks } from "@/lib/bigquery-storage";
 
 export const runtime = "nodejs";

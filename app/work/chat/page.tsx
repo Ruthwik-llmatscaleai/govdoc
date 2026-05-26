@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { ProcessedDocument } from "@/lib/document-service";
-import type { ChatMessage } from "@/lib/chat-service";
+import type { ProcessedDocument } from "@/features/search-ask/documents";
+import type { ChatMessage } from "@/features/search-ask/service";
 import { FileText, Send, Paperclip, Plus, X, Square, RotateCcw, Copy, Check, Pencil, Search, Settings, FolderOpen, Mic, FileUp, ThumbsUp, Share2, Download } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";

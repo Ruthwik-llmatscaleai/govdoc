@@ -1,5 +1,5 @@
-import type { ProcessedDocument } from "./document-service";
-import type { ChatMessage } from "./chat-service";
+import type { ProcessedDocument } from "@/features/search-ask/documents";
+import type { ChatMessage } from "@/features/search-ask/service";
 
 const STORAGE_KEYS = {
   DOCUMENTS: "govdoc_documents",
