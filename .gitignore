@@ -21,10 +21,17 @@ dist/
 .idea/
 *.swp
 
-# coverage / test artifacts
+# testing (not needed for deployment)
 coverage/
 playwright-report/
 test-results/
+tests/
+vitest.config.ts
+playwright.config.ts
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
 
 # private fixtures (PII-bearing real PDFs — never committed)
 tests/fixtures-private/
