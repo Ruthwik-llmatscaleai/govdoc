@@ -3,7 +3,7 @@ import { getDefaultRubricId, loadRubric } from "@/features/rubrics/store";
 import { makeLlmRouter } from "@/lib/llm/router";
 import type { StepContext, StepEvent } from "@/features/usecases/types";
 import { EMPTY_PRECEDENTS } from "@/features/usecases/cucp-reevals/memory/precedents";
-import { logger } from "@/lib/logger";
+import { createLogger } from "@/lib/logging";
 
 function projectIdFromFilename(filename: string): string {
   const stem = filename.replace(/\.[^./\\]+$/, "");
@@ -60,6 +60,10 @@ export async function* runPipeline(opts: {
   const effectiveProjectId = submittedProjectId || derivedProjectId || "_default";
   const runId = crypto.randomUUID();
 
+  const log = createLogger({ correlationId: runId, useCase: useCaseId });
+  log.info("pipeline.start", { useCase: useCase.label });
+  log.info("pipeline.rubric.resolved", { rubricId: resolvedRubricId });
+
   const ctx: StepContext = {
     userId: session.user,
     projectId: effectiveProjectId,
@@ -74,7 +78,7 @@ export async function* runPipeline(opts: {
     },
     llm: makeLlmRouter(),
     abortSignal,
-    log: (msg, data) => logger.warn({ runId, projectId: effectiveProjectId, data }, msg),
+    log: (msg, data) => log.info(msg, data ? { data } : {}),
     rubricId: resolvedRubricId,
     rubricVersionId: submittedRubricVersion,
     rubric: rubricContent,
@@ -93,7 +97,7 @@ export async function* runPipeline(opts: {
       }
     } catch (e) {
       const internal = e instanceof Error ? e.message : String(e);
-      logger.error({ runId, stage: step.id, error: internal }, "step failed");
+      log.error("pipeline.step.failed", { stage: step.id, error: internal });
       yield { type: "error", stage: step.id, message: "Step failed — check server logs" };
       return;
     }
@@ -110,6 +114,6 @@ export async function* runPipeline(opts: {
         : typeof ctx.prior[k],
     ]),
   );
-  logger.info({ runId, useCaseId, stageKeys, stageShape }, "pipeline done");
+  log.info("pipeline.complete", { stageKeys, stageShape });
   yield { type: "done", result: ctx.prior };
 }

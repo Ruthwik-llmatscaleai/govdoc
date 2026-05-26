@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { embedQuery, findTopKChunks, type DocumentChunk } from "./documents";
+import { createLogger } from "@/lib/logging";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -25,6 +26,9 @@ export async function answerQuestion(
   allChunks: DocumentChunk[],
   chatHistory: ChatMessage[] = []
 ): Promise<ChatMessage> {
+  const log = createLogger({ correlationId: crypto.randomUUID(), useCase: "search-ask" });
+  log.info("chat.query.start", { questionLength: question.length, historySize: chatHistory.length });
+
   // Generate query embedding
   const queryEmbedding = await embedQuery(question);
 
@@ -65,6 +69,8 @@ export async function answerQuestion(
     .filter((block) => block.type === "text")
     .map((block) => (block.type === "text" ? block.text : ""))
     .join("\n");
+
+  log.info("chat.query.complete", { responseLength: answerText.length, sourcesCount: topChunks.length });
 
   return {
     role: "assistant",
