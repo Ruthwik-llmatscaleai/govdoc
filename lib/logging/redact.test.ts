@@ -110,8 +110,8 @@ describe("redact", () => {
     it("redacts fields in arrays", () => {
       const input = { items: [{ token: "abc" }, { token: "def" }] };
       const result = redact(input) as { items: Array<{ token: string }> };
-      expect(result.items[0].token).toBe("[REDACTED]");
-      expect(result.items[1].token).toBe("[REDACTED]");
+      expect(result.items[0]!.token).toBe("[REDACTED]");
+      expect(result.items[1]!.token).toBe("[REDACTED]");
     });
   });
 

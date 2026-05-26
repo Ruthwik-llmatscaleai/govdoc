@@ -17,7 +17,7 @@ describe("createLogger", () => {
     logger.info("upload.received", { filename: "doc.pdf", bytes: 1024 });
 
     expect(console.log).toHaveBeenCalledTimes(1);
-    const line = (console.log as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const line = (console.log as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     const entry = JSON.parse(line);
 
     expect(entry.level).toBe(30);
@@ -35,7 +35,7 @@ describe("createLogger", () => {
     logger.warn("llm.retry", { attempt: 2, reason: "rate_limit" });
 
     expect(console.warn).toHaveBeenCalledTimes(1);
-    const entry = JSON.parse((console.warn as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    const entry = JSON.parse((console.warn as ReturnType<typeof vi.fn>).mock.calls[0]![0]);
     expect(entry.level).toBe(40);
     expect(entry.msg).toBe("llm.retry");
   });
@@ -45,7 +45,7 @@ describe("createLogger", () => {
     logger.error("pipeline.failed", { stage: "evaluate" });
 
     expect(console.error).toHaveBeenCalledTimes(1);
-    const entry = JSON.parse((console.error as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    const entry = JSON.parse((console.error as ReturnType<typeof vi.fn>).mock.calls[0]![0]);
     expect(entry.level).toBe(50);
     expect(entry.msg).toBe("pipeline.failed");
   });
@@ -54,7 +54,7 @@ describe("createLogger", () => {
     const logger = createLogger({ correlationId: "c-1" });
     logger.info("auth.check", { token: "secret-value", user: "alice" });
 
-    const entry = JSON.parse((console.log as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    const entry = JSON.parse((console.log as ReturnType<typeof vi.fn>).mock.calls[0]![0]);
     expect(entry.token).toBe("[REDACTED]");
     expect(entry.user).toBe("alice");
   });
@@ -63,7 +63,7 @@ describe("createLogger", () => {
     const logger = createLogger();
     logger.info("boot");
 
-    const entry = JSON.parse((console.log as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    const entry = JSON.parse((console.log as ReturnType<typeof vi.fn>).mock.calls[0]![0]);
     expect(entry.correlationId).toBeUndefined();
     expect(entry.useCase).toBeUndefined();
   });
@@ -89,7 +89,7 @@ describe("withCorrelation", () => {
       logger.info("inside.context");
     });
 
-    const entry = JSON.parse((console.log as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    const entry = JSON.parse((console.log as ReturnType<typeof vi.fn>).mock.calls[0]![0]);
     expect(entry.correlationId).toBe("ctx-789");
 
     vi.restoreAllMocks();
@@ -103,7 +103,7 @@ describe("withCorrelation", () => {
       logger.info("test");
     });
 
-    const entry = JSON.parse((console.log as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    const entry = JSON.parse((console.log as ReturnType<typeof vi.fn>).mock.calls[0]![0]);
     expect(entry.correlationId).toBe("explicit-id");
 
     vi.restoreAllMocks();

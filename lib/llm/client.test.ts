@@ -11,12 +11,12 @@ import { makeLlmRouter } from "./router";
 
 const mockMakeLlmRouter = vi.mocked(makeLlmRouter);
 
-function makeLogger(): Logger & {
-  info: ReturnType<typeof vi.fn>;
-  warn: ReturnType<typeof vi.fn>;
-  error: ReturnType<typeof vi.fn>;
-} {
-  return { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+function makeLogger() {
+  return { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as unknown as Logger & {
+    info: ReturnType<typeof vi.fn>;
+    warn: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+  };
 }
 
 describe("callLlm", () => {
