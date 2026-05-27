@@ -272,9 +272,7 @@ export function ChatClient({ userName }: ChatClientProps) {
         const data = await response.json();
         if (data.success) {
           setChatHistory([...newHistory, data.answer]);
-          // First message in a new thread → refresh the sidebar so it shows
-          // up immediately. Cheap call; BigQuery only writes happened.
-          if (chatHistory.length === 0) void refreshConversationList();
+          void refreshConversationList();
         } else {
           // Map common backend errors to a sentence the user can actually
           // act on, and never render the bare "Error:" placeholder.
