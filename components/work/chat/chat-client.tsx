@@ -499,8 +499,8 @@ function EmptyState({
   quickPills,
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-6">
-      <div className="w-full max-w-[820px]">
+    <div className="pointer-events-none flex flex-1 flex-col items-center justify-center px-6">
+      <div className="pointer-events-auto w-full max-w-[820px]">
         <h1
           className="mb-6 text-center text-[clamp(34px,4.5vw,52px)] font-medium leading-[1.05] tracking-[-0.018em] text-[var(--color-ink)]"
           style={{ fontFamily: "var(--font-display)" }}
