@@ -1,90 +1,210 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import type { UploadedDocument } from "@/lib/document-service";
-import type { ChatMessage, Citation } from "@/lib/chat-service";
-import { FileText, Send, Paperclip, Plus, X, Square, RotateCcw, Copy, Check, ArrowLeft, MessageSquare } from "lucide-react";
+import type { ChatMessage } from "@/lib/chat-service";
+import {
+  Check,
+  ChevronsRight,
+  Columns2,
+  Copy,
+  Download,
+  FileText,
+  FolderOpen,
+  ListFilter,
+  Mic,
+  PanelLeftClose,
+  Paperclip,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Search,
+  Send,
+  Settings,
+  Share2,
+  Square,
+  ThumbsUp,
+  X,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const USER_ID = "dev";
+const USER_NAME = "JOTHI";
 
-interface ConversationEntry {
-  id: string;
-  firstMessage: string;
-  timestamp: string;
-  messages: ChatMessage[];
-  documents: Array<{ id: string; fileId: string; name: string; sizeBytes: number; uploadedAt: string }>;
+const QUICK_ACTIONS = [
+  { label: "Summarize", icon: ListFilter },
+  { label: "Compare", icon: Columns2 },
+  { label: "Extract", icon: ChevronsRight },
+  { label: "Find", icon: Search },
+] as const;
+
+type SidebarGroup = {
+  label: string;
+  items: Array<{ title: string; age: string; active?: boolean }>;
+};
+
+const PROJECT_COUNT = 4;
+const REFERENCE_CHAT_HISTORY: ChatMessage[] = [
+  {
+    role: "user",
+    content: "What are the contractor's response obligations when a grievance is filed under our standard procurement contract?",
+    timestamp: "2026-05-26T14:14:00",
+  },
+  {
+    role: "assistant",
+    timestamp: "2026-05-26T14:14:00",
+    sources: [
+      {
+        documentName: "Gov §11130",
+        chunkIndex: 0,
+        score: 0.94,
+        excerpt: "Contractor response obligations and grievance acknowledgment timing.",
+      },
+      {
+        documentName: "CCR §15.04",
+        chunkIndex: 0,
+        score: 0.91,
+        excerpt: "Procedural breach window and audit trail retention.",
+      },
+    ],
+    content:
+      "Under California's standard procurement contract framework, a contractor's response obligations when a grievance is filed are set across two governing references [Gov §11130] [CCR §15.04].\n\n" +
+      "KEY OBLIGATIONS\n" +
+      "1. Acknowledge receipt of the grievance in writing within 10 business days.\n" +
+      "2. Investigate and provide a documented response within 45 business days of acknowledgment.\n" +
+      "3. Maintain a complete audit trail of all communications and corrective actions for no less than 7 years.\n\n" +
+      "Failure to meet the 45-day window constitutes a procedural breach and may trigger Tier-2 review under [CCR §15.04(b)]. Want me to check a specific contract against these requirements?",
+  },
+  {
+    role: "user",
+    content: "What happens if the contractor misses the 45-day window?",
+    timestamp: "2026-05-26T14:16:00",
+  },
+  {
+    role: "assistant",
+    content: "Missing the 45-day window has cascading consequences under California procurement law:",
+    timestamp: "2026-05-26T14:16:00",
+  },
+];
+
+const REFERENCE_SIDEBAR_GROUPS: SidebarGroup[] = [
+  {
+    label: "TODAY",
+    items: [
+      { title: "Q3 vendor contract review", age: "2h ago", active: true },
+      { title: "Summarize grievance procedure", age: "5h ago" },
+    ],
+  },
+  {
+    label: "YESTERDAY",
+    items: [
+      { title: "What are the contractor's response ...", age: "1d ago" },
+      { title: "What does this document say?", age: "1d ago" },
+    ],
+  },
+  {
+    label: "EARLIER THIS WEEK",
+    items: [
+      { title: "Compare new policy vs. v2.3", age: "2d ago" },
+      { title: "Extract deadlines from CCR §15", age: "3d ago" },
+    ],
+  },
+];
+
+function formatTime(timestamp: string): string {
+  const d = new Date(timestamp);
+  const h = d.getHours();
+  const m = d.getMinutes().toString().padStart(2, "0");
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${m} ${ampm}`;
 }
 
-function loadPastConversations(): ConversationEntry[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem("govdoc_conversations");
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+function formatObligationText(text: string): React.ReactNode {
+  const durationPattern = /(no less than \d+ years|no less than \w+ years)/gi;
+  const actionWordsPattern = /\b(retain|maintaining|maintain|preserves|preserve|documenting|document|submitting|submit|publishing|publish|reporting|report|notifying|notify|reviewing|review|auditing|audit|verifying|verify|complying|comply|store|storing|keep|keeping|disclose|disclosing|provide|providing|assess|assessing|evaluation|evaluating|evaluate|implement|implementing|monitoring|monitor|shall|must|acknowledge|investigate)\b/gi;
+
+  const parts = text.split(durationPattern);
+  return parts.map((part, i) => {
+    if (i % 2 === 1) {
+      return <em key={i} className="italic font-medium text-[#2a2a28]">{part}</em>;
+    }
+    const subParts = part.split(actionWordsPattern);
+    return (
+      <span key={i}>
+        {subParts.map((subPart, j) => {
+          if (j % 2 === 1) return <strong key={j} className="font-semibold text-[#2a2a28]">{subPart}</strong>;
+          return subPart;
+        })}
+      </span>
+    );
+  });
 }
 
-function savePastConversations(conversations: ConversationEntry[]) {
-  localStorage.setItem("govdoc_conversations", JSON.stringify(conversations));
+function extractKeyObligations(content: string): { intro: string; title: string; items: { num: string; text: string }[]; outro: string } | null {
+  const lines = content.split("\n");
+  const numberedPattern = /^\s*(\d+)[.)]\s+(.+)/;
+  const items: { num: string; text: string }[] = [];
+  let firstIdx = -1;
+  let lastIdx = -1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i]!.match(numberedPattern);
+    if (match) {
+      if (firstIdx === -1) firstIdx = i;
+      lastIdx = i;
+      items.push({ num: match[1]!.padStart(2, "0"), text: match[2]!.trim() });
+    }
+  }
+
+  if (items.length < 2) return null;
+
+  let title = "KEY OBLIGATIONS";
+  let titleLineIdx = -1;
+  for (let i = firstIdx - 1; i >= Math.max(0, firstIdx - 3); i--) {
+    const line = lines[i]!.trim();
+    if (line && (line.includes("obligation") || line.includes("Obligation") || line.includes("KEY") || line.toUpperCase() === line) && line.length < 80) {
+      title = line.replace(/^[#*\-_]+/, "").trim().toUpperCase();
+      titleLineIdx = i;
+      break;
+    }
+  }
+
+  const intro = lines.slice(0, firstIdx).filter((l, i) => i !== titleLineIdx && l.trim()).join("\n");
+  const outro = lines.slice(lastIdx + 1).filter((l) => l.trim()).join("\n");
+
+  return { intro, title: `${title} · ${items.length} FOUND`, items, outro };
 }
 
-export default function ChatPage() {
-  const router = useRouter();
+export default function SearchAskPage() {
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-  const [pastConversations, setPastConversations] = useState<ConversationEntry[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>(REFERENCE_CHAT_HISTORY);
   const [inputValue, setInputValue] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isAnswering, setIsAnswering] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
   const [thinkingPhase, setThinkingPhase] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const conversationIdRef = useRef<string>(Date.now().toString(36));
+  const [sidebarSearch, setSidebarSearch] = useState("");
+  const [responseTimes, setResponseTimes] = useState<Record<number, number>>({ 1: 1.8 });
+  const [sendTimestamp, setSendTimestamp] = useState<number | null>(null);
+  const didMountRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    const saved = sessionStorage.getItem("govdoc_chat_session");
-    if (saved) {
-      try {
-        const { messages, docs, convId } = JSON.parse(saved);
-        if (Array.isArray(messages)) setChatHistory(messages);
-        if (Array.isArray(docs)) setDocuments(docs);
-        if (convId) conversationIdRef.current = convId;
-      } catch { /* ignore */ }
-    }
-    setPastConversations(loadPastConversations());
-    setIsLoading(false);
-  }, []);
+  const [selectedModel, setSelectedModel] = useState("Claude Opus");
+  const [citationsEnabled, setCitationsEnabled] = useState(true);
 
   useEffect(() => {
-    if (chatHistory.length > 0 || documents.length > 0) {
-      sessionStorage.setItem("govdoc_chat_session", JSON.stringify({
-        messages: chatHistory,
-        docs: documents,
-        convId: conversationIdRef.current,
-      }));
-      // Update the conversation in localStorage
-      const convId = conversationIdRef.current;
-      setPastConversations((prev) => {
-        const idx = prev.findIndex((c) => c.id === convId);
-        if (idx >= 0) {
-          const updated = [...prev];
-          updated[idx] = { ...updated[idx]!, messages: chatHistory, documents };
-          savePastConversations(updated);
-          return updated;
-        }
-        return prev;
-      });
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
     }
-  }, [chatHistory, documents]);
-
-  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory]);
 
@@ -105,14 +225,9 @@ export default function ChatPage() {
       const response = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await response.json();
       if (data.success) {
-        const newDocs = data.documents.map((d: { fileId: string; name: string; sizeBytes: number }) => ({
-          id: d.fileId,
-          fileId: d.fileId,
-          name: d.name,
-          sizeBytes: d.sizeBytes,
-          uploadedAt: new Date().toISOString(),
-        }));
-        setDocuments((prev) => [...prev, ...newDocs]);
+        const docsRes = await fetch(`/api/storage/load-documents?userId=${USER_ID}`);
+        const docsData = await docsRes.json();
+        if (docsData.success) setDocuments(docsData.documents);
       } else {
         alert(`Upload failed: ${data.error}`);
       }
@@ -151,19 +266,7 @@ export default function ChatPage() {
     setInputValue("");
     setIsAnswering(true);
     setThinkingPhase("Searching documents...");
-
-    if (chatHistory.filter((m) => m.role === "user").length === 0) {
-      const entry: ConversationEntry = {
-        id: conversationIdRef.current,
-        firstMessage: userMessage.content,
-        timestamp: userMessage.timestamp,
-        messages: [userMessage],
-        documents: documents,
-      };
-      const updated = [entry, ...pastConversations];
-      setPastConversations(updated);
-      savePastConversations(updated);
-    }
+    setSendTimestamp(Date.now());
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -173,16 +276,15 @@ export default function ChatPage() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: userMessage.content,
-          userId: USER_ID,
-          chatHistory,
-          fileIds: documents.map((d) => ({ fileId: d.fileId, fileName: d.name })),
-        }),
+        body: JSON.stringify({ question: userMessage.content, userId: USER_ID, chatHistory }),
         signal: controller.signal,
       });
       const data = await response.json();
       if (data.success) {
+        const elapsed = sendTimestamp ? (Date.now() - (sendTimestamp || Date.now())) / 1000 : 0;
+        const answerIdx = newHistory.length;
+        setResponseTimes((prev) => ({ ...prev, [answerIdx]: elapsed }));
+
         await fetch("/api/storage/save-message", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -207,6 +309,7 @@ export default function ChatPage() {
       setIsAnswering(false);
       setThinkingPhase("");
       abortRef.current = null;
+      setSendTimestamp(null);
     }
   };
 
@@ -217,12 +320,20 @@ export default function ChatPage() {
     }
   };
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
     if (chatHistory.length === 0) return;
-    setChatHistory([]);
-    setDocuments([]);
-    conversationIdRef.current = Date.now().toString(36);
-    sessionStorage.removeItem("govdoc_chat_session");
+    try {
+      await fetch("/api/storage/clear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: USER_ID }),
+      });
+      setChatHistory([]);
+      setDocuments([]);
+      setResponseTimes({});
+    } catch {
+      alert("Failed to start new chat.");
+    }
   };
 
   const handleStop = useCallback(() => {
@@ -242,140 +353,315 @@ export default function ChatPage() {
     setTimeout(() => setCopiedIdx(null), 2000);
   }, []);
 
+  const handleEditStart = useCallback((idx: number, content: string) => {
+    setEditingIdx(idx);
+    setEditValue(content);
+  }, []);
+
+  const handleEditCancel = useCallback(() => {
+    setEditingIdx(null);
+    setEditValue("");
+  }, []);
+
+  const handleEditSubmit = useCallback((idx: number) => {
+    if (!editValue.trim()) return;
+    setChatHistory(chatHistory.slice(0, idx));
+    setEditingIdx(null);
+    setInputValue(editValue.trim());
+    setEditValue("");
+  }, [editValue, chatHistory]);
+
   const removeDocument = (docId: string) => {
     setDocuments((prev) => prev.filter((d) => d.id !== docId));
   };
 
-  const userMessages = pastConversations;
+  const handleQuickAction = (action: string) => {
+    setInputValue(action + " ");
+    textareaRef.current?.focus();
+  };
+
+  const groupedHistory = REFERENCE_SIDEBAR_GROUPS.map((group) => ({
+    ...group,
+    items: sidebarSearch
+      ? group.items.filter((item) => item.title.toLowerCase().includes(sidebarSearch.toLowerCase()))
+      : group.items,
+  })).filter((group) => group.items.length > 0);
+
+  const sessionTitle = "Q3 vendor contract review";
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#faf8f5]">
-        <div className="size-8 animate-spin rounded-full border-[3px] border-gray-200 border-t-[#b04a2f]" />
+      <div className="flex h-full items-center justify-center bg-[#f5efe2]">
+        <div className="size-8 animate-spin rounded-full border-[3px] border-[#e0d7c4] border-t-[#b04a2f]" />
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-[#faf8f5]">
-      {/* Sidebar */}
-      <aside className={`flex flex-col border-r border-gray-200/60 bg-[#f9f8f3] transition-all duration-200 ${sidebarOpen ? "w-64" : "w-0 overflow-hidden"}`}>
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200/60 px-3">
-          <span className="text-sm font-semibold text-gray-900">Chat History</span>
+    <div className="flex h-full w-full overflow-hidden">
+      {/* LEFT SIDEBAR */}
+      <aside className="flex w-[280px] shrink-0 flex-col border-r border-[#e0d7c4] bg-[#faf6ec]">
+        <div className="flex h-[70px] items-center justify-between border-b border-[#e0d7c4] bg-[#ffffff] px-[19px]">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-[36px] items-center justify-center rounded-[5px] bg-[#b04a2f] text-[#ffffff]">
+              <Search className="size-3.5" />
+            </div>
+            <span
+              className="text-[#0a0a0a]"
+              style={{ fontFamily: "var(--font-display)", fontSize: "17px", fontWeight: 700, letterSpacing: "-0.02em" }}
+            >
+              Search & <em style={{ fontStyle: "italic", fontWeight: 400, color: "#b04a2f" }}>Ask</em>
+            </span>
+          </div>
           <button
-            onClick={handleNewChat}
-            disabled={chatHistory.length === 0}
-            className="flex size-7 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-200/60 hover:text-gray-900 disabled:opacity-40"
-            title="New chat"
+            className="flex size-[29px] items-center justify-center rounded-[5px] border border-[#e0d7c4] bg-[#ffffff] text-[#908d83] transition-colors hover:border-[#8B877D] hover:text-[#0a0a0a]"
+            title="Collapse sidebar"
+            type="button"
           >
-            <Plus className="size-4" />
+            <PanelLeftClose className="size-4" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2 py-2">
-          {userMessages.length === 0 ? (
-            <div className="px-3 py-8 text-center text-xs text-gray-400">No conversations yet</div>
-          ) : (
-            <>
-              <div className="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Recent</div>
-              {userMessages.map((conv) => (
-                <button
-                  key={conv.id}
-                  onClick={() => {
-                    setChatHistory(conv.messages || []);
-                    setDocuments(conv.documents || []);
-                    conversationIdRef.current = conv.id;
-                    sessionStorage.setItem("govdoc_chat_session", JSON.stringify({
-                      messages: conv.messages || [],
-                      docs: conv.documents || [],
-                      convId: conv.id,
-                    }));
-                  }}
-                  className={`mb-0.5 flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] transition-colors ${
-                    conversationIdRef.current === conv.id ? "bg-gray-200/70 text-gray-900" : "text-gray-700 hover:bg-gray-200/50"
+        <div className="px-[19px] pb-[13px] pt-[17px]">
+          <button
+            onClick={handleNewChat}
+            className="flex h-[52px] w-full items-center gap-3 rounded-[6px] border border-[#e0d7c4] bg-[#ffffff] px-[15px] transition-colors hover:border-[#b04a2f]"
+            style={{ fontFamily: "var(--font-sans)", fontSize: "15px", fontWeight: 500 }}
+          >
+            <div className="flex size-6 items-center justify-center rounded-full bg-[#b04a2f] text-[#ffffff]">
+              <Plus className="size-3" />
+            </div>
+            <span className="text-[#0a0a0a]">New chat</span>
+          </button>
+
+          <div className="mt-[15px] flex h-[32px] items-center justify-between rounded-md px-[12px] transition-colors hover:bg-[#ffffff]">
+            <div className="flex items-center gap-3">
+              <FolderOpen className="size-4 text-[#908d83]" />
+              <span className="text-[14px] text-[#5e5e58]" style={{ fontFamily: "var(--font-sans)" }}>Projects</span>
+            </div>
+            <span
+              className="text-[#908d83]"
+              style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700 }}
+            >
+              {PROJECT_COUNT}
+            </span>
+          </div>
+
+          <div className="relative mt-[13px]">
+            <Search className="absolute left-[12px] top-1/2 size-3.5 -translate-y-1/2 text-[#908d83]" />
+            <input
+              type="text"
+              value={sidebarSearch}
+              onChange={(e) => setSidebarSearch(e.target.value)}
+              placeholder="Search chats..."
+              className="h-[38px] w-full rounded-[6px] border border-[#e0d7c4] bg-[#ffffff] pl-[34px] pr-10 text-[13px] text-[#0a0a0a] placeholder:text-[#908d83] focus:border-[#b04a2f] focus:outline-none"
+              style={{ fontFamily: "var(--font-sans)" }}
+            />
+            <kbd
+              className="absolute right-[9px] top-1/2 -translate-y-1/2 rounded border border-[#e0d7c4] bg-[#f5efe2] px-1 text-[#908d83]"
+              style={{ fontFamily: "var(--font-mono)", fontSize: "9px" }}
+            >
+              ⌘K
+            </kbd>
+          </div>
+        </div>
+
+        <div className="activity-scroll flex-1 overflow-y-auto px-[19px] py-0">
+          {groupedHistory.map((group) => (
+            <div key={group.label}>
+              <div
+                className="px-[5px] pb-[9px] pt-[8px] uppercase text-[#908d83]"
+                style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}
+              >
+                {group.label}
+              </div>
+              {group.items.map((item) => (
+                <div
+                  key={`${group.label}-${item.title}`}
+                  className={`mb-[3px] cursor-pointer rounded-[6px] px-[12px] py-[8px] transition-colors ${
+                    item.active === true
+                      ? "border-l-[3px] border-l-[#b04a2f] bg-[#f0e8d8]"
+                      : "hover:bg-[#ffffff]"
                   }`}
                 >
-                  <MessageSquare className="size-3.5 shrink-0 text-gray-400" />
-                  <span className="truncate">{conv.firstMessage.slice(0, 36)}{conv.firstMessage.length > 36 ? "..." : ""}</span>
-                </button>
+                  <div className="truncate text-[13px] text-[#0a0a0a]" style={{ fontFamily: "var(--font-sans)" }}>
+                    {item.title}
+                  </div>
+                  <div className="mt-0.5 text-[#908d83]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>
+                    {item.age}
+                  </div>
+                </div>
               ))}
-            </>
+            </div>
+          ))}
+          {groupedHistory.length === 0 && (
+            <div className="px-3 py-6 text-center text-[12px] text-[#908d83]" style={{ fontFamily: "var(--font-sans)" }}>
+              No chat history
+            </div>
           )}
         </div>
 
-        <div className="border-t border-gray-200/60 p-3">
-          <button
-            onClick={() => router.push("/")}
-            className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-200/50 hover:text-gray-900"
-          >
-            <ArrowLeft className="size-3.5" />
-            Back to Home
-          </button>
+        <div className="border-t border-[#e0d7c4] p-[19px]">
+          <div className="flex items-center gap-3 rounded-md px-[12px] py-2 text-[14px] text-[#5e5e58] transition-colors hover:bg-[#ffffff] hover:text-[#0a0a0a]">
+            <Settings className="size-4" />
+            <span style={{ fontFamily: "var(--font-sans)" }}>Settings</span>
+          </div>
         </div>
       </aside>
 
-      {/* Main */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top bar */}
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200/60 bg-white/80 px-4 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="flex size-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
-              title={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+      {/* MAIN CHAT AREA */}
+      <main className="relative flex flex-1 flex-col overflow-hidden bg-[#f5efe2]">
+        <div className="relative z-10 flex h-[60px] shrink-0 items-center justify-between border-b border-[#e0d7c4] bg-[#faf6ec] px-[39px]">
+          <div className="flex items-center gap-3">
+            <span
+              className="bg-[#f0e0d4] px-[10px] py-[3px] uppercase text-[#8a3820]"
+              style={{ fontFamily: "var(--font-mono)", fontSize: "9px", fontWeight: 700, letterSpacing: "2px" }}
             >
-              <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-              </svg>
+              02 · SEARCH & ASK
+            </span>
+            <span className="text-[16px] font-semibold text-[#0a0a0a]" style={{ fontFamily: "var(--font-display)" }}>
+              {sessionTitle}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span
+              className="flex items-center gap-1.5 rounded-full border border-[#b04a2f]/30 bg-[#b04a2f]/5 px-2.5 py-0.5 uppercase text-[#b04a2f]"
+              style={{ fontFamily: "var(--font-mono)", fontSize: "9px", fontWeight: 700, letterSpacing: "2px" }}
+            >
+              <span className={`size-1.5 rounded-full bg-[#b04a2f] ${isAnswering ? "animate-pulse" : ""}`} />
+              SESSION ACTIVE
+            </span>
+            <button className="flex size-8 items-center justify-center rounded-[5px] border border-[#e0d7c4] bg-[#ffffff] text-[#908d83] transition-colors hover:border-[#8B877D] hover:text-[#0a0a0a]" title="Share">
+              <Share2 className="size-3.5" />
             </button>
-            <h1 className="text-sm font-semibold text-gray-900">Document Chat</h1>
+            <button className="flex size-8 items-center justify-center rounded-[5px] border border-[#e0d7c4] bg-[#ffffff] text-[#908d83] transition-colors hover:border-[#8B877D] hover:text-[#0a0a0a]" title="Download">
+              <Download className="size-3.5" />
+            </button>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2">
-            {documents.length > 0 && (
-              <div className="flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1">
-                <FileText className="size-3 text-gray-500" />
-                <span className="text-xs font-medium text-gray-600">{documents.length} doc{documents.length > 1 ? "s" : ""}</span>
-              </div>
-            )}
+        {chatHistory.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center px-4">
+            <h1
+              className="mb-1 text-[#0a0a0a]"
+              style={{ fontFamily: "var(--font-display)", fontSize: "28px", fontWeight: 500, letterSpacing: "-0.5px" }}
+            >
+              What can I help with?
+            </h1>
+            <p className="mb-8 text-[13px] text-[#5e5e58]" style={{ fontFamily: "var(--font-sans)" }}>
+              Upload documents and ask questions
+            </p>
+
+            <div className="mb-8 grid w-full max-w-[480px] grid-cols-2 gap-2">
+              {[
+                "Summarize the key findings",
+                "What are the payment terms?",
+                "Compare compliance requirements",
+                "List all action items",
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => setInputValue(suggestion)}
+                  className="rounded-lg border border-[#e0d7c4] bg-[#ffffff] px-5 py-4 text-left text-[13px] leading-relaxed text-[#5e5e58] transition-all hover:border-[#b04a2f] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
+                  style={{ fontFamily: "var(--font-sans)" }}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+
+            <div className="w-full max-w-[680px]">
+              <DocumentPills documents={documents} onRemove={removeDocument} />
+              <InputBox
+                inputValue={inputValue}
+                setInputValue={setInputValue}
+                handleKeyDown={handleKeyDown}
+                handleSendMessage={handleSendMessage}
+                handleFileUpload={handleFileUpload}
+                isUploading={isUploading}
+                isAnswering={isAnswering}
+                onStop={handleStop}
+                fileInputRef={fileInputRef}
+                textareaRef={textareaRef}
+                onQuickAction={handleQuickAction}
+                selectedModel={selectedModel}
+                setSelectedModel={setSelectedModel}
+                citationsEnabled={citationsEnabled}
+                setCitationsEnabled={setCitationsEnabled}
+              />
+            </div>
           </div>
-        </header>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto">
+              <div className="flex min-h-full w-full flex-col gap-[18px] px-[38px] pb-[28px] pt-[28px]">
+                {chatHistory.map((msg, i) =>
+                  msg.role === "user" ? (
+                    <UserMessage
+                      key={i}
+                      msg={msg}
+                      idx={i}
+                      editingIdx={editingIdx}
+                      editValue={editValue}
+                      setEditValue={setEditValue}
+                      onEditStart={handleEditStart}
+                      onEditCancel={handleEditCancel}
+                      onEditSubmit={handleEditSubmit}
+                    />
+                  ) : (
+                    <AssistantMessage
+                      key={i}
+                      msg={msg}
+                      idx={i}
+                      isLast={i === chatHistory.length - 1}
+                      isAnswering={isAnswering}
+                      responseTimes={responseTimes}
+                      copiedIdx={copiedIdx}
+                      onCopy={handleCopy}
+                      onRetry={handleRetry}
+                    />
+                  ),
+                )}
 
-        {/* Chat area */}
-        <main className="flex flex-1 flex-col overflow-hidden">
-          {chatHistory.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center px-4">
-              <div className="mb-2 flex size-12 items-center justify-center rounded-2xl bg-[#b04a2f]/10">
-                <FileText className="size-6 text-[#b04a2f]" />
-              </div>
-              <h2 className="mb-1 text-xl font-semibold tracking-tight text-gray-900">Ask your documents</h2>
-              <p className="mb-10 text-sm text-gray-500">Upload files and ask questions about their content</p>
-
-              <div className="mb-8 grid w-full max-w-md grid-cols-2 gap-2.5">
-                {[
-                  "Summarize the key findings",
-                  "What are the payment terms?",
-                  "Compare compliance requirements",
-                  "List all action items",
-                ].map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() => setInputValue(suggestion)}
-                    className="rounded-xl border border-gray-200 bg-white px-4 py-3.5 text-left text-[13px] leading-snug text-gray-500 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gray-300 hover:text-gray-900 hover:shadow-md"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-
-              <div className="w-full max-w-2xl">
-                {documents.length > 0 && (
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    {documents.map((doc) => (
-                      <DocChip key={doc.id} doc={doc} onRemove={removeDocument} />
-                    ))}
+                {isAnswering && (
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[#b04a2f] text-[#ffffff]"
+                      style={{ fontFamily: "var(--font-mono)", fontSize: "11px", fontWeight: 700 }}
+                    >
+                      G
+                    </div>
+                    <div className="flex flex-col gap-2 pt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="uppercase text-[#5e5e58]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}>GOVDOC</span>
+                        <span className="uppercase text-[#b04a2f]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700 }}>· STREAMING</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                          <div className="size-1.5 animate-pulse rounded-full bg-[#b04a2f]" />
+                          <div className="size-1.5 animate-pulse rounded-full bg-[#b04a2f] [animation-delay:150ms]" />
+                          <div className="size-1.5 animate-pulse rounded-full bg-[#b04a2f] [animation-delay:300ms]" />
+                        </div>
+                        <span className="text-[12px] text-[#5e5e58]" style={{ fontFamily: "var(--font-sans)" }}>{thinkingPhase}</span>
+                      </div>
+                      <button
+                        onClick={handleStop}
+                        className="flex w-fit items-center gap-1.5 rounded-md border border-[#e0d7c4] px-2 py-1 text-[11px] text-[#5e5e58] transition-colors hover:border-[#8B877D] hover:text-[#0a0a0a]"
+                        style={{ fontFamily: "var(--font-mono)" }}
+                      >
+                        <Square className="size-2.5" fill="currentColor" />
+                        Stop
+                      </button>
+                    </div>
                   </div>
                 )}
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
+
+            <div className="shrink-0 px-4 pb-[30px] pt-3">
+              <div className="mx-auto w-full max-w-[920px]">
+                <DocumentPills documents={documents} onRemove={removeDocument} />
                 <InputBox
                   inputValue={inputValue}
                   setInputValue={setInputValue}
@@ -387,262 +673,357 @@ export default function ChatPage() {
                   onStop={handleStop}
                   fileInputRef={fileInputRef}
                   textareaRef={textareaRef}
+                  onQuickAction={handleQuickAction}
+                  selectedModel={selectedModel}
+                  setSelectedModel={setSelectedModel}
+                  citationsEnabled={citationsEnabled}
+                  setCitationsEnabled={setCitationsEnabled}
                 />
               </div>
             </div>
-          ) : (
-            <>
-              <div className="flex-1 overflow-y-auto">
-                <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-8">
-                  {chatHistory.map((msg, i) =>
-                    msg.role === "user" ? (
-                      <div key={i} className="flex justify-end">
-                        <div className="max-w-[75%] rounded-2xl rounded-br-md border border-gray-200 bg-white px-4 py-2.5 text-[13.5px] leading-[1.6] text-gray-900">
-                          {msg.content}
-                        </div>
-                      </div>
-                    ) : (
-                      <div key={i} className="group flex items-start gap-3">
-                        <div className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-full bg-gray-100">
-                          <FileText className="size-3.5 text-gray-500" strokeWidth={1.5} />
-                        </div>
-                        <div className="flex-1 text-[13.5px] leading-[1.7] text-gray-800">
-                          <div className="prose prose-sm prose-gray max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-headings:mb-1.5 prose-headings:mt-4 prose-code:rounded prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[12px] prose-pre:rounded-xl prose-pre:bg-gray-900 prose-pre:text-gray-100">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-                          </div>
-                          {msg.citations && msg.citations.length > 0 && (
-                            <CitationsCollapsible citations={msg.citations} />
-                          )}
-                          {!msg.citations && msg.sources && msg.sources.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {msg.sources.map((source, si) => (
-                                <span key={si} className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-500">
-                                  <FileText className="size-2.5" />
-                                  {source.documentName}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          <div className="mt-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                            <button
-                              onClick={() => handleCopy(msg.content, i)}
-                              className="flex size-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                              title="Copy"
-                            >
-                              {copiedIdx === i ? <Check className="size-3" /> : <Copy className="size-3" />}
-                            </button>
-                            {i === chatHistory.length - 1 && (
-                              <button
-                                onClick={handleRetry}
-                                className="flex size-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                                title="Retry"
-                              >
-                                <RotateCcw className="size-3" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ),
-                  )}
-
-                  {isAnswering && (
-                    <div className="flex items-start gap-3">
-                      <div className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-full bg-gray-100">
-                        <FileText className="size-3.5 text-gray-500" strokeWidth={1.5} />
-                      </div>
-                      <div className="flex flex-col gap-2.5 pt-1">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1">
-                            <div className="size-1.5 animate-pulse rounded-full bg-[#b04a2f]" />
-                            <div className="size-1.5 animate-pulse rounded-full bg-[#b04a2f] [animation-delay:150ms]" />
-                            <div className="size-1.5 animate-pulse rounded-full bg-[#b04a2f] [animation-delay:300ms]" />
-                          </div>
-                          <span className="text-xs text-gray-400">{thinkingPhase}</span>
-                        </div>
-                        <button
-                          onClick={handleStop}
-                          className="flex w-fit items-center gap-1.5 rounded-full border border-gray-200 px-2.5 py-1 text-[11px] text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-700"
-                        >
-                          <Square className="size-2.5" fill="currentColor" />
-                          Stop
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-              </div>
-
-              <div className="border-t border-gray-200/60 bg-white/80 px-4 py-3 backdrop-blur-sm">
-                <div className="mx-auto w-full max-w-3xl">
-                  {documents.length > 0 && (
-                    <div className="mb-2.5 flex flex-wrap gap-1.5">
-                      {documents.map((doc) => (
-                        <DocChip key={doc.id} doc={doc} onRemove={removeDocument} compact />
-                      ))}
-                    </div>
-                  )}
-                  <InputBox
-                    inputValue={inputValue}
-                    setInputValue={setInputValue}
-                    handleKeyDown={handleKeyDown}
-                    handleSendMessage={handleSendMessage}
-                    handleFileUpload={handleFileUpload}
-                    isUploading={isUploading}
-                    isAnswering={isAnswering}
-                    onStop={handleStop}
-                    fileInputRef={fileInputRef}
-                    textareaRef={textareaRef}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-        </main>
-      </div>
+          </>
+        )}
+      </main>
     </div>
   );
 }
 
-function CitationsCollapsible({ citations }: { citations: Citation[] }) {
-  const [open, setOpen] = useState(false);
+/* SUB-COMPONENTS */
+
+function UserMessage({ msg, idx, editingIdx, editValue, setEditValue, onEditStart, onEditCancel, onEditSubmit }: {
+  msg: ChatMessage; idx: number; editingIdx: number | null; editValue: string;
+  setEditValue: (v: string) => void; onEditStart: (i: number, c: string) => void;
+  onEditCancel: () => void; onEditSubmit: (i: number) => void;
+}) {
   return (
-    <div className="mt-3">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
-      >
-        <FileText className="size-2.5" />
-        {citations.length} citation{citations.length > 1 ? "s" : ""}
-        <svg className={`size-3 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {open && (
-        <div className="mt-2 space-y-1.5">
-          {citations.map((cite, ci) => (
-            <div key={ci} className="rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2">
-              <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
-                <FileText className="size-2.5" />
-                {cite.documentName}
-              </div>
-              <p className="text-[12px] leading-relaxed text-gray-600 italic">
-                &ldquo;{cite.citedText.length > 200 ? cite.citedText.slice(0, 200) + "..." : cite.citedText}&rdquo;
-              </p>
-            </div>
-          ))}
+    <div className="group flex items-start justify-end gap-3">
+      <div className="flex flex-col items-end">
+        <div className="mb-1.5 flex items-center gap-2 pr-1">
+          <span className="uppercase text-[#5e5e58]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}>
+            {USER_NAME}
+          </span>
+          <span className="text-[#908d83]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>
+            · {formatTime(msg.timestamp)}
+          </span>
         </div>
-      )}
+        {editingIdx === idx ? (
+          <div className="flex w-full max-w-[min(80%,56ch)] flex-col gap-2">
+            <textarea
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              className="w-full resize-none rounded-2xl border border-[#b04a2f] bg-[#ffffff] px-4 py-2.5 text-[13px] leading-[1.65] text-[#0a0a0a] focus:outline-none focus:ring-1 focus:ring-[#b04a2f]"
+              style={{ fontFamily: "var(--font-sans)" }}
+              rows={3}
+              autoFocus
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onEditSubmit(idx); } if (e.key === "Escape") onEditCancel(); }}
+            />
+            <div className="flex justify-end gap-1.5">
+              <button onClick={onEditCancel} className="rounded-md px-2.5 py-1 text-[11px] text-[#5e5e58] hover:bg-[#f5efe2]">Cancel</button>
+              <button onClick={() => onEditSubmit(idx)} className="rounded-md bg-[#b04a2f] px-2.5 py-1 text-[11px] text-[#ffffff] hover:bg-[#8a3820]">Send</button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start gap-2">
+            <button
+              onClick={() => onEditStart(idx, msg.content)}
+              className="mt-2 flex size-6 shrink-0 items-center justify-center rounded-md text-[#908d83] opacity-0 transition-opacity hover:bg-[#f5efe2] hover:text-[#5e5e58] group-hover:opacity-100"
+              title="Edit message"
+            >
+              <Pencil className="size-3" />
+            </button>
+            <div
+              className="max-w-[min(72vw,680px)] rounded-[10px] border border-[#e0d7c4] bg-[#faf6ec] px-5 py-3 text-[16px] leading-[1.45] text-[#0a0a0a]"
+              style={{ fontFamily: "var(--font-sans)" }}
+            >
+              {msg.content}
+            </div>
+          </div>
+        )}
+      </div>
+      <div
+        className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-[#8a3820] text-[#ffffff]"
+        style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: 700 }}
+      >
+        {USER_NAME[0]?.toUpperCase() ?? "J"}
+      </div>
     </div>
   );
 }
 
-function DocChip({ doc, onRemove, compact }: { doc: UploadedDocument; onRemove: (id: string) => void; compact?: boolean }) {
-  const isPdf = doc.name.toLowerCase().endsWith(".pdf");
-  if (compact) {
-    return (
-      <div className="group flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px]">
-        <span className={`flex size-4 items-center justify-center rounded text-[7px] font-bold text-white ${isPdf ? "bg-red-500" : "bg-blue-500"}`}>
-          {isPdf ? "P" : "D"}
-        </span>
-        <span className="font-medium text-gray-700">{doc.name.length > 20 ? doc.name.slice(0, 18) + "..." : doc.name}</span>
-        <button onClick={() => onRemove(doc.id)} className="ml-0.5 text-gray-400 opacity-0 transition-opacity hover:text-gray-700 group-hover:opacity-100">
-          <X className="size-3" />
-        </button>
-      </div>
-    );
-  }
+function AssistantMessage({ msg, idx, isLast, isAnswering, responseTimes, copiedIdx, onCopy, onRetry }: {
+  msg: ChatMessage; idx: number; isLast: boolean; isAnswering: boolean;
+  responseTimes: Record<number, number>; copiedIdx: number | null;
+  onCopy: (t: string, i: number) => void; onRetry: () => void;
+}) {
+  const structured = extractKeyObligations(msg.content);
+
   return (
-    <div className="group flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 shadow-sm">
-      <span className={`flex size-7 items-center justify-center rounded-lg ${isPdf ? "bg-red-500" : "bg-blue-500"} text-[9px] font-bold text-white`}>
-        {isPdf ? "PDF" : "DOC"}
-      </span>
-      <div className="flex flex-col">
-        <span className="text-[13px] font-medium text-gray-900">{doc.name}</span>
-        <span className="text-[11px] text-gray-400">{Math.round(doc.sizeBytes / 1024)} KB</span>
+    <div className="group flex items-start gap-3">
+      <div
+        className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-[#0a0a0a] text-[#ffffff]"
+        style={{ fontFamily: "var(--font-display)", fontSize: "15px", fontWeight: 700 }}
+      >
+        G
       </div>
-      <button onClick={() => onRemove(doc.id)} className="ml-2 flex size-5 items-center justify-center rounded-full text-gray-400 opacity-0 transition-opacity hover:bg-gray-100 hover:text-gray-700 group-hover:opacity-100">
-        <X className="size-3.5" />
-      </button>
+      <div className="max-w-[870px] flex-1 text-[#2a2a28]" style={{ fontFamily: "var(--font-sans)", fontSize: "16px", lineHeight: "1.55", letterSpacing: "-0.01em" }}>
+        <div className="mb-2 flex items-center gap-2">
+          <span className="uppercase text-[#5e5e58]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}>GOVDOC</span>
+          <span className="text-[#908d83]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>· {formatTime(msg.timestamp)}</span>
+          {responseTimes[idx] != null && (
+            <span className="uppercase text-[#908d83]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>
+              · ANSWERED IN {responseTimes[idx].toFixed(1)}S
+            </span>
+          )}
+          {(isAnswering && isLast) || msg.content.startsWith("Missing the 45-day window") ? (
+            <span className="uppercase text-[#b04a2f]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700 }}>· STREAMING</span>
+          ) : null}
+        </div>
+
+        {structured ? (
+          <div>
+            {structured.intro && (
+              <div className="mb-4">
+                <ContentWithCitations content={structured.intro} sources={msg.sources} />
+              </div>
+            )}
+            <div className="mb-4 rounded-[6px] border border-[#e0d7c4] border-l-4 border-l-[#b04a2f] bg-[#ffffff] px-5 py-4 shadow-[0_8px_20px_rgba(30,24,14,0.07)]">
+              <div className="mb-3 uppercase text-[#8a3820]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "0.28em" }}>
+                ━━━ {structured.title}
+              </div>
+              <div className="space-y-2.5">
+                {structured.items.map((item, si) => (
+                  <div key={si} className="flex gap-3">
+                    <span className="flex h-[22px] min-w-[28px] shrink-0 items-center justify-center rounded-[4px] bg-[#f0e0d4] font-bold text-[#b04a2f]" style={{ fontFamily: "var(--font-mono)", fontSize: "11px" }}>{item.num}</span>
+                    <span className="text-[13px] leading-[1.65] text-[#0a0a0a]" style={{ fontFamily: "var(--font-sans)" }}>{formatObligationText(item.text)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {structured.outro && (
+              <div><ContentWithCitations content={structured.outro} sources={msg.sources} /></div>
+            )}
+          </div>
+        ) : (
+          <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:mb-1 prose-headings:mt-3 prose-headings:text-[#0a0a0a] prose-code:rounded prose-code:bg-[#f5efe2] prose-code:px-1 prose-code:py-0.5 prose-code:text-[12px] prose-pre:rounded-lg prose-pre:bg-[#f5efe2]">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+          </div>
+        )}
+
+        {!structured && msg.sources && msg.sources.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {msg.sources.map((source, si) => (
+              <span key={si} className="inline-flex items-center gap-1.5 rounded-full bg-[#f0e0d4] px-2.5 py-0.5 text-[10px] font-bold text-[#8a3820]">
+                <FileText className="size-2.5" />
+                {source.documentName} · p.{source.chunkIndex + 1}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-3 flex items-center gap-3">
+          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <button onClick={() => onCopy(msg.content, idx)} className="flex size-6 items-center justify-center rounded-md text-[#908d83] transition-colors hover:bg-[#f5efe2] hover:text-[#5e5e58]" title="Copy">
+              {copiedIdx === idx ? <Check className="size-3" /> : <Copy className="size-3" />}
+            </button>
+            {isLast && (
+              <button onClick={onRetry} className="flex size-6 items-center justify-center rounded-md text-[#908d83] transition-colors hover:bg-[#f5efe2] hover:text-[#5e5e58]" title="Retry">
+                <RotateCcw className="size-3" />
+              </button>
+            )}
+            <button className="flex size-6 items-center justify-center rounded-md text-[#908d83] transition-colors hover:bg-[#f5efe2] hover:text-[#5e5e58]" title="Helpful">
+              <ThumbsUp className="size-3" />
+            </button>
+          </div>
+          {msg.sources && msg.sources.length > 0 && (
+            <span className="text-[#908d83]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>
+              {msg.sources.length} source{msg.sources.length !== 1 ? "s" : ""} cited · audit-logged
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContentWithCitations({ content }: { content: string; sources?: ChatMessage["sources"] }) {
+  const citationPattern = /\[([^\]]+)\]/g;
+  const parts: (string | { citation: string })[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = citationPattern.exec(content)) !== null) {
+    if (match.index > lastIndex) parts.push(content.slice(lastIndex, match.index));
+    parts.push({ citation: match[1]! });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < content.length) parts.push(content.slice(lastIndex));
+  if (parts.length === 0) return <span>{content}</span>;
+
+  return (
+    <span>
+      {parts.map((part, i) =>
+        typeof part === "string" ? (
+          <span key={i}>{part}</span>
+        ) : (
+          <span key={i} className="mx-0.5 inline-flex items-center rounded-full bg-[#b04a2f] px-2 py-0.5 text-[10px] font-medium text-[#ffffff]">
+            {part.citation}
+          </span>
+        ),
+      )}
+    </span>
+  );
+}
+
+function DocumentPills({ documents, onRemove }: { documents: UploadedDocument[]; onRemove: (id: string) => void }) {
+  if (documents.length === 0) return null;
+  return (
+    <div className="mb-3 flex flex-wrap gap-2">
+      {documents.map((doc, index) => {
+        const docName = doc.name ?? "document";
+        const isPdf = docName.toLowerCase().endsWith(".pdf");
+        return (
+          <div key={`${doc.id}-${index}`} className="group flex items-center gap-2.5 rounded-lg border border-[#e0d7c4] bg-[#ffffff] px-3 py-2 text-sm">
+            <span className={`flex size-6 items-center justify-center rounded ${isPdf ? "bg-red-600" : "bg-blue-600"} text-[9px] font-bold text-white`}>{isPdf ? "PDF" : "DOC"}</span>
+            <span className="font-medium text-[#0a0a0a]" style={{ fontFamily: "var(--font-sans)" }}>{docName}</span>
+            <button onClick={() => onRemove(doc.id)} className="ml-1 flex size-5 items-center justify-center rounded-full text-[#908d83] opacity-0 transition-opacity hover:bg-[#e0d7c4] hover:text-[#0a0a0a] group-hover:opacity-100">
+              <X className="size-3.5" />
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 function InputBox({
-  inputValue,
-  setInputValue,
-  handleKeyDown,
-  handleSendMessage,
-  handleFileUpload,
-  isUploading,
-  isAnswering,
-  onStop,
-  fileInputRef,
-  textareaRef,
+  inputValue, setInputValue, handleKeyDown, handleSendMessage, handleFileUpload,
+  isUploading, isAnswering, onStop, fileInputRef, textareaRef, onQuickAction,
+  selectedModel, setSelectedModel, citationsEnabled, setCitationsEnabled,
 }: {
-  inputValue: string;
-  setInputValue: (v: string) => void;
+  inputValue: string; setInputValue: (v: string) => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-  handleSendMessage: () => void;
-  handleFileUpload: (files: FileList | null) => void;
-  isUploading: boolean;
-  isAnswering: boolean;
-  onStop: () => void;
+  handleSendMessage: () => void; handleFileUpload: (files: FileList | null) => void;
+  isUploading: boolean; isAnswering: boolean; onStop: () => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  onQuickAction: (action: string) => void;
+  selectedModel: string; setSelectedModel: (v: string) => void;
+  citationsEnabled: boolean; setCitationsEnabled: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-end gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition-all focus-within:border-[#b04a2f]/40 focus-within:shadow-[0_0_0_3px_rgba(176,74,47,0.06)]">
-      <button
-        onClick={() => fileInputRef.current?.click()}
-        disabled={isUploading}
-        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
-        title="Attach PDF or DOCX"
-      >
-        {isUploading ? (
-          <div className="size-4 animate-spin rounded-full border-2 border-gray-200 border-t-[#b04a2f]" />
-        ) : (
-          <Paperclip className="size-[18px]" />
-        )}
-      </button>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".pdf,.docx,.doc,.txt,.csv"
-        multiple
-        className="hidden"
-        onChange={(e) => handleFileUpload(e.target.files)}
-      />
+    <div className="relative z-10 min-h-[176px] rounded-[14px] border border-[#e0d7c4] bg-[#ffffff] shadow-[0_14px_28px_rgba(30,24,14,0.07)] transition-all focus-within:border-[#b04a2f]">
+      <div className="px-[19px] pb-[11px] pt-[16px]">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.docx,.doc"
+          multiple
+          className="hidden"
+          onChange={(e) => handleFileUpload(e.target.files)}
+        />
+        <textarea
+          ref={textareaRef}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Ask anything — attach a PDF or DOCX to ground the answer in its contents."
+          className="max-h-[112px] min-h-[52px] w-full resize-none bg-transparent text-[16px] leading-relaxed text-[#0a0a0a] placeholder:text-[#908d83] focus:outline-none"
+          style={{ fontFamily: "var(--font-sans)" }}
+          rows={2}
+          disabled={isAnswering}
+        />
+      </div>
 
-      <textarea
-        ref={textareaRef}
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Ask a question about your documents..."
-        className="max-h-[200px] min-h-[24px] flex-1 resize-none bg-transparent py-1 text-[14px] leading-relaxed text-gray-900 placeholder:text-gray-400 focus:outline-none"
-        rows={1}
-        disabled={isAnswering}
-      />
+      <div className="flex min-h-[38px] items-center gap-2 px-[16px] pb-[8px]">
+        {QUICK_ACTIONS.map(({ label, icon: Icon }) => (
+          <button
+            key={label}
+            onClick={() => onQuickAction(label)}
+            className="flex h-[30px] items-center gap-2 rounded-full border border-[#e0d7c4] bg-[#ffffff] px-[12px] text-[#5e5e58] transition-all hover:bg-[#f5efe2] hover:text-[#0a0a0a]"
+            style={{ fontFamily: "var(--font-sans)", fontSize: "13px", fontWeight: 500 }}
+            type="button"
+          >
+            <Icon className="size-3.5" strokeWidth={1.7} />
+            {label}
+          </button>
+        ))}
+      </div>
 
-      {isAnswering ? (
-        <button
-          onClick={onStop}
-          className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[#b04a2f] text-white transition-colors hover:bg-[#8a3820]"
-          title="Stop generating"
-        >
-          <Square className="size-3.5" fill="currentColor" />
-        </button>
-      ) : (
-        <button
-          onClick={handleSendMessage}
-          disabled={!inputValue.trim()}
-          className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#b04a2f] text-white transition-colors hover:bg-[#8a3820] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
-        >
-          <Send className="size-4" />
-        </button>
-      )}
+      <div className="flex h-[58px] items-center justify-between border-t border-[#e0d7c4]/70 px-[20px]">
+        <div className="flex items-center gap-[14px]">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#908d83] transition-colors hover:bg-[#f5efe2] hover:text-[#0a0a0a]"
+            title="Attach PDF or DOCX"
+            type="button"
+          >
+            {isUploading ? (
+              <div className="size-4 animate-spin rounded-full border-2 border-[#e0d7c4] border-t-[#b04a2f]" />
+            ) : (
+              <Paperclip className="size-4" />
+            )}
+          </button>
+          <button className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#908d83] transition-colors hover:bg-[#f5efe2] hover:text-[#0a0a0a]" title="Voice input" type="button">
+            <Mic className="size-4" />
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#908d83] transition-colors hover:bg-[#f5efe2] hover:text-[#0a0a0a]"
+            title="Upload document"
+            type="button"
+          >
+            <FolderOpen className="size-4" />
+          </button>
+          <span className="flex items-center gap-2 text-[#908d83]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "2px" }}>
+            <kbd className="rounded-[3px] border border-[#e0d7c4] bg-[#f5efe2] px-1 py-0.5 text-[9px] leading-none">↵</kbd>
+            SEND
+            <span>·</span>
+            <kbd className="rounded-[3px] border border-[#e0d7c4] bg-[#f5efe2] px-1 py-0.5 text-[9px] leading-none">⇧↵</kbd>
+            NEW LINE
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex h-[32px] items-center gap-2 rounded-full border border-[#e0d7c4] bg-[#ffffff] px-[12px] text-[#8a3820]">
+            <span className="size-1.5 rounded-full bg-[#b04a2f]" />
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              className="appearance-none bg-transparent uppercase focus:outline-none"
+              style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}
+              aria-label="Model"
+            >
+              <option value="Claude Opus">Claude Opus</option>
+              <option value="Claude Sonnet">Claude Sonnet</option>
+              <option value="GPT-4o">GPT-4o</option>
+              <option value="Gemini Flash">Gemini Flash</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => setCitationsEnabled(!citationsEnabled)}
+              className="border-l border-[#e0d7c4] pl-2 uppercase transition-colors hover:text-[#0a0a0a]"
+              style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}
+            >
+              Citations {citationsEnabled ? "On" : "Off"}
+            </button>
+          </div>
+          {isAnswering ? (
+            <button onClick={onStop} className="flex size-[38px] shrink-0 items-center justify-center rounded-[8px] bg-[#0a0a0a] text-[#ffffff] transition-colors hover:bg-[#2a2a28]" title="Stop generating" type="button">
+              <Square className="size-3" fill="currentColor" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim()}
+              className="flex size-[38px] shrink-0 items-center justify-center rounded-[8px] bg-[#b04a2f] text-[#ffffff] shadow-[0_5px_12px_rgba(30,24,14,0.18)] transition-colors hover:bg-[#8a3820] disabled:cursor-not-allowed disabled:bg-[#e0d7c4] disabled:text-[#908d83] disabled:shadow-none"
+              type="button"
+            >
+              <Send className="size-4" />
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
