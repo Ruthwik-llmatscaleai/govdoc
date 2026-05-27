@@ -208,11 +208,15 @@ export async function getConversation(
   };
 }
 
-function parseJsonOrNull<T>(s: string | null): T | null {
+function parseJsonOrNull<T>(s: unknown): T | null {
   if (!s) return null;
-  try {
-    return JSON.parse(s) as T;
-  } catch {
-    return null;
+  if (typeof s === "object") return s as T;
+  if (typeof s === "string") {
+    try {
+      return JSON.parse(s) as T;
+    } catch {
+      return null;
+    }
   }
+  return null;
 }
