@@ -359,10 +359,10 @@ export function ChatClient({ userName }: ChatClientProps) {
 
   return (
     <div
-      className="relative -mb-14 -mt-8 flex h-[calc(100vh-90px)] bg-[var(--color-cream)]"
+      className="relative -mb-8 -mt-8 flex h-[calc(100vh-60px)] overflow-hidden bg-[var(--color-cream)]"
       style={{
         fontFamily: "var(--font-source-sans)",
-        width: "calc(100vw - 16px)",
+        width: "100vw",
         marginLeft: "calc(50% - 50vw)",
       }}
     >
