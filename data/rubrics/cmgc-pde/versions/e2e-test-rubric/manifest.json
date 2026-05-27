@@ -1,0 +1,15 @@
+{
+  "versions": [
+    {
+      "id": "v1.1",
+      "createdAt": "2026-05-27T09:21:52.005Z",
+      "source": "edit"
+    },
+    {
+      "id": "v1.2",
+      "createdAt": "2026-05-27T09:22:07.789Z",
+      "source": "restore",
+      "note": "E2E restore test"
+    }
+  ]
+}

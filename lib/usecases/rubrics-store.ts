@@ -284,6 +284,8 @@ export async function saveRubric(
       createdAt: nowIso(),
       source: "seed",
     };
+    const vdir = versionsDir(usecaseId, rubricId);
+    if (!existsSync(vdir)) mkdirSync(vdir, { recursive: true });
     await fsp.writeFile(versionFile(usecaseId, rubricId, seedId), priorText, "utf-8");
     versionsManifest = { versions: [seedEntry] };
     await writeVersionsManifest(usecaseId, rubricId, versionsManifest);
