@@ -199,6 +199,14 @@
       "option_a": "Resources are available.",
       "option_b": "Full-time construction oversight could strain staff resources.",
       "option_c": "Resources are unavailable."
+    },
+    {
+      "id": "A11",
+      "section": "A: Project Scope & Characteristics",
+      "question": "Does the Project require coordination with multiple agencies, jurisdictions, third-party utility owners, or separate procurements that would  \n  benefit from early Contractor input?",
+      "option_a": "Minimal external coordination. Single owner-operator with one or two routine interfaces (e.g., one utility, one local jurisdiction).",
+      "option_b": "Moderate coordination required. Two or three external parties (e.g., a city, a single utility relocation, and one regulatory permit beyond    \n  routine encroachment).",
+      "option_c": "Extensive coordination across multiple agencies, jurisdictions, third-party utility owners, regulatory bodies, and/or separate technology     \n  procurements — introducing significant scheduling and risk-allocation complexity that benefits materially from early CMGC contractor\n  involvement."
     }
   ],
   "weights": {
