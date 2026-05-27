@@ -69,15 +69,15 @@ export async function appendMessage(input: {
   fileIds?: Array<{ fileId: string; fileName: string }>;
 }): Promise<string> {
   const messageId = randomUUID();
-  const row: MessageRow = {
+  const row = {
     message_id: messageId,
     conversation_id: input.conversationId,
     user_id: input.userId,
     role: input.role,
     content: input.content,
-    citations: input.citations && input.citations.length > 0 ? input.citations : null,
-    sources: input.sources && input.sources.length > 0 ? input.sources : null,
-    file_ids: input.fileIds && input.fileIds.length > 0 ? input.fileIds : null,
+    citations: input.citations && input.citations.length > 0 ? JSON.stringify(input.citations) : null,
+    sources: input.sources && input.sources.length > 0 ? JSON.stringify(input.sources) : null,
+    file_ids: input.fileIds && input.fileIds.length > 0 ? JSON.stringify(input.fileIds) : null,
     created_at: new Date().toISOString(),
   };
   await bq()
