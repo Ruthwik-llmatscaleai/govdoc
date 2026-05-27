@@ -7,7 +7,7 @@ import { docxExporter } from "./exporters/docx";
 
 export const rowAppraisal: UseCase = {
   id: "row-appraisal",
-  label: "Validate Appraisal",
+  label: "Appraisal",
   blurb: "Score Caltrans appraisal reports against the 34-category rubric.",
   tile: "review",
   inputs: [

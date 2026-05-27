@@ -1,23 +1,22 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import {
+  Search,
+  CheckCircle2,
+  ScanText,
+  Tag,
+  AlertTriangle,
+  ClipboardList,
+  ShieldCheck,
+  BookOpenCheck,
+} from "lucide-react";
 import { verifySession } from "@/lib/auth/mock-session";
-import { getRecentActivity } from "@/lib/bigquery-recent-activity";
 import { TopBar } from "@/components/shell/top-bar";
-import { CapabilityGrid } from "@/components/workspace/capability-grid";
-import { RecentActivity } from "@/components/workspace/recent-activity";
+import { Tile } from "@/components/workspace/tile";
 
 function displayName(user: string): string {
   const head = user.split(/[.@_-]/)[0] ?? user;
   return head.charAt(0).toUpperCase() + head.slice(1);
-}
-
-function formatDate(): string {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date());
 }
 
 export default async function WorkspacePage() {
@@ -26,24 +25,19 @@ export default async function WorkspacePage() {
   if (!session) redirect("/login");
 
   const name = displayName(session.user);
-  const dateStamp = formatDate();
-  const recentActivity = await getRecentActivity(session.user);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-cream)]">
       <TopBar user={session.user} />
 
-      <main className="mx-auto w-full max-w-[1400px] flex-1 px-6 pb-16 pt-10 lg:px-10 lg:pt-14">
-        <header className="mb-10 lg:mb-12">
-          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-mute)]">
-            Workspace · {dateStamp}
-          </div>
+      <main className="mx-auto w-full max-w-[1200px] flex-1 px-10 pb-16 pt-12 lg:pt-16">
+        <header className="mb-10 lg:mb-14">
           <h1
             className="leading-[1.02] tracking-[-0.025em] text-[var(--color-ink)]"
             style={{
               fontFamily: "var(--font-display)",
               fontWeight: 400,
-              fontSize: "clamp(48px, 6vw, 72px)",
+              fontSize: "clamp(48px, 6vw, 80px)",
               fontVariationSettings: '"opsz" 144',
             }}
           >
@@ -55,35 +49,23 @@ export default async function WorkspacePage() {
               {name}.
             </em>
           </h1>
-          <p
-            className="mt-4 max-w-[600px] leading-relaxed text-[var(--color-ink-soft)]"
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "clamp(16px, 1.5vw, 18px)",
-              fontWeight: 400,
-              fontVariationSettings: '"opsz" 72',
-            }}
-          >
-            Pick a capability to run. Each one reads documents, applies policy, and produces an auditable
-            decision — every step cited and traceable.
-          </p>
         </header>
 
-        <div className="mb-6 flex gap-2">
-          <FilterButton active>ALL</FilterButton>
-          <FilterButton>RUN</FilterButton>
-          <FilterButton>REVIEW</FilterButton>
-          <FilterButton>ANALYZE</FilterButton>
-        </div>
-
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
-          <CapabilityGrid />
-          <RecentActivity items={recentActivity} />
-        </div>
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+          <Tile icon={BookOpenCheck} title="" accent="Rubrics" href="/work/search" enabled featured />
+          <Tile icon={Search} title="Search &" accent="Ask" href="/work/chat" enabled />
+          <Tile icon={CheckCircle2} title="Validate &" accent="Comply" href="/work/review" enabled />
+          <Tile icon={ScanText} title="OCR &" accent="Extract" href="/work/ocr" enabled />
+          <Tile icon={Tag} title="Classify &" accent="Tag" href="/work/classify" enabled />
+          <Tile icon={AlertTriangle} title="Detect" accent="Risk" href="/work/detect-risk" enabled />
+          <Tile icon={ClipboardList} title="Fill" accent="Forms" href="/work/fill-forms" enabled />
+          <Tile icon={ShieldCheck} title="Audit &" accent="Trace" href="/work/audit" enabled />
+          <Tile icon={BookOpenCheck} title="Policy &" accent="Standards" href="/work/policy" enabled />
+        </section>
       </main>
 
       <footer className="border-t border-[var(--color-line)] bg-[var(--color-paper)]">
-        <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-2 px-6 py-6 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)] md:flex-row md:items-center md:justify-between lg:px-10">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-2 px-10 py-6 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)] md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <span>© 2026 LLM at Scale.AI</span>
             <Sep />
@@ -101,20 +83,6 @@ export default async function WorkspacePage() {
         </div>
       </footer>
     </div>
-  );
-}
-
-function FilterButton({ children, active = false }: { children: React.ReactNode; active?: boolean }) {
-  return (
-    <button
-      className={`rounded px-4 py-2 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors ${
-        active
-          ? "bg-[var(--color-ink)] text-white"
-          : "border border-[var(--color-line)] bg-white text-[var(--color-ink-mute)] hover:border-[var(--color-govdoc-primary)]"
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 

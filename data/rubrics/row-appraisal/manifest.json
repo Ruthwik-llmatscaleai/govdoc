@@ -1,0 +1,10 @@
+{
+  "rubrics": [
+    {
+      "id": "default",
+      "label": "Default",
+      "isDefault": true,
+      "createdAt": "2026-05-21T05:08:47.758Z"
+    }
+  ]
+}

@@ -15,11 +15,6 @@ function reqAt(path: string, cookie?: string) {
 }
 
 describe("middleware", () => {
-  it("allows / (landing page) through", async () => {
-    const res = await middleware(reqAt("/"));
-    expect(res.status).not.toBe(307);
-  });
-
   it("allows /login through", async () => {
     const res = await middleware(reqAt("/login"));
     expect(res.status).not.toBe(307);

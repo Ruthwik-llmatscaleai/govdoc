@@ -1,13 +1,20 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { embedQuery, findTopKChunks, type DocumentChunk } from "./document-service";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 });
 
+export interface Citation {
+  documentName: string;
+  citedText: string;
+  startIndex?: number;
+  endIndex?: number;
+}
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  citations?: Citation[];
   sources?: Array<{
     documentName: string;
     chunkIndex: number;
@@ -17,63 +24,81 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-/**
- * Answer a question using semantic search and Claude
- */
 export async function answerQuestion(
   question: string,
-  allChunks: DocumentChunk[],
+  fileIds: Array<{ fileId: string; fileName: string }>,
   chatHistory: ChatMessage[] = []
 ): Promise<ChatMessage> {
-  // Generate query embedding
-  const queryEmbedding = await embedQuery(question);
+  const documentBlocks: Anthropic.Beta.BetaContentBlockParam[] = fileIds.map((f) => ({
+    type: "document" as const,
+    source: { type: "file" as const, file_id: f.fileId },
+    title: f.fileName,
+    citations: { enabled: true },
+  }));
 
-  // Find top 5 most relevant chunks
-  const topChunks = findTopKChunks(queryEmbedding, allChunks, 5);
-
-  // Build context from retrieved chunks
-  const context = topChunks
-    .map((chunk) => `[Document: ${chunk.documentName}, Chunk ${chunk.chunkIndex + 1}]\n${chunk.text}`)
-    .join("\n\n");
-
-  // Build conversation history for Claude
-  const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-    ...chatHistory.slice(-10).map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    })),
-    {
-      role: "user" as const,
-      content: `Context from uploaded documents:\n\n${context}\n\nQuestion: ${question}`,
-    },
+  const userContent: Anthropic.Beta.BetaContentBlockParam[] = [
+    ...documentBlocks,
+    { type: "text" as const, text: question },
   ];
 
-  // Call Claude with adaptive thinking
-  const response = await anthropic.messages.create({
+  const messages: Anthropic.Beta.BetaMessageParam[] = [
+    ...chatHistory.slice(-10).map((msg) => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+    })),
+    { role: "user" as const, content: userContent },
+  ];
+
+  const response = await anthropic.beta.messages.create({
     model: "claude-opus-4-7",
-    max_tokens: 4096,
+    max_tokens: 16000,
+    betas: ["files-api-2025-04-14"],
     thinking: {
       type: "adaptive",
       display: "omitted",
     },
     system:
-      "You are a helpful assistant that answers questions based on the provided document context. Only answer based on the information in the context. If the answer is not in the context, say so clearly. Be concise and accurate.",
+      "You are a helpful assistant that answers questions based on the provided documents. Only answer based on the information in the documents. If the answer is not in the documents, say so clearly. Be concise and accurate. Always cite specific passages from the documents to support your answers.",
     messages,
   });
 
-  const answerText = response.content
-    .filter((block) => block.type === "text")
-    .map((block) => (block.type === "text" ? block.text : ""))
-    .join("\n");
+  const fileIdToName = Object.fromEntries(fileIds.map((f) => [f.fileId, f.fileName]));
+  let answerText = "";
+  const citations: Citation[] = [];
+
+  for (const block of response.content) {
+    if (block.type === "text") {
+      answerText += block.text;
+      const blockAny = block as unknown as Record<string, unknown>;
+      if ("citations" in block && Array.isArray(blockAny.citations)) {
+        for (const cite of blockAny.citations as Array<Record<string, unknown>>) {
+          const citedText = cite.cited_text as string | undefined;
+          if (!citedText) continue;
+          const docName = (cite.document_title as string) || fileIdToName[cite.file_id as string] || "Document";
+          citations.push({
+            documentName: docName,
+            citedText,
+            startIndex: cite.start_char_index as number | undefined,
+            endIndex: cite.end_char_index as number | undefined,
+          });
+        }
+      }
+    }
+  }
+
+  const uniqueCitations = citations.filter((cite, i, arr) =>
+    arr.findIndex((c) => c.citedText === cite.citedText) === i
+  );
 
   return {
     role: "assistant",
     content: answerText,
-    sources: topChunks.map((chunk) => ({
-      documentName: chunk.documentName,
-      chunkIndex: chunk.chunkIndex,
-      score: chunk.score,
-      excerpt: chunk.text.slice(0, 200) + (chunk.text.length > 200 ? "..." : ""),
+    citations: uniqueCitations.length > 0 ? uniqueCitations : undefined,
+    sources: fileIds.map((f) => ({
+      documentName: f.fileName,
+      chunkIndex: 0,
+      score: 1.0,
+      excerpt: `Consulted full document: ${f.fileName}`,
     })),
     timestamp: new Date().toISOString(),
   };
