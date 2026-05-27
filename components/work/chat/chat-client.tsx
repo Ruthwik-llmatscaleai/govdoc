@@ -322,7 +322,6 @@ export function ChatClient({ userName }: ChatClientProps) {
     setChatHistory([]);
     setDocuments([]);
     setConversationId(newConversationId());
-    void refreshConversationList();
     try {
       window.localStorage.removeItem(STORAGE_LAST_CONVERSATION);
     } catch {
