@@ -12,6 +12,8 @@
   --color-govdoc-deep: #8a3820;
   --color-govdoc-tint: #f5efe2;
   --color-govdoc-accent: oklch(0.78 0.13 75);
+  --color-govdoc-navy: #b04a2f;
+  --color-govdoc-navy-soft: rgba(176, 74, 47, 0.08);
 
   /* Mock palette tokens (cream / paper / ink) */
   --color-cream: #f5efe2;

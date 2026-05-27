@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadToClaudeFiles } from "@/lib/document-service";
+import { uploadToClaudeFiles } from "@/lib/search-ask/document-service";
+import { verifySession } from "@/lib/auth/mock-session";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+function getCookie(req: NextRequest, name: string): string | undefined {
+  const cookie = req.headers.get("cookie") ?? "";
+  for (const part of cookie.split(";")) {
+    const [k, ...v] = part.trim().split("=");
+    if (k === name) return v.join("=");
+  }
+  return undefined;
+}
 
 const SUPPORTED_EXTENSIONS: Record<string, string> = {
   ".pdf": "application/pdf",
@@ -13,48 +24,44 @@ const SUPPORTED_EXTENSIONS: Record<string, string> = {
 };
 
 export async function POST(request: NextRequest) {
+  const session = await verifySession(getCookie(request, "govdoc_session"));
+  if (!session) return new NextResponse("Unauthorized", { status: 401 });
+
   const startTime = Date.now();
   try {
     const formData = await request.formData();
-    const userId = formData.get("userId") as string;
     const files = formData.getAll("files") as File[];
-
-    if (!userId) {
-      return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
-    }
 
     if (files.length === 0) {
       return NextResponse.json({ success: false, error: "No files provided" }, { status: 400 });
     }
 
-    console.log("[upload] Starting:", files.length, "file(s) from", userId);
-
     const uploadedDocuments = [];
-
     for (const file of files) {
       const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
       const mimeType = SUPPORTED_EXTENSIONS[ext];
       if (!mimeType) {
-        console.warn("[upload] Skipping unsupported:", file.name);
+        logger.warn({ name: file.name }, "[search-ask] skipping unsupported file");
         continue;
       }
-
       const buffer = Buffer.from(await file.arrayBuffer());
-      console.log("[upload] Uploading to Claude Files API:", file.name, `(${buffer.length} bytes)`);
-
       const { fileId, sizeBytes } = await uploadToClaudeFiles(buffer, file.name, mimeType);
-      console.log("[upload] Done:", file.name, "→", fileId);
-
       uploadedDocuments.push({ fileId, name: file.name, sizeBytes });
     }
 
     const duration = Date.now() - startTime;
-    console.log("[upload] Complete:", uploadedDocuments.length, "doc(s) in", duration, "ms");
+    logger.info(
+      { user: session.user, count: uploadedDocuments.length, durationMs: duration },
+      "[search-ask] upload complete",
+    );
 
     return NextResponse.json({ success: true, documents: uploadedDocuments });
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error("[upload] Error after", duration, "ms:", error instanceof Error ? error.stack : error);
+    logger.error(
+      { durationMs: duration, error: error instanceof Error ? error.message : String(error) },
+      "[search-ask] upload error",
+    );
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "Upload failed" },
       { status: 500 },
