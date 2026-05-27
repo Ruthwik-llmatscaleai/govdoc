@@ -603,7 +603,7 @@ export default function SearchAskPage() {
           /* ─── CONVERSATION ACTIVE ─── */
           <>
             <div className="flex-1 overflow-y-auto">
-              <div className="flex min-h-full w-full flex-col gap-[18px] px-[38px] pb-[248px] pt-[28px]">
+              <div className="flex min-h-full w-full flex-col gap-[18px] px-[38px] pb-[28px] pt-[28px]">
                 {chatHistory.map((msg, i) =>
                   msg.role === "user" ? (
                     <UserMessage
@@ -669,8 +669,8 @@ export default function SearchAskPage() {
             </div>
 
             {/* Bottom input */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-[30px] z-20 px-4">
-              <div className="pointer-events-auto mx-auto w-full max-w-[920px]">
+            <div className="shrink-0 px-4 pb-[30px] pt-3">
+              <div className="mx-auto w-full max-w-[920px]">
                 <DocumentPills documents={documents} onRemove={removeDocument} />
                 <InputBox
                   inputValue={inputValue}
