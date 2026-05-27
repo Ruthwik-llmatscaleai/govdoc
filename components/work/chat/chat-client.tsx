@@ -315,7 +315,6 @@ export function ChatClient({ userName }: ChatClientProps) {
   );
 
   const handleNewChat = useCallback(() => {
-    if (chatHistory.length === 0) return;
     setChatHistory([]);
     setDocuments([]);
     setConversationId(newConversationId());
@@ -373,7 +372,7 @@ export function ChatClient({ userName }: ChatClientProps) {
         selectedId={conversationId}
         onSelect={handleSelectConversation}
         onNewChat={handleNewChat}
-        canStartNew={chatHistory.length > 0}
+        canStartNew={true}
         onOpenSettings={() => alert("Settings — coming soon")}
       />
 
