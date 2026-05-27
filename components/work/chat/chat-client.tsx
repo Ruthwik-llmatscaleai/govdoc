@@ -119,6 +119,8 @@ export function ChatClient({ userName }: ChatClientProps) {
             : null;
         if (last && list.find((c) => c.id === last)) {
           await loadConversationInto(last);
+        } else if (list.length > 0) {
+          await loadConversationInto(list[0].id);
         }
       } catch {
         /* leave list empty; user can still start chatting */
@@ -145,6 +147,7 @@ export function ChatClient({ userName }: ChatClientProps) {
         messages: ChatMessage[];
         fileIds: Array<{ fileId: string; fileName: string }>;
       };
+      if (conv.messages.length === 0) return;
       setConversationId(conv.id);
       setChatHistory(conv.messages);
       // Rehydrate the doc chip row from the message history. We can't recover
@@ -316,12 +319,13 @@ export function ChatClient({ userName }: ChatClientProps) {
     setChatHistory([]);
     setDocuments([]);
     setConversationId(newConversationId());
+    void refreshConversationList();
     try {
       window.localStorage.removeItem(STORAGE_LAST_CONVERSATION);
     } catch {
       /* ignore */
     }
-  }, [chatHistory.length]);
+  }, [chatHistory.length, refreshConversationList]);
 
   const handleSelectConversation = useCallback((id: string) => {
     void loadConversationInto(id);
