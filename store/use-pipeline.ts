@@ -115,8 +115,13 @@ export const usePipelineStore = create<Store>((set, get) => ({
       buf = blocks.pop() ?? "";
       for (const b of blocks) {
         if (!b.startsWith("data: ")) continue;
-        get().applyEvent(JSON.parse(b.slice(6)) as StepEvent);
+        try {
+          get().applyEvent(JSON.parse(b.slice(6)) as StepEvent);
+        } catch { /* skip malformed SSE event */ }
       }
+    }
+    if (get().current?.status === "running") {
+      get().applyEvent({ type: "error", stage: "stream", message: "Connection lost — please retry." });
     }
   },
 }));

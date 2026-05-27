@@ -119,7 +119,7 @@ export function ChatClient({ userName }: ChatClientProps) {
             : null;
         if (last && list.find((c) => c.id === last)) {
           await loadConversationInto(last);
-        } else if (list.length > 0) {
+        } else if (list.length > 0 && list[0]) {
           await loadConversationInto(list[0].id);
         }
       } catch {
@@ -325,7 +325,7 @@ export function ChatClient({ userName }: ChatClientProps) {
     } catch {
       /* ignore */
     }
-  }, [chatHistory.length, refreshConversationList]);
+  }, [refreshConversationList]);
 
   const handleSelectConversation = useCallback((id: string) => {
     void loadConversationInto(id);
@@ -336,10 +336,10 @@ export function ChatClient({ userName }: ChatClientProps) {
   }, []);
 
   const handleRetry = useCallback(() => {
-    const lastUser = [...chatHistory].reverse().find((m) => m.role === "user");
-    if (!lastUser) return;
-    setChatHistory(chatHistory.filter((_, i) => i < chatHistory.length - 1));
-    inputRef.current?.setMessage(lastUser.content);
+    const lastUserIdx = chatHistory.map((m) => m.role).lastIndexOf("user");
+    if (lastUserIdx === -1) return;
+    inputRef.current?.setMessage(chatHistory[lastUserIdx]!.content);
+    setChatHistory(chatHistory.slice(0, lastUserIdx));
   }, [chatHistory]);
 
   const sidebarEntries: ConversationListEntry[] = conversations.map((c) => ({

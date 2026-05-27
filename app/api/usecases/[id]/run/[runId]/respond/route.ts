@@ -15,7 +15,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const session = await verifySession(getCookie(req, "govdoc_session"));
   if (!session) return new NextResponse("Unauthorized", { status: 401 });
   const { runId } = await params;
-  const body = await req.json();
+  let body: unknown;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const ok = resolveHumanResponse(runId, body);
   if (!ok) return new NextResponse("Run not found or already responded", { status: 404 });
   return NextResponse.json({ ok: true });

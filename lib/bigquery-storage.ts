@@ -14,9 +14,10 @@ let _initPromise: Promise<void> | null = null;
 async function ensureTables() {
   if (_initialized) return;
   if (!_initPromise) {
-    _initPromise = initializeBigQueryTables().then(() => {
-      _initialized = true;
-    });
+    _initPromise = initializeBigQueryTables().then(
+      () => { _initialized = true; },
+      () => { _initPromise = null; },
+    );
   }
   await _initPromise;
 }
@@ -121,7 +122,7 @@ export async function loadChatHistory(userId: string, limit: number = 50): Promi
     messageId: row.messageId as string,
     role: row.role as "user" | "assistant",
     content: row.content as string,
-    sources: row.sources ? JSON.parse(row.sources as string) : undefined,
+    sources: row.sources ? (typeof row.sources === "string" ? JSON.parse(row.sources) : row.sources) : undefined,
     timestamp: (row.timestamp as { value: string }).value,
   })).reverse();
 }
@@ -164,7 +165,7 @@ export async function loadDocuments(userId: string): Promise<StoredDocument[]> {
     documentId: row.documentId as string,
     documentName: row.documentName as string,
     pageCount: row.pageCount as number,
-    chunks: JSON.parse(row.chunks as string),
+    chunks: typeof row.chunks === "string" ? JSON.parse(row.chunks) : row.chunks,
     uploadedAt: (row.uploadedAt as { value: string }).value,
   }));
 }
