@@ -147,7 +147,10 @@ export function ChatClient({ userName }: ChatClientProps) {
         messages: ChatMessage[];
         fileIds: Array<{ fileId: string; fileName: string }>;
       };
-      if (conv.messages.length === 0) return;
+      if (conv.messages.length === 0) {
+        setConversations((prev) => prev.filter((c) => c.id !== id));
+        return;
+      }
       setConversationId(conv.id);
       setChatHistory(conv.messages);
       // Rehydrate the doc chip row from the message history. We can't recover
