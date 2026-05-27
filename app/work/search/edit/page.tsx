@@ -260,18 +260,6 @@ export default function ManageRubricsPage() {
 
   return (
     <div className="relative min-h-full">
-      {/* Subtle grid overlay */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(10,10,10,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(10,10,10,0.03) 1px, transparent 1px)",
-          backgroundSize: "64px 64px",
-        }}
-      />
-
-      <div className="relative z-10">
         {/* Breadcrumbs */}
         <nav className="mb-7 flex items-center gap-2.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
           <Link
@@ -292,32 +280,19 @@ export default function ManageRubricsPage() {
         </nav>
 
         {/* Section label */}
-        <div className="mb-5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-[var(--color-ink-mute)]">
-          <span className="mr-2 text-[var(--color-line)]">━━━</span>
-          03&nbsp;&nbsp;RUBRICS&nbsp;&middot;&nbsp;MANAGE
+        <div className="govdoc-kicker mb-6">
+          <span className="govdoc-kicker-number">03</span>
+          <span>Rubrics · Manage</span>
         </div>
 
         {/* Header row: title + badge + version info */}
         <div className="mb-6 flex items-start justify-between">
           <div className="space-y-3">
-            <h1
-              className="leading-none tracking-[-0.025em] text-[var(--color-ink)]"
-              style={{
-                fontFamily: "var(--font-display)",
-                fontWeight: 400,
-                fontSize: "clamp(34px, 4vw, 48px)",
-                fontVariationSettings: '"opsz" 96',
-              }}
-            >
+            <h1 className="govdoc-display">
               Manage{" "}
-              <em
-                className="text-[var(--color-govdoc-primary)]"
-                style={{ fontStyle: "italic", fontWeight: 300 }}
-              >
-                Rubrics.
-              </em>
+              <em>Rubrics.</em>
             </h1>
-            <p className="max-w-[62ch] text-[14.5px] leading-[1.6] text-[var(--color-ink-mute)]">
+            <p className="govdoc-copy">
               Build and refine the scoring rubrics GovDoc applies to each review type. Add
               questions, set weights, adjust options &mdash;{" "}
               <strong className="font-semibold text-[var(--color-ink-soft)]">
@@ -329,9 +304,8 @@ export default function ManageRubricsPage() {
 
           <div className="shrink-0 space-y-2 text-right">
             {/* Admin badge */}
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-emerald-700">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              ACTIVE&nbsp;&middot;&nbsp;EDIT MODE
+            <span className="govdoc-pill border-[#D6C2A0] text-[#8A6335] before:bg-[#C78B3A]">
+              ADMIN&nbsp;&middot;&nbsp;EDIT MODE
             </span>
             {/* Version info */}
             <div className="space-y-0.5 font-mono text-[9.5px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)]">
@@ -370,7 +344,7 @@ export default function ManageRubricsPage() {
         </div>
 
         {/* Action bar */}
-        <div className="mb-6 flex items-center gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] px-4 py-2.5">
+        <div className="govdoc-surface mb-6 flex flex-wrap items-center gap-3 px-4 py-2.5">
           <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--color-ink-soft)]">
             <span className="text-[var(--color-ink-faint)]">RUBRIC:</span>
             <span className="font-medium">Manage Project</span>
@@ -401,7 +375,7 @@ export default function ManageRubricsPage() {
             return (
               <div
                 key={section.id}
-                className={`border border-[var(--color-line)] ${idx === 0 ? "rounded-t-lg" : ""} ${idx === SECTIONS.length - 1 ? "rounded-b-lg" : ""} ${idx > 0 ? "-mt-px" : ""} ${isExpanded ? "bg-[var(--color-paper)]" : "bg-[var(--color-cream-soft)]"}`}
+                className={`border border-[var(--color-line)] ${idx === 0 ? "rounded-t-[8px]" : ""} ${idx === SECTIONS.length - 1 ? "rounded-b-[8px]" : ""} ${idx > 0 ? "-mt-px" : ""} ${isExpanded ? "bg-[var(--color-paper)]" : "bg-[var(--color-cream-soft)]"}`}
               >
                 {/* Section header */}
                 <button
@@ -521,7 +495,7 @@ export default function ManageRubricsPage() {
             {VERSION_HISTORY.map((v) => (
               <div
                 key={v.version}
-                className="flex items-start gap-4 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] px-5 py-4"
+                className="flex items-start gap-4 rounded-[8px] border border-[var(--color-line)] bg-[var(--color-paper)] px-5 py-4"
               >
                 <span className="font-mono text-[12px] font-bold text-[var(--color-ink-soft)]">
                   {v.version}
@@ -551,7 +525,7 @@ export default function ManageRubricsPage() {
         </div>
 
         {/* Bottom status bar */}
-        <div className="mt-8 flex items-center justify-between rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] px-5 py-3">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[var(--color-line)] bg-[var(--color-paper)] px-5 py-3">
           <span className="inline-flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-emerald-600">
             <span>&#9670;</span>
             NO UNSAVED CHANGES
@@ -568,7 +542,6 @@ export default function ManageRubricsPage() {
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 }

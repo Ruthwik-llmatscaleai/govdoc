@@ -19,7 +19,7 @@ type Props = {
 };
 
 const TAB_BASE =
-  "inline-flex items-center gap-2.5 border-b-2 border-transparent bg-transparent px-[22px] py-3.5 text-[13.5px] font-medium tracking-[-0.005em] text-[var(--color-ink-mute)] -mb-px transition-colors hover:bg-[var(--color-cream-soft)] hover:text-[var(--color-ink)] data-[selected=true]:border-[var(--color-govdoc-primary)] data-[selected=true]:font-semibold data-[selected=true]:text-[var(--color-ink)]";
+  "-mb-px inline-flex items-center gap-2.5 border-b-2 border-transparent bg-transparent px-[22px] py-3.5 text-[13.5px] font-medium tracking-[-0.005em] text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-cream-soft)] hover:text-[var(--color-ink)] data-[selected=true]:border-[var(--color-govdoc-primary)] data-[selected=true]:font-semibold data-[selected=true]:text-[var(--color-ink)]";
 
 const COUNT_CHIP =
   "border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-1.5 py-0.5 font-mono text-[10px] tracking-[0.08em] text-[var(--color-ink-faint)]";

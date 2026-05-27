@@ -8,51 +8,111 @@ interface RecentActivityProps {
 export function RecentActivity({ items }: RecentActivityProps) {
   return (
     <aside
-      className="rounded-lg border border-[var(--color-line)] bg-white p-6"
+      className="w-full max-w-[500px] shrink-0 rounded-[8px] border border-[#D4CDB8] bg-[#FCFAF3] px-[22px] py-[20px]"
+      style={{ minHeight: "220px" }}
       data-testid="recent-activity"
     >
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-ink-mute)]">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#107e54]" />
-          RECENT ACTIVITY - LAST 24H
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-[10px]">
+          <span className="inline-block h-[6px] w-[6px] rounded-full bg-[#3D5740]" />
+          <span
+            className="uppercase text-[#3D5740]"
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "9px",
+              lineHeight: "11px",
+              letterSpacing: "3px",
+              fontWeight: 700,
+            }}
+          >
+            RECENT ACTIVITY · LAST 24H
+          </span>
         </div>
         <Link
           href="/work/audit"
-          className="font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-ink-soft)] hover:underline flex items-center gap-1"
+          className="uppercase text-[#6E706A] hover:text-[#0E1410]"
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "9px",
+            lineHeight: "11px",
+            letterSpacing: "3px",
+            fontWeight: 700,
+          }}
         >
           VIEW ALL →
         </Link>
       </div>
 
-      {items.length === 0 ? (
-        <div className="py-8 text-center text-sm text-[var(--color-ink-mute)]">No recent activity</div>
-      ) : (
-        <div className="space-y-3">
-          {items.map((item, idx) => (
-            <ActivityItem key={idx} item={item} />
-          ))}
-        </div>
-      )}
+      {/* Divider */}
+      <div className="my-[12px] h-px bg-[#D4CDB8]" />
+
+      {/* Scrollable content */}
+      <div className="activity-scroll overflow-y-auto" style={{ maxHeight: "150px" }}>
+        {items.length > 0 ? (
+          <div className="space-y-[16px]">
+            {items.map((item, idx) => (
+              <ActivityRow key={idx} item={item} />
+            ))}
+          </div>
+        ) : (
+          <p
+            className="text-[#6E706A]"
+            style={{ fontFamily: "var(--font-mono)", fontSize: "11px", fontWeight: 500 }}
+          >
+            No recent activity
+          </p>
+        )}
+      </div>
     </aside>
   );
 }
 
-function ActivityItem({ item }: { item: RecentActivityItem }) {
+function ActivityRow({ item }: { item: RecentActivityItem }) {
   const badge = getBadge(item.status);
   const timeAgo = formatTimeAgo(item.timestamp);
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-[10px]">
       <span
-        className="shrink-0 rounded px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wider border"
-        style={{ background: badge.bg, color: badge.color, borderColor: badge.border }}
+        className="inline-flex shrink-0 items-center justify-center rounded-[2px] uppercase"
+        style={{
+          height: "14px",
+          minWidth: "52px",
+          background: badge.bg,
+          color: badge.color,
+          fontFamily: "var(--font-mono)",
+          fontSize: "8px",
+          lineHeight: "14px",
+          letterSpacing: "1.5px",
+          fontWeight: 700,
+          textAlign: "center",
+        }}
       >
         {item.status}
       </span>
-      <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-[var(--color-ink)]">
+      <span
+        className="min-w-0 flex-1 truncate text-[#0E1410]"
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: "11px",
+          lineHeight: "14px",
+          fontWeight: 500,
+        }}
+      >
         {item.documentName}
       </span>
-      <span className="shrink-0 font-mono text-[10px] text-[var(--color-ink-faint)]">
+      <span
+        className="shrink-0 text-[#6E706A]"
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: "9px",
+          lineHeight: "11px",
+          letterSpacing: "0.5px",
+          fontWeight: 500,
+          textAlign: "right",
+        }}
+      >
         {timeAgo}
       </span>
     </div>
@@ -62,11 +122,11 @@ function ActivityItem({ item }: { item: RecentActivityItem }) {
 function getBadge(status: string) {
   switch (status) {
     case "PASS":
-      return { bg: "#e2f9ee", border: "#b2f2d2", color: "#107e54" };
+      return { bg: "#E3E5DB", color: "#475F49" };
     case "FAIL":
-      return { bg: "#fff1f1", border: "#ffd1d1", color: "#c72c2c" };
+      return { bg: "#F1E1DC", color: "#8E3535" };
     default:
-      return { bg: "#faf4f1", border: "#f4d4ca", color: "#b04a2f" };
+      return { bg: "#F2E7D5", color: "#8A6335" };
   }
 }
 

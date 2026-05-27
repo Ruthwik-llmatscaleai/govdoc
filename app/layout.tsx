@@ -42,7 +42,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${fraunces.variable} ${tinos.variable} ${interTight.variable} ${jetbrainsMono.variable}`}
     >
       <body>
-        <Providers>{children}</Providers>
+        <div className="govdoc-desktop-required hidden max-[1023px]:flex" role="status" aria-live="polite">
+          <div className="govdoc-desktop-required__panel">
+            <div className="govdoc-desktop-required__brand">
+              <span className="govdoc-desktop-required__mark" />
+              <span>GovDoc</span>
+            </div>
+            <h1>Desktop Workspace Required</h1>
+            <p>
+              GovDoc is a governed review console built for wide desktop screens.
+              Please open it on a desktop browser.
+            </p>
+          </div>
+        </div>
+        <div className="govdoc-app-shell max-[1023px]:hidden">
+          <Providers>{children}</Providers>
+        </div>
       </body>
     </html>
   );

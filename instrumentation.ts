@@ -5,8 +5,7 @@ export async function register(): Promise<void> {
     validateEnv(process.env);
   } catch (e) {
     if (e instanceof EnvValidationError) {
-      process.stderr.write(`[govdoc] env validation failed: ${e.message}\n`);
-      process.exit(1);
+      throw new Error(`[govdoc] env validation failed: ${e.message}`);
     }
     throw e;
   }

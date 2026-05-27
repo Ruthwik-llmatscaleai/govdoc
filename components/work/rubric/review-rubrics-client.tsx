@@ -141,7 +141,7 @@ export function ReviewRubricsClient({
       </div>
 
       {/* Metadata bar */}
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-5 py-3">
+      <div className="govdoc-surface mt-5 flex flex-wrap items-center justify-between gap-4 px-5 py-3">
         <div className="flex flex-wrap items-center gap-5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
           <span>
             Rubric:{" "}
@@ -227,7 +227,7 @@ export function ReviewRubricsClient({
 
       {/* Question sections — CMGC view (the primary/first tab) */}
       {activeTab === "cmgc-pde" && (
-        <div className="mt-4 border border-[var(--color-line)] bg-[var(--color-paper)]">
+        <div className="govdoc-surface mt-4 overflow-hidden">
           {sections.map((s, i) => {
             const isOpen = expandedSections.has(s.key);
             const weightPct = Math.round(s.weight * 100);
@@ -263,7 +263,7 @@ export function ReviewRubricsClient({
                       </span>
                     )}
                   </div>
-                  <span className="border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
+                  <span className="rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
                     {s.qs.length} questions · {weightPct}%
                   </span>
                   <span
@@ -321,7 +321,7 @@ export function ReviewRubricsClient({
 
       {/* CUCP view */}
       {activeTab === "cucp-reevals" && (
-        <div className="mt-4 border border-[var(--color-line)] bg-[var(--color-paper)]">
+        <div className="govdoc-surface mt-4 overflow-hidden">
           {/* L2 Categories */}
           <div className="border-b border-[var(--color-line)] px-6 py-4">
             <h3 className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
@@ -396,7 +396,7 @@ export function ReviewRubricsClient({
 
       {/* ROW view */}
       {activeTab === "row-appraisal" && (
-        <div className="mt-4 border border-[var(--color-line)] bg-[var(--color-paper)]">
+        <div className="govdoc-surface mt-4 overflow-hidden">
           {Object.entries(rowData).map(([category, tiers], i) => (
             <div
               key={category}
@@ -433,7 +433,7 @@ export function ReviewRubricsClient({
       )}
 
       {/* Summary bar */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 bg-[var(--color-ink)] px-6 py-4">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[8px] bg-[var(--color-ink)] px-6 py-4">
         <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--color-cream)]">
           <span className="text-[var(--color-govdoc-primary)]">◆</span>
           <span className="border border-[var(--color-ink-mute)] px-2 py-0.5 text-[10px]">
@@ -517,7 +517,7 @@ function TabBtn({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-2.5 border-b-2 px-5 py-3.5 text-[13.5px] font-medium tracking-[-0.005em] transition-colors -mb-px ${
+      className={`-mb-px inline-flex items-center gap-2.5 border-b-2 px-5 py-3.5 text-[13.5px] font-medium tracking-[-0.005em] transition-colors ${
         active
           ? "border-[var(--color-govdoc-primary)] font-semibold text-[var(--color-ink)]"
           : "border-transparent text-[var(--color-ink-mute)] hover:bg-[var(--color-cream-soft)] hover:text-[var(--color-ink)]"

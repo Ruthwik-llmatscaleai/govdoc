@@ -1,29 +1,57 @@
 export function PageFooter() {
+  const labelStyle = {
+    fontFamily: "var(--font-mono)",
+    fontSize: "11px",
+    lineHeight: "13px",
+    letterSpacing: "3px",
+    fontWeight: 700,
+  } as const;
+
   return (
-    <footer className="bg-[#0a0d0b]">
-      <div className="mx-auto flex max-w-[1400px] items-center justify-between px-10 py-5 font-mono text-[11px] font-semibold uppercase tracking-[0.35em] text-[#aaa898]">
-        <div className="flex items-center gap-x-4">
-          <span className="text-[#c5a65b]">© 2026 LLMATSCALE.AI</span>
-          <span className="text-[#5f6158]">|</span>
-          <span>Confidential &amp; Proprietary</span>
+    <footer
+      className="w-full bg-[#0E1410]"
+      style={{ minHeight: "60px", borderTop: "1px solid #1C221D" }}
+    >
+      <div className="govdoc-page-pad flex min-h-[60px] flex-wrap items-center justify-between gap-x-8 gap-y-3 py-3">
+        {/* Left group */}
+        <div className="flex items-center gap-0">
+          <span className="uppercase text-[#E7E6D8]" style={labelStyle}>
+            © 2026 LLMATSCALE.AI
+          </span>
+          <span className="mx-[25px] inline-block h-[25px] w-px bg-[#E7E6D8] opacity-30" />
+          <span className="uppercase text-[#E7E6D8]" style={labelStyle}>
+            CONFIDENTIAL &amp; PROPRIETARY
+          </span>
         </div>
-        <span className="text-[#e9e2ce]">Authorized Use Only</span>
-        <div className="flex items-center gap-x-4">
-          <span className="inline-flex items-center gap-1.5">
-            <svg width="10" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#aaa898]"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/></svg>
+
+        {/* Center */}
+        <span
+          className="hidden uppercase text-[#D7E0D0] md:inline"
+          style={{ ...labelStyle, letterSpacing: "6px" }}
+        >
+          AUTHORIZED USE ONLY
+        </span>
+
+        {/* Right group */}
+        <div className="flex items-center gap-0">
+          <span className="inline-flex items-center gap-1.5 uppercase text-[#E7E6D8]" style={labelStyle}>
+            <svg width="10" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#E7E6D8]">
+              <rect x="3" y="7" width="10" height="7" rx="1.5"/>
+              <path d="M5 7V5a3 3 0 0 1 6 0v2"/>
+            </svg>
             TLS 1.3
           </span>
-          <span className="text-[#5f6158]">·</span>
-          <span className="inline-flex items-center gap-1">
-            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#5f9b72]"><path d="M3 8.5l3.5 3.5 6.5-7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <span className="mx-[20px] inline-block h-[25px] w-px bg-[#E7E6D8] opacity-30" />
+          <span className="inline-flex items-center gap-1.5 uppercase text-[#E7E6D8]" style={labelStyle}>
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#E7E6D8]">
+              <path d="M2 9l4 4L14 3"/>
+            </svg>
             MFA
           </span>
-          <span className="text-[#5f6158]">·</span>
-          <span>FedRAMP</span>
-          <span className="text-[#5f6158]">·</span>
-          <span>CJIS</span>
-          <span className="text-[#5f6158]">·</span>
-          <span>SOC 2</span>
+          <span className="mx-[20px] inline-block h-[25px] w-px bg-[#E7E6D8] opacity-30" />
+          <span className="uppercase text-[#E7E6D8]" style={labelStyle}>
+            FedRAMP · CJIS · SOC 2
+          </span>
         </div>
       </div>
     </footer>

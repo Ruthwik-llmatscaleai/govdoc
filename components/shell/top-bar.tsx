@@ -1,95 +1,138 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { AppLogo } from "@/components/brand/app-logo";
 
 type Props = {
   user: string;
-  variant?: "workspace" | "full";
+  variant?: "workspace" | "full" | "rubric";
 };
 
-export function TopBar({ user, variant = "workspace" }: Props) {
-  const pathname = usePathname();
-  const initial =
-    user
-      .split(/[.\s@_-]+/)
-      .filter(Boolean)[0]?.[0]
-      ?.toUpperCase() ?? "?";
-  const display = user.split("@")[0]?.split(/[._]/)[0] ?? user;
-  const displayUpper = display.toUpperCase();
-
-  // Determine header title based on current path to match screenshots exactly
-  const isPolicyHeader = pathname?.includes("/work/search/edit") || pathname?.includes("/work/search/preview");
-  const headerTitle = isPolicyHeader ? "Policy Compliance - Agentic AI" : "GovDoc";
+export function TopBar({ variant = "full" }: Props) {
+  const isRubric = variant === "rubric";
 
   return (
     <>
-      {/* Top announcement banner */}
-      <div className="flex w-full items-center justify-center gap-3 bg-[#0a0d0b] py-2.5 font-mono text-[11.5px] font-normal uppercase tracking-[0.3em] text-white">
-        <span className="inline-block h-2 w-2 rounded-full bg-[#5f9b72] shadow-[0_0_0_4px_rgba(95,155,114,0.18)]" />
-        <span>Policy Compliance Evaluation<span className="mx-4">·</span>Powered by Agentic AI</span>
-        <span className="inline-block h-2 w-2 rounded-full bg-[#5f9b72] shadow-[0_0_0_4px_rgba(95,155,114,0.18)]" />
+      {/* System ribbon */}
+      <div
+        className="flex w-full items-center justify-center gap-3 bg-[#0E1410]"
+        style={{ height: "36px" }}
+      >
+        <span className="inline-block h-[10px] w-[10px] rounded-full bg-[#5f9b72] shadow-[0_0_0_3px_rgba(95,155,114,0.2)]" />
+        <span
+          className="uppercase text-[#C8D1C1]"
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "11px",
+            lineHeight: "13px",
+            letterSpacing: "6px",
+            fontWeight: 700,
+          }}
+        >
+          POLICY COMPLIANCE EVALUATION · POWERED BY AGENTIC AI
+        </span>
+        <span className="inline-block h-[10px] w-[10px] rounded-full bg-[#5f9b72] shadow-[0_0_0_3px_rgba(95,155,114,0.2)]" />
       </div>
 
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-paper)] px-8 py-[14px]">
-        {/* Left: Logo + title */}
+      {/* App header */}
+      <header
+        className="govdoc-page-pad sticky top-0 z-50 flex items-center justify-between border-b border-[#D5CFBA] bg-[#F7F2E6]"
+        style={{ height: "80px", borderTop: "1px solid #AEADA3" }}
+      >
+        {/* Left: brand cluster */}
         <Link
           href={"/workspace" as any}
-          className="flex items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-govdoc-primary)]/40"
+          className="flex items-center gap-0 outline-none focus-visible:ring-2 focus-visible:ring-[rgba(61,87,64,0.35)]"
         >
-          <AppLogo size={38} />
-          <span className="text-[var(--color-govdoc-primary)]">&#9670;</span>
+          <AppLogo size={47} />
+          <div className="mx-4 h-[40px] w-[2px] bg-[#D4CDB8]" />
+          <span className="inline-block h-[12px] w-[12px] rotate-45 bg-[#4d6b50]" />
           <span
-            className="text-[17px] font-medium tracking-[-0.015em] text-[var(--color-ink)]"
-            style={{ fontFamily: "var(--font-display)", fontVariationSettings: '"opsz" 96' }}
+            className="ml-2 text-[#0E1410]"
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: isRubric ? "18px" : "22px",
+              lineHeight: isRubric ? "22px" : "24px",
+              fontWeight: isRubric ? 500 : 700,
+              whiteSpace: "nowrap",
+            }}
           >
-            {headerTitle}
+            {isRubric ? "Policy Compliance · Agentic AI" : "GovDoc"}
           </span>
         </Link>
 
-        {/* Center: tagline (full variant only) */}
-        {variant === "full" && (
-          <div className="hidden font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-mute)] lg:block">
-            Reads. Checks. Decides.
-          </div>
-        )}
-
-        {/* Right: version + user + sign out */}
-        <div className="flex items-center gap-4">
-          {variant === "full" && (
-            <span className="hidden items-center gap-1.5 rounded-full border border-[var(--color-line)] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)] sm:inline-flex">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-govdoc-primary)]" />
-              V 1.0.0 Stable
-            </span>
+        {/* Right: account cluster */}
+        <div className="flex items-center gap-3 sm:gap-4">
+          {isRubric && (
+            <>
+              <span
+                className="italic text-[#6E706A]"
+                style={{ fontFamily: "var(--font-display)", fontSize: "15px", fontWeight: 400 }}
+              >
+                Reads. Checks. Decides.
+              </span>
+              <span
+                className="inline-flex items-center gap-2 rounded-full border border-[#D4CDB8] bg-[#FCFAF3] px-3 py-1 uppercase text-[#6E706A]"
+                style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}
+              >
+                <span className="inline-block h-[7px] w-[7px] rounded-full bg-[#3D5740]" />
+                V 1.0.0 Stable
+              </span>
+            </>
           )}
-          <div className="flex items-center gap-2.5 rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)] py-1.5 pl-1.5 pr-4">
+          {/* User pill */}
+          <div
+            className="flex items-center border border-[#D4CDB8] bg-[#FCFAF3]"
+            style={{
+              height: "48px",
+              borderRadius: "24px",
+              gap: "14px",
+              padding: "0 18px 0 10px",
+            }}
+          >
             <div
-              className="flex size-[26px] items-center justify-center rounded-full bg-[var(--color-govdoc-primary)] text-[12px] font-bold text-white"
-              style={{ fontFamily: "var(--font-display)" }}
+              className="flex items-center justify-center rounded-full bg-[#47644A] text-[#FCFAF3]"
+              style={{
+                width: "32px",
+                height: "32px",
+                fontFamily: "var(--font-mono)",
+                fontSize: "13px",
+                fontWeight: 700,
+              }}
             >
-              {initial}
+              J
             </div>
-            <span className="font-mono text-[11px] font-semibold tracking-[0.04em] text-[var(--color-ink)]">
-              {displayUpper} <span className="font-normal text-[var(--color-ink-mute)]">· ADMIN</span>
+            <span
+              className="hidden uppercase text-[#0E1410] sm:inline"
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "11px",
+                lineHeight: "13px",
+                letterSpacing: "3px",
+                fontWeight: 700,
+              }}
+            >
+              JOTHI <span className="font-normal text-[#6E706A]">· ADMIN</span>
             </span>
           </div>
+
+          {/* Sign out */}
           <form action="/api/auth/logout" method="post">
             <button
               type="submit"
               title="Sign out"
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[var(--color-line)] bg-transparent px-4 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-mute)] transition-colors hover:border-[var(--color-ink-faint)] hover:text-[var(--color-ink)]"
+              className="cursor-pointer border border-[#D4CDB8] bg-[#FCFAF3] uppercase text-[#0E1410] transition-colors hover:border-[#8B877D]"
+              style={{
+                height: "33px",
+                borderRadius: "16.5px",
+                padding: "0 19px",
+                fontFamily: "var(--font-mono)",
+                fontSize: "11px",
+                letterSpacing: "3px",
+                fontWeight: 700,
+              }}
             >
-              <svg
-                viewBox="0 0 16 16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="size-3"
-              >
-                <path d="M10 11.5 13.5 8 10 4.5M13 8H6M6 2H3.5C2.7 2 2 2.7 2 3.5v9c0 .8.7 1.5 1.5 1.5H6" />
-              </svg>
-              <span className="hidden sm:inline">SIGN OUT</span>
+              ↪ SIGN OUT
             </button>
           </form>
         </div>

@@ -7,81 +7,90 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ showAuth = true, variant = "landing" }: PageHeaderProps) {
-  const headerStyles = variant === "landing"
-    ? "sticky top-0 z-50 border-b border-[#d8d0bc] bg-[#efeadd]"
-    : "flex w-full items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-paper)] px-8 py-3";
+  const title = "GovDoc";
 
   return (
     <>
       {/* Top Banner */}
-      <div className="flex w-full items-center justify-center gap-3 bg-[#0a0d0b] py-2.5 font-mono text-[11.5px] font-normal uppercase tracking-[0.3em] text-white">
-        <span className="inline-block h-2 w-2 rounded-full bg-[#5f9b72] shadow-[0_0_0_4px_rgba(95,155,114,0.18)]" />
-        <span>Policy Compliance Evaluation<span className="mx-4">·</span>Powered by Agentic AI</span>
-        <span className="inline-block h-2 w-2 rounded-full bg-[#5f9b72] shadow-[0_0_0_4px_rgba(95,155,114,0.18)]" />
+      <div
+        className="flex w-full items-center justify-center gap-3 bg-[#0E1410]"
+        style={{ height: "38px" }}
+      >
+        <span className="inline-block h-[10px] w-[10px] rounded-full bg-[#5f9b72] shadow-[0_0_0_3px_rgba(95,155,114,0.2)]" />
+        <span
+          className="uppercase text-[#C8D1C1]"
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "11px",
+            lineHeight: "13px",
+            letterSpacing: "6px",
+            fontWeight: 700,
+          }}
+        >
+          POLICY COMPLIANCE EVALUATION · POWERED BY AGENTIC AI
+        </span>
+        <span className="inline-block h-[10px] w-[10px] rounded-full bg-[#5f9b72] shadow-[0_0_0_3px_rgba(95,155,114,0.2)]" />
       </div>
 
       {/* Header Bar */}
-      <header className={headerStyles}>
-        {variant === "landing" ? (
-          <div className="mx-auto flex h-20 max-w-[1400px] items-center justify-between px-6 lg:px-10 lg:pr-4">
+      <header className="sticky top-0 z-50 border-b border-[#D5CFBA] bg-[#F7F2E6]">
+        <div className="govdoc-page-pad flex h-[86px] w-full items-center justify-between">
           {/* Left: Logo + Title */}
           <div className="flex items-center gap-4">
-            <AppLogo size={50} />
-            <span className="inline-block h-[45px] w-px bg-[rgba(216,210,191,0.8)]" />
-            <span className="inline-block h-[9px] w-[9px] rotate-45 bg-[#2b4d3a]" />
+            <AppLogo size={47} />
+            <span className="inline-block h-[40px] w-px bg-[#D4CDB8]" />
+            <span className="inline-block h-[12px] w-[12px] rotate-45 bg-[#4d6b50]" />
             <span
-              className="text-[21px] tracking-[-0.015em] text-[#1a1d18]"
+              className="text-[#0E1410]"
               style={{
                 fontFamily: "var(--font-display)",
-                fontWeight: 500,
-                fontVariationSettings: '"opsz" 96',
+                fontSize: "22px",
+                lineHeight: "24px",
+                fontWeight: 600,
+                letterSpacing: 0,
               }}
             >
-              Policy Compliance · Agentic AI
+              {title}
             </span>
           </div>
 
-          {/* Right: Tagline + Version + Demo + Sign In */}
-          {showAuth && (
-            <div className="flex items-center gap-5">
+          {/* Right */}
+          <div className="flex items-center gap-5">
+            {variant === "landing" && (
               <span
-                className="hidden text-[15px] italic text-[#383a33] lg:inline"
-                style={{ fontFamily: "var(--font-display)", fontVariationSettings: '"opsz" 72', fontWeight: 400 }}
+                className="hidden italic text-[#6E706A] lg:inline"
+                style={{ fontFamily: "var(--font-display)", fontSize: "15px", fontWeight: 400 }}
               >
                 Reads. Checks. Decides.
               </span>
-              <span className="hidden items-center gap-2 rounded-full border border-[#d8d0bc] bg-[#f7f2e5] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.15em] text-[#3f423a] sm:inline-flex" style={{ fontFamily: "var(--font-sans)" }}>
-                <span className="inline-block h-[7px] w-[7px] rounded-full bg-[#5f9b72] shadow-[0_0_0_3px_rgba(95,155,114,0.18)]" />
-                V 1.0.0 Stable
-              </span>
-              <Link
-                href="#"
-                className="hidden text-[11px] font-medium uppercase tracking-[0.15em] text-[#353831] transition-colors hover:text-[#1a1d18] md:inline"
-                style={{ fontFamily: "var(--font-sans)" }}
-              >
-                Request Demo
-              </Link>
-              <Link
-                href="/login"
-                className="rounded-full bg-[#2b4d3a] px-5 py-2.5 font-mono text-[10px] font-extrabold uppercase tracking-[0.3em] text-[#f4eedf] transition-colors hover:bg-[#365f48]"
-              >
-                Sign In &rarr;
-              </Link>
-            </div>
-          )}
-        </div>
-        ) : (
-          <div className="flex items-center gap-3">
-            <AppLogo size={32} />
-            <span className="text-[var(--color-govdoc-primary)]">◆</span>
+            )}
             <span
-              className="text-[18px] tracking-[-0.01em] text-[var(--color-ink)]"
-              style={{ fontFamily: "var(--font-display)", fontWeight: 400, fontVariationSettings: '"opsz" 96' }}
+              className="hidden items-center gap-2 rounded-full border border-[#D4CDB8] bg-[#FCFAF3] px-3 py-1 uppercase text-[#6E706A] sm:inline-flex"
+              style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}
             >
-              Policy Compliance · Agentic AI
+              <span className="inline-block h-[7px] w-[7px] rounded-full bg-[#3D5740]" />
+              V 1.0.0 Stable
             </span>
+            {showAuth && (
+              <>
+                <Link
+                  href="#"
+                  className="hidden uppercase text-[#6E706A] transition-colors hover:text-[#0E1410] md:inline"
+                  style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}
+                >
+                  Request Demo
+                </Link>
+                <Link
+                  href="/login"
+                  className="rounded-full bg-[#3D5740] px-5 py-2.5 uppercase text-[#FCFAF3] transition-colors hover:bg-[#0E1410]"
+                  style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "3px" }}
+                >
+                  Sign In →
+                </Link>
+              </>
+            )}
           </div>
-        )}
+        </div>
       </header>
     </>
   );

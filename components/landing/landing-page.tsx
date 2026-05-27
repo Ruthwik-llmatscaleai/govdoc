@@ -6,26 +6,19 @@ import { ComparisonTable } from "@/components/landing/comparison-table";
 
 export function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#efeadd]">
+    <div className="flex min-h-screen flex-col bg-[#F3EEE0]">
       <PageHeader showAuth />
       <main className="flex-1">
-        <div
-          style={{
-            backgroundImage: "url('/landing/grid-bg.svg')",
-            backgroundRepeat: "repeat",
-            backgroundSize: "56px 56px",
-            backgroundColor: "#efeadd",
-          }}
-        >
+        <div className="govdoc-grid-bg">
           <HeroSection />
-          <div className="px-6 lg:px-10">
-            <div className="ml-[3%] lg:ml-[3.5%]">
+          <div className="govdoc-page-pad">
+            <div className="govdoc-page-inner">
               <hr className="border-t border-[#d8d0bc]" />
             </div>
           </div>
           <ProcessFlow />
+          <ComparisonTable />
         </div>
-        <ComparisonTable />
       </main>
       <PageFooter />
     </div>

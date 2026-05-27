@@ -31,87 +31,85 @@ export default async function WorkspacePage() {
   const recentActivity = await getRecentActivity(session.user);
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-[var(--color-cream)]">
-      {/* Subtle grid overlay */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(10,10,10,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(10,10,10,0.03) 1px, transparent 1px)",
-          backgroundSize: "64px 64px",
-        }}
-      />
+    <div className="govdoc-grid-bg relative flex min-h-screen flex-col bg-[#F3EEE0]">
 
       <TopBar user={session.user} />
 
-      <main className="relative z-10 mx-auto w-full max-w-[1400px] flex-1 px-6 pb-16 pt-10 lg:px-10 lg:pt-14">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px]">
+      <main className="govdoc-page-pad relative z-10 w-full flex-1 pb-10 pt-[clamp(48px,5vw,80px)]">
+        <div className="govdoc-page-inner">
+        {/* Top section: welcome left, activity right */}
+        <div className="flex flex-col items-start justify-between gap-8 xl:flex-row">
+          {/* Welcome block */}
           <div>
-            <header className="mb-8">
-              <div className="mb-3 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
-                <span>━━━ WORKSPACE · {dateStamp}</span>
-              </div>
-              <h1
-                className="leading-[1.02] tracking-[-0.025em] text-[var(--color-ink)]"
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontWeight: 400,
-                  fontSize: "clamp(48px, 6vw, 72px)",
-                  fontVariationSettings: '"opsz" 144',
-                }}
-              >
-                Welcome back,{" "}
-                <em
-                  className="text-[#b04a2f]"
-                  style={{ fontStyle: "italic", fontWeight: 300 }}
-                >
-                  {name}.
-                </em>
-              </h1>
-              <p className="mt-4 max-w-[600px] text-[15px] leading-[1.6] text-[var(--color-ink-mute)]">
-                Pick a capability to run. Each one reads documents, applies policy, and produces an
-                auditable decision — every step cited and traceable.
-              </p>
-            </header>
-
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-baseline gap-3">
-                <span
-                  className="tracking-[-0.015em] text-[var(--color-ink)]"
-                  style={{
-                    fontFamily: "var(--font-display)",
-                    fontSize: "20px",
-                    fontWeight: 400,
-                    fontVariationSettings: '"opsz" 72',
-                  }}
-                >
-                  Choose a{" "}
-                  <em
-                    className="text-[var(--color-govdoc-primary)]"
-                    style={{ fontStyle: "italic", fontWeight: 300 }}
-                  >
-                    capability
-                  </em>
-                </span>
-                <span className="rounded bg-[var(--color-cream)] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-mute)]">
-                  9 Available
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <FilterButton active>ALL</FilterButton>
-                <FilterButton>RUN</FilterButton>
-                <FilterButton>REVIEW</FilterButton>
-                <FilterButton>ANALYZE</FilterButton>
-              </div>
+            <div className="govdoc-kicker mb-5">
+              <span>
+                WORKSPACE · {dateStamp}
+              </span>
             </div>
 
-            <CapabilityGrid />
+            <h1
+              className="govdoc-display"
+              style={{ fontSize: "clamp(48px, 4vw, 64px)" }}
+            >
+              Welcome back,{" "}
+              <em>
+                {name}.
+              </em>
+            </h1>
+
+            <p
+              className="govdoc-copy mt-4 max-w-[610px]"
+            >
+              Pick a capability to run. Each one reads documents, applies policy, and produces an
+              auditable decision — every step cited and traceable.
+            </p>
           </div>
 
-          <aside className="lg:sticky lg:top-6 lg:self-start">
-            <RecentActivity items={recentActivity} />
-          </aside>
+          {/* Recent activity panel */}
+          <RecentActivity items={recentActivity} />
+        </div>
+
+        {/* Capability section header + filters */}
+        <div className="mb-5 mt-12 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-baseline gap-[18px]">
+            <h2
+              className="text-[#0E1410]"
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "24px",
+                lineHeight: "26px",
+                fontWeight: 700,
+                letterSpacing: "-0.3px",
+              }}
+            >
+              Choose a{" "}
+              <em style={{ fontStyle: "italic", fontWeight: 500, color: "#3D5740" }}>
+                capability
+              </em>
+            </h2>
+            <span
+              className="uppercase text-[#6E706A]"
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "11px",
+                lineHeight: "13px",
+                letterSpacing: "4px",
+                fontWeight: 700,
+              }}
+            >
+              9 AVAILABLE
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <FilterChip active>ALL</FilterChip>
+            <FilterChip>RUN</FilterChip>
+            <FilterChip>REVIEW</FilterChip>
+            <FilterChip>ANALYZE</FilterChip>
+          </div>
+        </div>
+
+        <CapabilityGrid />
         </div>
       </main>
 
@@ -120,17 +118,26 @@ export default async function WorkspacePage() {
   );
 }
 
-function FilterButton({ children, active = false }: { children: React.ReactNode; active?: boolean }) {
+function FilterChip({ children, active = false }: { children: React.ReactNode; active?: boolean }) {
   return (
     <button
-      className={`rounded px-4 py-2 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors ${
-        active
-          ? "bg-[var(--color-ink)] text-white"
-          : "border border-[var(--color-line)] bg-white text-[var(--color-ink-mute)] hover:border-[var(--color-govdoc-primary)]"
-      }`}
+      className="transition-colors"
+      style={{
+        height: "27px",
+        borderRadius: "13.5px",
+        padding: "0 16px",
+        fontFamily: "var(--font-mono)",
+        fontSize: "10px",
+        lineHeight: "27px",
+        letterSpacing: "2.4px",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        background: active ? "#0E1410" : "#FCFAF3",
+        color: active ? "#FCFAF3" : "#0E1410",
+        border: active ? "1px solid #0E1410" : "1px solid #D4CDB8",
+      }}
     >
       {children}
     </button>
   );
 }
-

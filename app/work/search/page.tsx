@@ -17,18 +17,6 @@ const DRAFT_RUBRICS = [
 export default function SearchAskPage() {
   return (
     <div className="relative">
-      {/* Subtle grid overlay */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(10,10,10,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(10,10,10,0.03) 1px, transparent 1px)",
-          backgroundSize: "64px 64px",
-        }}
-      />
-
-      <div className="relative z-10">
         {/* Breadcrumbs */}
         <WorkBreadcrumbs
           crumbs={[
@@ -38,31 +26,19 @@ export default function SearchAskPage() {
         />
 
         {/* Section number */}
-        <div className="mb-4 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
-          ━━━ 01&nbsp;&nbsp;RUBRICS
+        <div className="govdoc-kicker mb-6">
+          <span className="govdoc-kicker-number">01</span>
+          <span>Rubrics</span>
         </div>
 
         {/* Title + Description + Stats */}
         <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="space-y-3">
-            <h1
-              className="leading-none tracking-[-0.025em] text-[var(--color-ink)]"
-              style={{
-                fontFamily: "var(--font-display)",
-                fontWeight: 400,
-                fontSize: "clamp(36px, 4.5vw, 52px)",
-                fontVariationSettings: '"opsz" 96',
-              }}
-            >
+            <h1 className="govdoc-display">
               Rubric{" "}
-              <em
-                className="text-[#b04a2f]"
-                style={{ fontStyle: "italic", fontWeight: 300 }}
-              >
-                Tools
-              </em>
+              <em>Tools</em>
             </h1>
-            <p className="max-w-[62ch] text-[14.5px] leading-[1.6] text-[var(--color-ink-mute)]">
+            <p className="govdoc-copy">
               A <strong>rubric</strong> is the set of scoring questions GovDoc uses to evaluate a document
               type. <em>Inspect, refine, and version</em> the rubrics behind every review.
             </p>
@@ -88,9 +64,9 @@ export default function SearchAskPage() {
         </div>
 
         {/* Two-panel layout */}
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <div className="mx-auto grid max-w-[2560px] grid-cols-1 gap-10 md:grid-cols-2">
           {/* Left panel — Review Rubrics */}
-          <div className="flex flex-col border border-[var(--color-line)] bg-[var(--color-paper)] rounded-xl overflow-hidden">
+          <div className="govdoc-surface flex flex-col overflow-hidden">
             <div className="px-7 pt-7 pb-6">
               {/* Icon + Badge */}
               <div className="mb-5 flex items-start justify-between">
@@ -100,7 +76,7 @@ export default function SearchAskPage() {
                     <path d="M21 5h-7a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h8z" />
                   </svg>
                 </div>
-                <span className="rounded-full border border-[var(--color-line)] px-3 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)] bg-[var(--color-cream-soft)]">
+                <span className="govdoc-pill">
                   PRIMARY - READ-ONLY
                 </span>
               </div>
@@ -183,7 +159,7 @@ export default function SearchAskPage() {
           </div>
 
           {/* Right panel — Manage Rubrics */}
-          <div className="flex flex-col border border-[var(--color-line)] bg-[var(--color-paper)] rounded-xl overflow-hidden">
+          <div className="govdoc-surface flex flex-col overflow-hidden">
             <div className="px-7 pt-7 pb-6">
               {/* Icon + Badge */}
               <div className="mb-5 flex items-start justify-between">
@@ -193,7 +169,7 @@ export default function SearchAskPage() {
                     <path d="m14 7 3 3" />
                   </svg>
                 </div>
-                <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-emerald-700">
+                <span className="govdoc-pill border-[#D6C2A0] text-[#8A6335] before:bg-[#C78B3A]">
                   ADMIN · GOVERNED
                 </span>
               </div>
@@ -212,7 +188,7 @@ export default function SearchAskPage() {
                   Manage
                 </Link>{" "}
                 <em
-                  className="text-[#b04a2f]"
+                  className="text-[var(--color-govdoc-primary)]"
                   style={{ fontStyle: "italic", fontWeight: 400 }}
                 >
                   Rubrics
@@ -229,7 +205,7 @@ export default function SearchAskPage() {
             <div className="px-7 pb-5">
               <Link
                 href="/work/search/edit"
-                className="group/cta flex items-center gap-4 rounded bg-[#345243] px-5 py-4 text-white no-underline transition-colors hover:bg-[#253f32]"
+                className="group/cta flex items-center gap-4 rounded-[8px] bg-[#345243] px-5 py-4 text-white no-underline transition-colors hover:bg-[#253f32]"
               >
                 <div className="flex size-8 items-center justify-center rounded-full bg-white/10 border border-white/20">
                   <span className="text-lg leading-none font-light">+</span>
@@ -293,7 +269,6 @@ export default function SearchAskPage() {
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 }

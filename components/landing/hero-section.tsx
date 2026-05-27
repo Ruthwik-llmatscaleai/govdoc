@@ -1,53 +1,43 @@
 export function HeroSection() {
   return (
-    <section className="relative px-6 pb-10 pt-16 lg:px-10 lg:pb-14 lg:pt-22">
-
-      <div className="relative z-10 ml-[3%] max-w-[1200px] lg:ml-[3.5%]">
-        {/* Section number prefix */}
-        <div className="mb-8 flex items-center gap-5 font-mono text-[11px] font-semibold uppercase tracking-[0.3em] text-[#54574f]">
-          <span className="inline-block h-[2px] w-7 bg-[#1a1d18]" />
-          <span className="grid h-6 place-items-center rounded-[5px] border border-[#d8d0bc] bg-[#f7f2e5] px-2.5 text-[10px] font-bold tracking-[0.05em] text-[#343730]">00</span>
-          <span className="tracking-[0.15em]">Welcome · GovDoc Platform</span>
+    <section className="govdoc-page-pad relative pb-10 pt-16 lg:pb-14 lg:pt-20">
+      <div className="govdoc-page-inner relative z-10">
+        <div className="govdoc-kicker mb-8">
+          <span className="govdoc-kicker-number">
+            00
+          </span>
+          <span>Welcome · GovDoc Platform</span>
         </div>
 
         <h1
-          className="mb-6 whitespace-nowrap leading-[1.02] tracking-[-0.028em] text-[#1a1d18]"
-          style={{
-            fontFamily: "var(--font-tinos, 'Tinos'), 'Times New Roman', Georgia, serif",
-            fontWeight: 700,
-            fontSize: "clamp(45px, 5.7vw, 103px)",
-          }}
+          className="govdoc-display mb-6 max-w-[1180px]"
         >
           GovDoc is{" "}
-          <em
-            className="text-[#2b4d3a]"
-            style={{ fontStyle: "italic", fontWeight: 400, fontFamily: "var(--font-display)", fontVariationSettings: '"opsz" 144' }}
-          >
-            beyond
-          </em>{" "}
+          <em>beyond</em>{" "}
           Microsoft 365
           <br />
-          Copilot<span className="ml-1 inline-block h-[14px] w-[14px] translate-y-[-4px] bg-[#2b4d3a]" />
+          Copilot<span className="ml-1 inline-block h-[12px] w-[12px] translate-y-[-3px] bg-[#3D5740]" />
         </h1>
 
         <p
-          className="whitespace-nowrap leading-[1.3] tracking-[-0.015em] text-[#1a1d18]"
+          className="max-w-[980px] text-[#0E1410]"
           style={{
             fontFamily: "var(--font-display)",
             fontWeight: 400,
-            fontSize: "25px",
-            fontVariationSettings: '"opsz" 72',
+            fontSize: "clamp(18px, 1.4vw, 22px)",
+            lineHeight: 1.4,
+            letterSpacing: 0,
           }}
         >
-          <strong style={{ fontWeight: 700, fontFamily: "var(--font-tinos, 'Tinos'), 'Times New Roman', Georgia, serif" }}>
+          <strong style={{ fontWeight: 700 }}>
             Deterministic responses{" "}
           </strong>
-          <span style={{ fontStyle: "italic", fontFamily: "var(--font-tinos, 'Tinos'), 'Times New Roman', Georgia, serif" }}>at</span>
-          <strong style={{ fontWeight: 700, fontFamily: "var(--font-tinos, 'Tinos'), 'Times New Roman', Georgia, serif" }}>
+          <span style={{ fontStyle: "italic" }}>at</span>
+          <strong style={{ fontWeight: 700 }}>
             {" "}low cost
           </strong>{" "}
           —{" "}
-          <em className="text-[#2b4d3a]" style={{ fontStyle: "italic", fontWeight: 500, fontFamily: "var(--font-tinos, 'Tinos'), 'Times New Roman', Georgia, serif" }}>
+          <em style={{ fontStyle: "italic", fontWeight: 500, color: "#3D5740" }}>
             built to handle any complex document.
           </em>
         </p>
