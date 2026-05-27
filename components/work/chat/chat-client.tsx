@@ -359,30 +359,13 @@ export function ChatClient({ userName }: ChatClientProps) {
 
   return (
     <div
-      className="relative -mb-14 -mt-12 flex h-[calc(100vh-60px-56px)] bg-[var(--color-cream)]"
+      className="relative -mb-14 -mt-8 flex h-[calc(100vh-90px)] bg-[var(--color-cream)]"
       style={{
-        // Match the rubric pages' body font (Source Sans 3) so the chat
-        // reads as part of the same product surface as Validate.
         fontFamily: "var(--font-source-sans)",
-        // Break out of the parent layout's max-w-[1400px] mx-auto so the chat
-        // can span the full viewport. We trim 16px off the right so there's a
-        // small gap before the viewport edge / scrollbar.
         width: "calc(100vw - 16px)",
         marginLeft: "calc(50% - 50vw)",
       }}
     >
-      {/* Chat-only TopBar compaction. The shared shell TopBar uses py-5
-          everywhere; here we trim it to py-2.5 so the chat thread can claim
-          back ~24px of vertical real estate. Scoped via a tagged selector so
-          other /work pages keep the standard masthead. styled-jsx global is
-          auto-cleaned up when the chat page unmounts. */}
-      <style jsx global>{`
-        header[data-shell="topbar"] [data-shell="topbar-inner"] {
-          padding-top: 0.625rem !important;
-          padding-bottom: 0.625rem !important;
-        }
-      `}</style>
-
       <ChatSidebar
         open={sidebarOpen}
         onToggle={() => setSidebarOpen((v) => !v)}
