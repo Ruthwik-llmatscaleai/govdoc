@@ -1,547 +1,877 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight, Pencil, Trash2, Upload, Plus, Settings } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, Trash2, Upload, Plus } from "lucide-react";
+import { SaveBar } from "@/components/work/rubric/shared/save-bar";
+import type { SaveDraft } from "@/components/work/rubric/shared/save-options-popover";
+import { VersionHistoryPanel } from "@/components/work/rubric/version-history-panel";
+import { CreateRubricDialog, type CreateRubricInput } from "@/components/work/rubric/shared/create-rubric-dialog";
+import { ConfirmDialog, type ConfirmRequest } from "@/components/work/rubric/shared/confirm-dialog";
+import { RubricUploadModal } from "@/components/work/rubric/rubric-upload-modal";
+import type { RubricsManifestEntry } from "@/features/rubrics/store";
 
-/* ─── Rubric data (CMGC-PDE Caltrans CUCP questions) ─── */
-const SECTIONS = [
-  {
-    id: "A",
-    title: "Project Scope & Characteristics",
-    description: "Foundational definition of work and deliverables",
-    weight: 38,
-    questions: [
-      {
-        id: "A1",
-        text: "Where is the Project in the project development process?",
-        options: [
-          "Detailed or final engineering stage (60% design or later).",
-          "Preliminary design (30% design).",
-          "Conceptual engineering stage (before PA&ED).",
-        ],
-      },
-      {
-        id: "A2",
-        text: "What is the size of the Project?",
-        options: [
-          "Small project (less than $25 million construction capital cost).",
-          "Medium size project (between $25 to $75 million construction capital cost).",
-          "Large project (greater than $75 million construction capital cost).",
-        ],
-      },
-      {
-        id: "A3",
-        text: "What is the complexity of the Project?",
-        options: [
-          "Relatively simple project with no need for specialized outside expertise.",
-          "Project with more technically complex components and schedule complexity.",
-          "Very complex project with significant schedule complexity (e.g., multiple phases, extensive third-party issues, and/or specialized expertise needed).",
-        ],
-      },
-      {
-        id: "A4",
-        text: "Does the Project involve significant impacts to highway users and local businesses/community during construction?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-      {
-        id: "A5",
-        text: "Does the Project present right of way limitations that would benefit from the Entity's assistance?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-      {
-        id: "A6",
-        text: "Does the Project present environmental permitting issues that would benefit from the Entity's assistance?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-      {
-        id: "A7",
-        text: "Does the Project present utility or third-party issues that would benefit from the Entity's assistance?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-      {
-        id: "A8",
-        text: "Does the Project present unique work restrictions (e.g., strict environmental windows, railroad restrictions) or traffic maintenance requirements that would benefit from the Entity's assistance?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-      {
-        id: "A9",
-        text: "Would the Project benefit by packaging features of work to allow early lock-in of construction materials/labor pricing?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-      {
-        id: "A10",
-        text: "Would the Project benefit by raising quality standards/benchmarks to minimize maintenance and achieve lower life-cycle cost?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-    ],
-  },
-  {
-    id: "B",
-    title: "Schedule Issues",
-    description: "Timeline compression and fast-tracking opportunities",
-    weight: 15,
-    questions: [
-      {
-        id: "B1",
-        text: "Can time savings be realized through concurrent design and construction activities (fast-tracking)?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-      {
-        id: "B2",
-        text: "Can the schedule be compressed?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-    ],
-  },
-  {
-    id: "C",
-    title: "Opportunity for Innovation",
-    description: "Scope for alternate designs and performance specifications",
-    weight: 12,
-    questions: [
-      {
-        id: "C1",
-        text: "Will the Project scope allow for innovation (e.g., alternate designs, traffic management, construction means and methods, etc.)?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-      {
-        id: "C2",
-        text: "Must the Project scope be primarily defined in terms of prescriptive specifications, or can performance specifications be used, or a combination of both?",
-        options: [
-          "Primarily prescriptive specifications.",
-          "Combination of prescriptive and performance specifications.",
-          "Performance specifications for significant elements.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "D",
-    title: "Quality Enhancement",
-    description: "Value engineering and lifecycle quality improvements",
-    weight: 10,
-    questions: [
-      {
-        id: "D1",
-        text: "Will there be opportunities for the Entity to provide materials or methods that provide greater value than normally specified by the state on similar projects?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-      {
-        id: "D2",
-        text: "Will there be the opportunity for realization of greater value due to designs tailored to Entity's area of expertise?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-      {
-        id: "D3",
-        text: "Will warranties or maintenance agreements be used?",
-        options: [
-          "No.",
-          "Limited to short-term workmanship and materials.",
-          "Much more than typical.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "E",
-    title: "Cost Issues",
-    description: "Budget control, funding, and procurement economics",
-    weight: 20,
-    questions: [
-      {
-        id: "E1",
-        text: "Will there be opportunities for the Entity to provide designs with lower initial construction costs than those typically specified by the state?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-      {
-        id: "E2",
-        text: "Will there be opportunities for the Entity to provide alternate design concepts with lower lifecycle costs than those typically specified by the state?",
-        options: ["No more than typical.", "More than typical.", "Much more than typical."],
-      },
-      {
-        id: "E3",
-        text: "Is funding for the Project committed and available?",
-        options: [
-          "Secured for design phase only or cannot support accelerated construction.",
-          "Funding can accommodate fast-tracking to some extent.",
-          "Funding will accommodate compressed schedule/fast-tracking.",
-        ],
-      },
-      {
-        id: "E4",
-        text: "Will the cost of procurement affect the number of bidders?",
-        options: [
-          "Procurement cost would significantly limit competition.",
-          "Procurement cost could affect the number of bidders.",
-          "Procurement cost would not be a significant issue given the size or complexity of the Project.",
-        ],
-      },
-      {
-        id: "E5",
-        text: "Will Project budget control benefit from the use of formal contingencies?",
-        options: [
-          "No benefit.",
-          "A formal contingency may permit the Department to add Project scope or enhance quality within the constraints of its published budget.",
-          "A formal contingency is required to allow the Department to maximize Project scope and quality within the constraints of its published budget.",
-        ],
-      },
-    ],
-  },
-  {
-    id: "F",
-    title: "Staffing Issues",
-    description: "Resource availability and expertise requirements",
-    weight: 13,
-    questions: [
-      {
-        id: "F1",
-        text: "Does the Department have the expertise and resources necessary for a complicated procurement process?",
-        options: [
-          "Inadequate resources or expertise.",
-          "Limited resources or expertise.",
-          "Adequate resources and expertise.",
-        ],
-      },
-      {
-        id: "F2",
-        text: "Are resources available to complete the design?",
-        options: [
-          "Resources are available to complete design.",
-          "Resources are available for partial design.",
-          "Specialized expertise, not available in-house, is required.",
-        ],
-      },
-      {
-        id: "F3",
-        text: "Are resources available to provide construction oversight?",
-        options: [
-          "Resources are available.",
-          "Full-time construction oversight could strain staff resources.",
-          "Resources are unavailable.",
-        ],
-      },
-    ],
-  },
-];
+/* ─── Types ─── */
+type CmgcQuestion = { id: string; section: string; question: string; option_a: string; option_b: string; option_c: string };
+type CmgcData = { questions: CmgcQuestion[]; weights: Record<string, number> };
+type CucpL2 = { name: string; description: string };
+type CucpL3 = { s_no: number; name: string; title?: string; rule?: string; pass?: string; fail?: string };
+type CucpData = { l2: CucpL2[]; l3: CucpL3[] };
+type RowData = Record<string, Record<string, string>>;
 
-const TOTAL_QUESTIONS = SECTIONS.reduce((sum, s) => sum + s.questions.length, 0);
+type SectionGroup = { key: string; name: string; questions: CmgcQuestion[]; weight: number };
 
-const TABS = [
-  { label: "Manage Project", count: TOTAL_QUESTIONS },
-  { label: "Manage Appraisal", count: 6 },
-  { label: "Manage Narrative", count: 11 },
-];
+const USECASE_IDS = ["cmgc-pde", "row-appraisal", "cucp-reevals"] as const;
+const USECASE_LABELS = ["Project", "Appraisal", "Narrative"] as const;
 
-const VERSION_HISTORY = [
-  {
-    version: "v002",
-    current: true,
-    date: "09 May 2026 · 11:34 AM",
-    author: "JOTHI",
-    note: "Updated weights for Section 01 — Project Scope & Characteristics",
-  },
-  {
-    version: "v001",
-    current: false,
-    date: "07 May 2026 · 04:42 PM",
-    author: "JOTHI",
-    note: "Initial rubric — 6 sections, 25 questions established.",
-  },
-];
+/* ─── Helpers ─── */
+function groupCmgcSections(data: CmgcData): SectionGroup[] {
+  const map = new Map<string, SectionGroup>();
+  const maxWeight = Math.max(...Object.values(data.weights));
+  const isDecimal = maxWeight <= 1;
+  for (const q of data.questions) {
+    const m = q.section.match(/^([A-Z]):\s*(.+)$/);
+    const key = m?.[1] ?? "Z";
+    const name = m?.[2] ?? q.section;
+    const rawWeight = data.weights[key] ?? 0;
+    const weight = isDecimal ? Math.round(rawWeight * 100) : rawWeight;
+    const cur = map.get(key) ?? { key, name, questions: [], weight };
+    cur.questions.push(q);
+    map.set(key, cur);
+  }
+  for (const [k, w] of Object.entries(data.weights)) {
+    if (!map.has(k)) {
+      const weight = isDecimal ? Math.round(w * 100) : w;
+      map.set(k, { key: k, name: k, questions: [], weight });
+    }
+  }
+  return [...map.values()].sort((a, b) => a.key.localeCompare(b.key));
+}
 
+function serializeCmgcFromSections(sections: SectionGroup[]): CmgcData {
+  const questions: CmgcQuestion[] = [];
+  const weights: Record<string, number> = {};
+  for (const s of sections) {
+    weights[s.key] = s.weight / 100;
+    for (const q of s.questions) {
+      questions.push({ ...q, section: `${s.key}: ${s.name}` });
+    }
+  }
+  return { questions, weights };
+}
+
+function serializeRow(data: Array<{ name: string; tiers: Record<string, string> }>): RowData {
+  const out: RowData = {};
+  for (const cat of data) out[cat.name] = cat.tiers;
+  return out;
+}
+
+/* ─── Main Page ─── */
 export default function ManageRubricsPage() {
   const [activeTab, setActiveTab] = useState(0);
-  const [expandedSection, setExpandedSection] = useState<string>("A");
+  const [showNewSection, setShowNewSection] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
 
-  const toggleSection = (id: string) => {
-    setExpandedSection(expandedSection === id ? "" : id);
-  };
+  // Rubric selection
+  const [rubrics, setRubrics] = useState<RubricsManifestEntry[]>([]);
+  const [selectedRubricId, setSelectedRubricId] = useState("default");
+
+  // Save/version state
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [versionNonce, setVersionNonce] = useState(0);
+  const [baselineVersionId, setBaselineVersionId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Rubric data per use case
+  const [cmgcSections, setCmgcSections] = useState<SectionGroup[]>([]);
+  const [cucpData, setCucpData] = useState<CucpData>({ l2: [], l3: [] });
+  const [rowCategories, setRowCategories] = useState<Array<{ name: string; tiers: Record<string, string> }>>([]);
+  const [savedSnapshot, setSavedSnapshot] = useState("");
+
+  const usecaseId = USECASE_IDS[activeTab];
+  const rubricId = selectedRubricId;
+
+  // Fetch rubric list
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/usecases/${usecaseId}/rubrics`);
+        if (!res.ok || !alive) return;
+        const body = (await res.json()) as { rubrics: RubricsManifestEntry[] };
+        if (!alive) return;
+        setRubrics(body.rubrics);
+        const def = body.rubrics.find((r) => r.isDefault) ?? body.rubrics[0];
+        if (def) setSelectedRubricId(def.id);
+      } catch { /* silent */ }
+    })();
+    return () => { alive = false; };
+  }, [usecaseId]);
+
+  // Fetch rubric content
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    (async () => {
+      try {
+        const url = `/api/usecases/${usecaseId}/rubric?rubric=${encodeURIComponent(selectedRubricId)}${baselineVersionId ? `&versionId=${baselineVersionId}` : ""}`;
+        const res = await fetch(url);
+        if (!res.ok || !alive) return;
+        const data = await res.json();
+        if (!alive) return;
+        if (usecaseId === "cmgc-pde") {
+          setCmgcSections(groupCmgcSections(data));
+        } else if (usecaseId === "cucp-reevals") {
+          setCucpData({ l2: data.l2 ?? [], l3: data.l3 ?? [] });
+        } else {
+          const cats = Object.entries(data).map(([name, tiers]) => ({ name, tiers: tiers as Record<string, string> }));
+          setRowCategories(cats);
+        }
+        setSavedSnapshot(JSON.stringify(data));
+        setDirty(false);
+        setSaveMsg(null);
+      } catch { /* silent */ }
+      finally { if (alive) setLoading(false); }
+    })();
+    return () => { alive = false; };
+  }, [usecaseId, selectedRubricId, versionNonce, baselineVersionId]);
+
+  // Tab counts — only the active tab shows a real count
+  const activeCount = useMemo(() => {
+    if (activeTab === 0) return cmgcSections.reduce((s, sec) => s + sec.questions.length, 0);
+    if (activeTab === 1) return rowCategories.length;
+    return cucpData.l3.length;
+  }, [activeTab, cmgcSections, rowCategories, cucpData]);
+
+  // Weight validation
+  const weightSum = useMemo(() => {
+    if (activeTab !== 0) return 100;
+    return Math.round(cmgcSections.reduce((s, sec) => s + sec.weight, 0));
+  }, [activeTab, cmgcSections]);
+
+  // --- Handlers ---
+  const markDirty = useCallback(() => setDirty(true), []);
+
+  const handleSave = useCallback(async (draft: SaveDraft) => {
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      let payload: unknown;
+      if (usecaseId === "cmgc-pde") payload = serializeCmgcFromSections(cmgcSections);
+      else if (usecaseId === "cucp-reevals") payload = cucpData;
+      else payload = serializeRow(rowCategories);
+
+      const params = new URLSearchParams();
+      params.set("rubric", rubricId);
+      if (draft.mode === "overwrite") params.set("mode", "overwrite");
+      else if (draft.useCustom) {
+        if (!draft.customId) throw new Error("Custom version id is required");
+        params.set("versionId", draft.customId);
+      } else params.set("bump", draft.bump);
+      if (draft.note) params.set("note", draft.note);
+
+      const res = await fetch(`/api/usecases/${usecaseId}/rubric?${params.toString()}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
+      const body = (await res.json()) as { versionId: string };
+      setSaveMsg(draft.mode === "overwrite" ? `Overwrote ${body.versionId}.` : `Saved as ${body.versionId}.`);
+      setBaselineVersionId(body.versionId);
+      setSavedSnapshot(JSON.stringify(payload));
+      setDirty(false);
+      setVersionNonce((n) => n + 1);
+    } catch (e) {
+      setSaveMsg(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally { setSaving(false); }
+  }, [usecaseId, rubricId, cmgcSections, cucpData, rowCategories]);
+
+  const handleReset = useCallback(() => {
+    if (!savedSnapshot) return;
+    try {
+      const data = JSON.parse(savedSnapshot);
+      if (usecaseId === "cmgc-pde") setCmgcSections(groupCmgcSections(data));
+      else if (usecaseId === "cucp-reevals") setCucpData({ l2: data.l2 ?? [], l3: data.l3 ?? [] });
+      else {
+        const cats = Object.entries(data).map(([name, tiers]) => ({ name, tiers: tiers as Record<string, string> }));
+        setRowCategories(cats);
+      }
+      setDirty(false);
+      setSaveMsg(null);
+    } catch { /* silent */ }
+  }, [savedSnapshot, usecaseId]);
+
+  async function handleCreateRubric(input: CreateRubricInput) {
+    const res = await fetch(`/api/usecases/${usecaseId}/rubrics`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(body.error ?? `HTTP ${res.status}`);
+    }
+    const body = (await res.json()) as { entry: RubricsManifestEntry };
+    setRubrics((prev) => [...prev, body.entry]);
+    setSelectedRubricId(body.entry.id);
+    setShowCreateDialog(false);
+    setVersionNonce((n) => n + 1);
+  }
+
+  async function handleSetDefault() {
+    const res = await fetch(`/api/usecases/${usecaseId}/rubrics/${selectedRubricId}/default`, { method: "PATCH" });
+    if (res.ok) {
+      const body = (await res.json()) as { rubrics: RubricsManifestEntry[] };
+      setRubrics(body.rubrics);
+    }
+  }
+
+  function handleDeleteRubric() {
+    const entry = rubrics.find((r) => r.id === selectedRubricId);
+    setConfirmRequest({
+      title: "Delete rubric",
+      message: `Delete rubric "${entry?.label ?? selectedRubricId}"? This cannot be undone. You cannot delete the default rubric.`,
+      confirmLabel: "Delete",
+      danger: true,
+      onConfirm: async () => {
+        const res = await fetch(`/api/usecases/${usecaseId}/rubrics/${selectedRubricId}`, { method: "DELETE" });
+        if (res.ok) {
+          const body = (await res.json()) as { rubrics: RubricsManifestEntry[] };
+          setRubrics(body.rubrics);
+          const def = body.rubrics.find((r) => r.isDefault) ?? body.rubrics[0];
+          if (def) setSelectedRubricId(def.id);
+        }
+        setConfirmRequest(null);
+      },
+    });
+  }
+
+  const isDefault = rubrics.find((r) => r.id === selectedRubricId)?.isDefault ?? true;
+
+  // --- CMGC Section Mutations ---
+  function updateSection(key: string, updates: Partial<{ name: string; weight: number; description: string }>) {
+    setCmgcSections((prev) => prev.map((s) => s.key === key ? { ...s, ...updates } : s));
+    markDirty();
+  }
+  function deleteSection(key: string) {
+    setConfirmRequest({
+      title: "Delete section",
+      message: `Delete section "${cmgcSections.find((s) => s.key === key)?.name}" and all its questions?`,
+      confirmLabel: "Delete",
+      danger: true,
+      onConfirm: () => {
+        setCmgcSections((prev) => prev.filter((s) => s.key !== key));
+        markDirty();
+        setConfirmRequest(null);
+      },
+    });
+  }
+  function addSection(name: string, weight: number) {
+    const usedKeys = new Set(cmgcSections.map((s) => s.key));
+    let newKey = "";
+    for (let i = 0; i < 26; i++) {
+      const k = String.fromCharCode(65 + i);
+      if (!usedKeys.has(k)) { newKey = k; break; }
+    }
+    if (!newKey) return;
+    setCmgcSections((prev) => [...prev, { key: newKey, name, weight, questions: [] }]);
+    markDirty();
+    setShowNewSection(false);
+  }
+  function updateQuestion(sectionKey: string, questionId: string, updates: Partial<CmgcQuestion>) {
+    setCmgcSections((prev) => prev.map((s) =>
+      s.key === sectionKey
+        ? { ...s, questions: s.questions.map((q) => q.id === questionId ? { ...q, ...updates } : q) }
+        : s,
+    ));
+    markDirty();
+  }
+  function deleteQuestion(sectionKey: string, questionId: string) {
+    const q = cmgcSections.find((s) => s.key === sectionKey)?.questions.find((q) => q.id === questionId);
+    setConfirmRequest({
+      title: "Delete question",
+      message: `Delete question "${q?.question.slice(0, 60)}..."?`,
+      confirmLabel: "Delete",
+      danger: true,
+      onConfirm: () => {
+        setCmgcSections((prev) => prev.map((s) =>
+          s.key === sectionKey ? { ...s, questions: s.questions.filter((q) => q.id !== questionId) } : s,
+        ));
+        markDirty();
+        setConfirmRequest(null);
+      },
+    });
+  }
+  function addQuestion(sectionKey: string, question: string, optA: string, optB: string, optC: string) {
+    const sec = cmgcSections.find((s) => s.key === sectionKey);
+    if (!sec) return;
+    const newQ: CmgcQuestion = {
+      id: `${sectionKey}${sec.questions.length + 1}`,
+      section: `${sectionKey}: ${sec.name}`,
+      question,
+      option_a: optA,
+      option_b: optB,
+      option_c: optC,
+    };
+    setCmgcSections((prev) => prev.map((s) =>
+      s.key === sectionKey ? { ...s, questions: [...s.questions, newQ] } : s,
+    ));
+    markDirty();
+  }
+
+  // --- ROW Mutations ---
+  function updateRowTier(catIdx: number, tier: string, value: string) {
+    setRowCategories((prev) => prev.map((c, i) => i === catIdx ? { ...c, tiers: { ...c.tiers, [tier]: value } } : c));
+    markDirty();
+  }
+  function addRowCategory(name: string) {
+    setRowCategories((prev) => [...prev, { name, tiers: { "1": "", "2": "", "3": "", "4": "", "5": "" } }]);
+    markDirty();
+  }
+  function deleteRowCategory(idx: number) {
+    const cat = rowCategories[idx];
+    setConfirmRequest({
+      title: "Delete category",
+      message: `Delete "${cat?.name}" and all its tier descriptions?`,
+      confirmLabel: "Delete",
+      danger: true,
+      onConfirm: () => {
+        setRowCategories((prev) => prev.filter((_, i) => i !== idx));
+        markDirty();
+        setConfirmRequest(null);
+      },
+    });
+  }
+
+  // --- CUCP Mutations ---
+  function updateCriterion(sNo: number, updates: Partial<CucpL3>) {
+    setCucpData((prev) => ({ ...prev, l3: prev.l3.map((c) => c.s_no === sNo ? { ...c, ...updates } : c) }));
+    markDirty();
+  }
+  function addCriterion(name: string, pass: string, fail: string) {
+    const nextSNo = cucpData.l3.length > 0 ? Math.max(...cucpData.l3.map((c) => c.s_no)) + 1 : 1;
+    setCucpData((prev) => ({ ...prev, l3: [...prev.l3, { s_no: nextSNo, name, pass, fail }] }));
+    markDirty();
+  }
+  function deleteCriterion(sNo: number) {
+    const crit = cucpData.l3.find((c) => c.s_no === sNo);
+    setConfirmRequest({
+      title: "Delete criterion",
+      message: `Delete "${crit?.title ?? crit?.name}"?`,
+      confirmLabel: "Delete",
+      danger: true,
+      onConfirm: () => {
+        setCucpData((prev) => ({ ...prev, l3: prev.l3.filter((c) => c.s_no !== sNo) }));
+        markDirty();
+        setConfirmRequest(null);
+      },
+    });
+  }
+
+  // --- Tab switch with dirty warning ---
+  function switchTab(idx: number) {
+    if (dirty) {
+      setConfirmRequest({
+        title: "Unsaved changes",
+        message: "You have unsaved changes. Switch tabs and discard them?",
+        confirmLabel: "Discard & Switch",
+        danger: true,
+        onConfirm: () => {
+          setDirty(false);
+          setActiveTab(idx);
+          setBaselineVersionId(null);
+          setConfirmRequest(null);
+        },
+      });
+    } else {
+      setActiveTab(idx);
+      setBaselineVersionId(null);
+    }
+  }
 
   return (
     <div className="relative min-h-full">
-        {/* Breadcrumbs */}
-        <nav className="mb-7 flex items-center gap-2.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
-          <Link
-            href="/workspace"
-            className="text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
-          >
-            Workspace
-          </Link>
-          <span className="opacity-60">/</span>
-          <Link
-            href="/work/search"
-            className="text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]"
-          >
-            Rubrics
-          </Link>
-          <span className="opacity-60">/</span>
-          <span className="font-medium text-[var(--color-ink)]">Manage Rubrics</span>
-        </nav>
+      {/* Breadcrumbs */}
+      <nav className="mb-7 flex items-center gap-2.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
+        <Link href="/workspace" className="text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]">Workspace</Link>
+        <span className="opacity-60">/</span>
+        <Link href="/work/search" className="text-[var(--color-ink-mute)] transition-colors hover:text-[var(--color-ink)]">Rubrics</Link>
+        <span className="opacity-60">/</span>
+        <span className="font-medium text-[var(--color-ink)]">Manage Rubrics</span>
+      </nav>
 
-        {/* Section label */}
-        <div className="govdoc-kicker mb-6">
-          <span className="govdoc-kicker-number">03</span>
-          <span>Rubrics · Manage</span>
+      <div className="govdoc-kicker mb-6">
+        <span className="govdoc-kicker-number">03</span>
+        <span>Rubrics · Manage</span>
+      </div>
+
+      <div className="mb-6 flex items-start justify-between">
+        <div className="space-y-3">
+          <h1 className="govdoc-display">Manage <em>Rubrics.</em></h1>
+          <p className="govdoc-copy">
+            Build and refine the scoring rubrics GovDoc applies to each review type. Add questions, set weights, adjust options &mdash; <strong className="font-semibold text-[var(--color-ink-soft)]">every change is versioned and audit-logged</strong>.
+          </p>
         </div>
+        <span className="govdoc-pill border-[#D6C2A0] text-[#8A6335] before:bg-[#C78B3A]">ADMIN&nbsp;&middot;&nbsp;EDIT MODE</span>
+      </div>
 
-        {/* Header row: title + badge + version info */}
-        <div className="mb-6 flex items-start justify-between">
-          <div className="space-y-3">
-            <h1 className="govdoc-display">
-              Manage{" "}
-              <em>Rubrics.</em>
-            </h1>
-            <p className="govdoc-copy">
-              Build and refine the scoring rubrics GovDoc applies to each review type. Add
-              questions, set weights, adjust options &mdash;{" "}
-              <strong className="font-semibold text-[var(--color-ink-soft)]">
-                every change is versioned and audit-logged
-              </strong>
-              .
-            </p>
-          </div>
-
-          <div className="shrink-0 space-y-2 text-right">
-            {/* Admin badge */}
-            <span className="govdoc-pill border-[#D6C2A0] text-[#8A6335] before:bg-[#C78B3A]">
-              ADMIN&nbsp;&middot;&nbsp;EDIT MODE
-            </span>
-            {/* Version info */}
-            <div className="space-y-0.5 font-mono text-[9.5px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)]">
-              <div>EDITING: <span className="font-bold text-[var(--color-ink-soft)]">V1.0.0</span></div>
-              <div>LAST SAVED: <span className="font-bold text-[var(--color-ink-soft)]">09 MAY 2026</span></div>
-              <div>AUTHOR: <span className="font-bold text-[var(--color-ink-soft)]">JOTHI</span></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="mb-6 flex items-center gap-1 border-b border-[var(--color-line)]">
-          {TABS.map((tab, i) => (
-            <button
-              key={tab.label}
-              onClick={() => setActiveTab(i)}
-              className={`relative px-4 py-3 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors ${
-                activeTab === i
-                  ? "text-[var(--color-ink)] after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-[var(--color-govdoc-primary)]"
-                  : "text-[var(--color-ink-mute)] hover:text-[var(--color-ink-soft)]"
-              }`}
-            >
-              {tab.label}
-              {tab.count > 0 && (
-                <span className="ml-2 inline-flex size-5 items-center justify-center rounded-full bg-[var(--color-govdoc-primary)] text-[9px] font-bold text-white">
-                  {tab.count}
-                </span>
-              )}
-              {tab.count === 0 && (
-                <span className="ml-2 inline-flex size-5 items-center justify-center rounded-full bg-[var(--color-line)] text-[9px] font-bold text-[var(--color-ink-faint)]">
-                  0
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Action bar */}
-        <div className="govdoc-surface mb-6 flex flex-wrap items-center gap-3 px-4 py-2.5">
-          <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--color-ink-soft)]">
-            <span className="text-[var(--color-ink-faint)]">RUBRIC:</span>
-            <span className="font-medium">Manage Project</span>
-            <ChevronDown className="size-3 text-[var(--color-ink-faint)]" />
-          </div>
-          <div className="mx-3 h-5 w-px bg-[var(--color-line)]" />
-          <button className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-emerald-700">
-            <Plus className="size-3" />
-            New Section
+      {/* Tabs */}
+      <div className="mb-6 flex items-center gap-1 border-b border-[var(--color-line)]">
+        {USECASE_LABELS.map((label, i) => (
+          <button key={label} onClick={() => switchTab(i)} className={`relative px-4 py-3 font-mono text-[11px] uppercase tracking-[0.1em] transition-colors ${activeTab === i ? "text-[var(--color-ink)] after:absolute after:inset-x-0 after:bottom-0 after:h-[2px] after:bg-[var(--color-govdoc-primary)]" : "text-[var(--color-ink-mute)] hover:text-[var(--color-ink-soft)]"}`}>
+            {label}
+            {activeTab === i && (
+              <span className="ml-2 inline-flex size-5 items-center justify-center rounded-full bg-[var(--color-govdoc-primary)] text-[9px] font-bold text-white">{activeCount}</span>
+            )}
           </button>
-          <button className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-ink-soft)] transition-colors hover:bg-[var(--color-cream)]">
-            <Upload className="size-3" />
-            Upload
-          </button>
-          <button className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-ink-soft)] transition-colors hover:bg-[var(--color-cream)]">
-            <Settings className="size-3" />
-            Compare
-            <ChevronDown className="size-3" />
-          </button>
+        ))}
+      </div>
+
+      {/* Action bar */}
+      <div className="govdoc-surface mb-6 flex flex-wrap items-center gap-3 px-4 py-2.5">
+        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--color-ink-soft)]">
+          <span className="text-[var(--color-ink-faint)]">RUBRIC:</span>
+          <select value={selectedRubricId} onChange={(e) => { setSelectedRubricId(e.target.value); setBaselineVersionId(null); setVersionNonce((n) => n + 1); }} className="rounded-md border border-[var(--color-line)] bg-[var(--color-paper)] px-2 py-1 font-mono text-[11px] font-medium uppercase text-[var(--color-ink)]">
+            {rubrics.map((r) => <option key={r.id} value={r.id}>{r.label}{r.isDefault ? " (default)" : ""}</option>)}
+          </select>
         </div>
+        <div className="mx-2 h-5 w-px bg-[var(--color-line)]" />
+        <button type="button" onClick={() => setShowCreateDialog(true)} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-govdoc-primary)] px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-[var(--color-govdoc-deep)]">
+          <Plus className="size-3" /> Create Rubric
+        </button>
+        {activeTab === 0 && (
+          <button type="button" onClick={() => setShowNewSection(true)} className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-emerald-700">
+            <Plus className="size-3" /> New Section
+          </button>
+        )}
+        <button type="button" onClick={() => setShowUploadModal(true)} className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-ink-soft)] transition-colors hover:bg-[var(--color-cream)]">
+          <Upload className="size-3" /> Upload
+        </button>
+        {!isDefault && (
+          <button type="button" onClick={handleSetDefault} className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-ink-soft)] transition-colors hover:bg-[var(--color-cream)]">
+            Set Default
+          </button>
+        )}
+        {!isDefault && (
+          <button type="button" onClick={handleDeleteRubric} className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-red-700 transition-colors hover:bg-red-100">
+            <Trash2 className="size-3" /> Delete Rubric
+          </button>
+        )}
+      </div>
 
-        {/* Sections */}
-        <div className="space-y-0">
-          {SECTIONS.map((section, idx) => {
-            const isExpanded = expandedSection === section.id;
-            const sectionNum = String(idx + 1).padStart(2, "0");
+      {/* Weight warning */}
+      {activeTab === 0 && weightSum !== 100 && cmgcSections.length > 0 && (
+        <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-medium text-amber-800">
+          Section weights sum to {weightSum}%, not 100%.
+        </div>
+      )}
 
-            return (
-              <div
-                key={section.id}
-                className={`border border-[var(--color-line)] ${idx === 0 ? "rounded-t-[8px]" : ""} ${idx === SECTIONS.length - 1 ? "rounded-b-[8px]" : ""} ${idx > 0 ? "-mt-px" : ""} ${isExpanded ? "bg-[var(--color-paper)]" : "bg-[var(--color-cream-soft)]"}`}
-              >
-                {/* Section header */}
-                <button
-                  onClick={() => toggleSection(section.id)}
-                  className="flex w-full items-center gap-4 px-5 py-4 text-left"
-                >
-                  <span className="font-mono text-[12px] font-bold text-[var(--color-ink-faint)]">
-                    {sectionNum}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[14px] font-semibold text-[var(--color-ink)]">
-                      {section.title}
-                    </div>
-                    <div className="mt-0.5 text-[12px] text-[var(--color-ink-mute)]">
-                      {section.description}
-                    </div>
-                  </div>
-                  <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-ink-faint)]">
-                    {section.questions.length} QUESTIONS&nbsp;&middot;&nbsp;{section.weight}%
-                  </span>
-                  {isExpanded ? (
-                    <span className="inline-flex items-center gap-1.5 rounded border border-[var(--color-line)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-cream)]">
-                      <Pencil className="size-3" />
-                      Edit Section
-                    </span>
-                  ) : null}
-                  {isExpanded ? (
-                    <span className="inline-flex items-center justify-center rounded border border-[var(--color-line)] p-1.5 text-[var(--color-ink-faint)] transition-colors hover:bg-red-50 hover:text-red-500">
-                      <Trash2 className="size-3.5" />
-                    </span>
-                  ) : null}
-                  <span className="text-[var(--color-ink-faint)]">
-                    {isExpanded ? (
-                      <ChevronDown className="size-4" />
-                    ) : (
-                      <ChevronRight className="size-4" />
-                    )}
-                  </span>
+      {/* Loading */}
+      {loading && <p className="py-8 text-center text-sm text-[var(--color-ink-faint)]">Loading rubric…</p>}
+
+      {/* New Section form (Project tab) */}
+      {showNewSection && activeTab === 0 && <NewSectionForm onAdd={addSection} onCancel={() => setShowNewSection(false)} />}
+
+      {/* Tab content */}
+      {!loading && activeTab === 0 && (
+        <ProjectTab sections={cmgcSections} onUpdateSection={updateSection} onDeleteSection={deleteSection} onUpdateQuestion={updateQuestion} onDeleteQuestion={deleteQuestion} onAddQuestion={addQuestion} />
+      )}
+      {!loading && activeTab === 1 && (
+        <AppraisalTab categories={rowCategories} onUpdateTier={updateRowTier} onAddCategory={addRowCategory} onDeleteCategory={deleteRowCategory} />
+      )}
+      {!loading && activeTab === 2 && (
+        <NarrativeTab data={cucpData} onUpdateCriterion={updateCriterion} onAddCriterion={addCriterion} onDeleteCriterion={deleteCriterion} />
+      )}
+
+      {/* Version History */}
+      <div className="mt-10">
+        <VersionHistoryPanel usecaseId={usecaseId} rubricId={rubricId} refreshNonce={versionNonce} baselineVersionId={baselineVersionId} onChanged={() => setVersionNonce((n) => n + 1)} onLoad={(vid) => setBaselineVersionId(vid)} />
+      </div>
+
+      {/* Save bar */}
+      <div className="mt-8">
+        <SaveBar usecaseId={usecaseId} rubricId={rubricId} dirty={dirty} saving={saving} msg={saveMsg} baselineVersionId={baselineVersionId} downloadHref={`/api/usecases/${usecaseId}/rubric/download?rubric=${rubricId}`} downloadLabel="Export XLSX" onReset={handleReset} onSave={handleSave} />
+      </div>
+
+      {/* Dialogs */}
+      {showCreateDialog && <CreateRubricDialog rubrics={rubrics} onSave={handleCreateRubric} onCancel={() => setShowCreateDialog(false)} />}
+      {confirmRequest && <ConfirmDialog request={confirmRequest} onCancel={() => setConfirmRequest(null)} />}
+      <RubricUploadModal open={showUploadModal} usecaseId={usecaseId} rubricId={selectedRubricId} onUploaded={({ rubricId: rid }) => { setShowUploadModal(false); setSelectedRubricId(rid); setVersionNonce((n) => n + 1); }} onClose={() => setShowUploadModal(false)} />
+    </div>
+  );
+}
+
+/* ─── New Section Form ─── */
+function NewSectionForm({ onAdd, onCancel }: { onAdd: (name: string, weight: number) => void; onCancel: () => void }) {
+  const [name, setName] = useState("");
+  const [weight, setWeight] = useState("");
+  return (
+    <div className="mb-6 rounded-[8px] border border-emerald-200 bg-emerald-50/50 px-5 py-4">
+      <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.1em] text-emerald-700"><Plus className="inline size-3 mr-1" />New Section</div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-faint)]">Title *</span>
+          <input autoFocus type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Environmental Compliance" className="mt-1 w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" />
+        </label>
+        <label className="block">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-faint)]">Weight (%)</span>
+          <input type="number" min={0} max={100} value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="0" className="mt-1 w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" />
+        </label>
+      </div>
+      <div className="mt-3 flex gap-2">
+        <button type="button" onClick={() => { if (name.trim()) onAdd(name.trim(), Number(weight) || 0); }} disabled={!name.trim()} className="rounded-md bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">Create Section</button>
+        <button type="button" onClick={onCancel} className="rounded-md border border-[var(--color-line)] px-3 py-1.5 text-xs font-medium text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Project (CMGC) Tab ─── */
+function ProjectTab({ sections, onUpdateSection, onDeleteSection, onUpdateQuestion, onDeleteQuestion, onAddQuestion }: {
+  sections: SectionGroup[];
+  onUpdateSection: (key: string, u: Partial<{ name: string; weight: number }>) => void;
+  onDeleteSection: (key: string) => void;
+  onUpdateQuestion: (secKey: string, qId: string, u: Partial<CmgcQuestion>) => void;
+  onDeleteQuestion: (secKey: string, qId: string) => void;
+  onAddQuestion: (secKey: string, q: string, a: string, b: string, c: string) => void;
+}) {
+  const [expanded, setExpanded] = useState<string>(sections[0]?.key ?? "");
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [editingQuestion, setEditingQuestion] = useState<string | null>(null);
+  const [addingTo, setAddingTo] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-0">
+      {sections.map((sec, idx) => {
+        const isOpen = expanded === sec.key;
+        return (
+          <div key={sec.key} className={`border border-[var(--color-line)] ${idx === 0 ? "rounded-t-[8px]" : ""} ${idx === sections.length - 1 ? "rounded-b-[8px]" : ""} ${idx > 0 ? "-mt-px" : ""} ${isOpen ? "bg-[var(--color-paper)]" : "bg-[var(--color-cream-soft)]"}`}>
+            {/* Header */}
+            <div role="button" tabIndex={0} onClick={() => setExpanded(isOpen ? "" : sec.key)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setExpanded(isOpen ? "" : sec.key); }} className="flex w-full items-center gap-4 px-5 py-4 text-left cursor-pointer">
+              <span className="font-mono text-[12px] font-bold text-[var(--color-ink-faint)]">{String(idx + 1).padStart(2, "0")}</span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[14px] font-semibold text-[var(--color-ink)]">{sec.name}</div>
+              </div>
+              <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-ink-faint)]">{sec.questions.length} Q&nbsp;&middot;&nbsp;{sec.weight}%</span>
+              {isOpen && (
+                <button type="button" aria-label={`Edit section ${sec.name}`} onClick={(e) => { e.stopPropagation(); setEditingSection(editingSection === sec.key ? null : sec.key); }} className="inline-flex items-center gap-1.5 rounded border border-[var(--color-line)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-cream)]">
+                  <Pencil className="size-3" /> Edit
                 </button>
+              )}
+              {isOpen && (
+                <button type="button" aria-label={`Delete section ${sec.name}`} onClick={(e) => { e.stopPropagation(); onDeleteSection(sec.key); }} className="inline-flex items-center justify-center rounded border border-[var(--color-line)] p-1.5 text-[var(--color-ink-faint)] transition-colors hover:bg-red-50 hover:text-red-500">
+                  <Trash2 className="size-3.5" />
+                </button>
+              )}
+              <span className="text-[var(--color-ink-faint)]">{isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</span>
+            </div>
 
-                {/* Expanded questions */}
-                {isExpanded && (
-                  <div className="border-t border-[var(--color-line-soft)] px-5 pb-5">
-                    <div className="divide-y divide-[var(--color-line-soft)]">
-                      {section.questions.map((q, qi) => {
-                        const qNum = String(qi + 1).padStart(2, "0");
-                        return (
-                          <div key={q.id} className="group/question py-4">
-                            <div className="flex items-start gap-3">
-                              <span className="mt-0.5 font-mono text-[11px] font-bold text-[var(--color-ink-faint)]">
-                                {qNum}
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <div className="text-[13px] font-medium leading-[1.5] text-[var(--color-ink-soft)]">
-                                  {q.text}
-                                </div>
-                                <div className="mt-2 space-y-1">
-                                  {q.options.map((opt, oi) => (
-                                    <div
-                                      key={oi}
-                                      className="flex items-start gap-2 text-[12px] leading-[1.5] text-[var(--color-ink-mute)]"
-                                    >
-                                      <span className="mt-px font-mono font-bold text-[var(--color-ink-faint)]">
-                                        {String.fromCharCode(65 + oi)}
-                                      </span>
-                                      <span>{opt}</span>
-                                    </div>
-                                  ))}
-                                </div>
+            {/* Section edit form */}
+            {editingSection === sec.key && (
+              <SectionEditForm section={sec} onSave={(u) => { onUpdateSection(sec.key, u); setEditingSection(null); }} onCancel={() => setEditingSection(null)} />
+            )}
+
+            {/* Questions */}
+            {isOpen && editingSection !== sec.key && (
+              <div className="border-t border-[var(--color-line-soft)] px-5 pb-5">
+                <div className="divide-y divide-[var(--color-line-soft)]">
+                  {sec.questions.map((q, qi) => (
+                    <div key={q.id} className="group/question py-4">
+                      <div className="flex items-start gap-3">
+                        <span className="mt-0.5 font-mono text-[11px] font-bold text-[var(--color-ink-faint)]">{String(qi + 1).padStart(2, "0")}</span>
+                        <div className="min-w-0 flex-1">
+                          {editingQuestion === q.id ? (
+                            <QuestionEditForm question={q} onSave={(u) => { onUpdateQuestion(sec.key, q.id, u); setEditingQuestion(null); }} onCancel={() => setEditingQuestion(null)} />
+                          ) : (
+                            <>
+                              <div className="text-[13px] font-medium leading-[1.5] text-[var(--color-ink-soft)]">{q.question}</div>
+                              <div className="mt-2 space-y-1">
+                                {[q.option_a, q.option_b, q.option_c].map((opt, oi) => (
+                                  <div key={oi} className="flex items-start gap-2 text-[12px] leading-[1.5] text-[var(--color-ink-mute)]">
+                                    <span className="mt-px font-mono font-bold text-[var(--color-ink-faint)]">{String.fromCharCode(65 + oi)}</span>
+                                    <span>{opt}</span>
+                                  </div>
+                                ))}
                               </div>
-                              <div className="flex shrink-0 items-center gap-1.5 opacity-0 transition-opacity group-hover/question:opacity-100">
-                                <button className="inline-flex items-center gap-1 rounded border border-[var(--color-line)] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-cream)]">
-                                  <Pencil className="size-2.5" />
-                                  Edit
-                                </button>
-                                <button className="inline-flex items-center justify-center rounded border border-[var(--color-line)] p-1 text-[var(--color-ink-faint)] transition-colors hover:bg-red-50 hover:text-red-500">
-                                  <Trash2 className="size-3" />
-                                </button>
-                              </div>
+                            </>
+                          )}
+                        </div>
+                        {editingQuestion !== q.id && (
+                          <div className="flex shrink-0 items-center gap-1.5 opacity-0 transition-opacity group-hover/question:opacity-100">
+                            <button type="button" aria-label={`Edit question ${q.id}`} onClick={() => setEditingQuestion(q.id)} className="inline-flex items-center gap-1 rounded border border-[var(--color-line)] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-cream)]">
+                              <Pencil className="size-2.5" /> Edit
+                            </button>
+                            <button type="button" aria-label={`Delete question ${q.id}`} onClick={() => onDeleteQuestion(sec.key, q.id)} className="inline-flex items-center justify-center rounded border border-[var(--color-line)] p-1 text-[var(--color-ink-faint)] transition-colors hover:bg-red-50 hover:text-red-500">
+                              <Trash2 className="size-3" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {addingTo === sec.key ? (
+                  <AddQuestionForm onAdd={(q, a, b, c) => { onAddQuestion(sec.key, q, a, b, c); setAddingTo(null); }} onCancel={() => setAddingTo(null)} />
+                ) : (
+                  <button type="button" onClick={() => setAddingTo(sec.key)} className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--color-line)] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-mute)] transition-colors hover:border-[var(--color-govdoc-primary)] hover:text-[var(--color-govdoc-primary)]">
+                    <Plus className="size-3" /> Add question
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {sections.length === 0 && <p className="py-8 text-center text-sm text-[var(--color-ink-faint)] italic">No sections. Click "New Section" to add one.</p>}
+    </div>
+  );
+}
+
+function SectionEditForm({ section, onSave, onCancel }: { section: SectionGroup; onSave: (u: { name: string; weight: number }) => void; onCancel: () => void }) {
+  const [name, setName] = useState(section.name);
+  const [weight, setWeight] = useState(String(section.weight));
+  return (
+    <div className="border-t border-[var(--color-line-soft)] bg-amber-50/40 px-5 py-4">
+      <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.1em] text-amber-700"><Pencil className="inline size-3 mr-1" />Editing Section</div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-faint)]">Title</span><input type="text" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" /></label>
+        <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-faint)]">Weight (%)</span><input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} className="mt-1 w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" /></label>
+      </div>
+      <div className="mt-3 flex gap-2">
+        <button type="button" onClick={() => onSave({ name: name.trim(), weight: Number(weight) || 0 })} className="rounded-md bg-[var(--color-govdoc-primary)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-govdoc-deep)]">Save</button>
+        <button type="button" onClick={onCancel} className="rounded-md border border-[var(--color-line)] px-3 py-1.5 text-xs font-medium text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function QuestionEditForm({ question, onSave, onCancel }: { question: CmgcQuestion; onSave: (u: Partial<CmgcQuestion>) => void; onCancel: () => void }) {
+  const [text, setText] = useState(question.question);
+  const [a, setA] = useState(question.option_a);
+  const [b, setB] = useState(question.option_b);
+  const [c, setC] = useState(question.option_c);
+  return (
+    <div className="space-y-2">
+      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} className="w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" />
+      {[["A", a, setA], ["B", b, setB], ["C", c, setC]].map(([letter, val, setter]) => (
+        <label key={letter as string} className="flex items-center gap-2">
+          <span className="font-mono text-[10px] font-bold text-[var(--color-ink-faint)]">{letter as string}</span>
+          <input type="text" value={val as string} onChange={(e) => (setter as (v: string) => void)(e.target.value)} className="flex-1 rounded-md border border-[var(--color-line)] bg-white px-2 py-1 text-xs" />
+        </label>
+      ))}
+      <div className="flex gap-2 pt-1">
+        <button type="button" onClick={() => onSave({ question: text, option_a: a, option_b: b, option_c: c })} className="rounded-md bg-[var(--color-govdoc-primary)] px-3 py-1 text-xs font-semibold text-white hover:bg-[var(--color-govdoc-deep)]">Save</button>
+        <button type="button" onClick={onCancel} className="rounded-md border border-[var(--color-line)] px-3 py-1 text-xs text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function AddQuestionForm({ onAdd, onCancel }: { onAdd: (q: string, a: string, b: string, c: string) => void; onCancel: () => void }) {
+  const [text, setText] = useState("");
+  const [a, setA] = useState("");
+  const [b, setB] = useState("");
+  const [c, setC] = useState("");
+  return (
+    <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/50 p-4">
+      <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.1em] text-emerald-700">New Question</div>
+      <textarea autoFocus value={text} onChange={(e) => setText(e.target.value)} rows={2} placeholder="Question text..." className="w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" />
+      <div className="mt-2 space-y-1.5">
+        {[["A", a, setA], ["B", b, setB], ["C", c, setC]].map(([letter, val, setter]) => (
+          <label key={letter as string} className="flex items-center gap-2">
+            <span className="font-mono text-[10px] font-bold text-[var(--color-ink-faint)]">{letter as string}</span>
+            <input type="text" value={val as string} onChange={(e) => (setter as (v: string) => void)(e.target.value)} placeholder={`Option ${letter}`} className="flex-1 rounded-md border border-[var(--color-line)] bg-white px-2 py-1 text-xs" />
+          </label>
+        ))}
+      </div>
+      <div className="mt-3 flex gap-2">
+        <button type="button" onClick={() => { if (text.trim()) onAdd(text.trim(), a, b, c); }} disabled={!text.trim()} className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">Add Question</button>
+        <button type="button" onClick={onCancel} className="rounded-md border border-[var(--color-line)] px-3 py-1.5 text-xs font-medium text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Appraisal (ROW) Tab ─── */
+function AppraisalTab({ categories, onUpdateTier, onAddCategory, onDeleteCategory }: { categories: Array<{ name: string; tiers: Record<string, string> }>; onUpdateTier: (idx: number, tier: string, value: string) => void; onAddCategory: (name: string) => void; onDeleteCategory: (idx: number) => void }) {
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [editingTier, setEditingTier] = useState<{ idx: number; tier: string } | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+
+  return (
+    <div>
+      <div className="space-y-0">
+        {categories.map((cat, idx) => {
+          const isOpen = expanded === idx;
+          return (
+            <div key={cat.name} className={`border border-[var(--color-line)] ${idx === 0 ? "rounded-t-[8px]" : ""} ${idx === categories.length - 1 ? "rounded-b-[8px]" : ""} ${idx > 0 ? "-mt-px" : ""} ${isOpen ? "bg-[var(--color-paper)]" : "bg-[var(--color-cream-soft)]"}`}>
+              <div role="button" tabIndex={0} onClick={() => setExpanded(isOpen ? null : idx)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setExpanded(isOpen ? null : idx); }} className="flex w-full items-center gap-4 px-5 py-4 text-left cursor-pointer">
+                <span className="font-mono text-[12px] font-bold text-[var(--color-ink-faint)]">{String(idx + 1).padStart(2, "0")}</span>
+                <div className="min-w-0 flex-1"><div className="text-[14px] font-semibold text-[var(--color-ink)]">{cat.name}</div></div>
+                <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-ink-faint)]">{Object.values(cat.tiers).filter((v) => v).length} / 5 TIERS</span>
+                {isOpen && (
+                  <button type="button" aria-label={`Edit ${cat.name}`} onClick={(e) => { e.stopPropagation(); setEditingTier({ idx, tier: "1" }); }} className="inline-flex items-center gap-1.5 rounded border border-[var(--color-line)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-cream)]">
+                    <Pencil className="size-3" /> Edit
+                  </button>
+                )}
+                {isOpen && (
+                  <button type="button" aria-label={`Delete ${cat.name}`} onClick={(e) => { e.stopPropagation(); onDeleteCategory(idx); }} className="inline-flex items-center justify-center rounded border border-[var(--color-line)] p-1.5 text-[var(--color-ink-faint)] transition-colors hover:bg-red-50 hover:text-red-500">
+                    <Trash2 className="size-3.5" />
+                  </button>
+                )}
+                <span className="text-[var(--color-ink-faint)]">{isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</span>
+              </div>
+              {isOpen && (
+                <div className="border-t border-[var(--color-line-soft)] px-5 pb-5">
+                  {(["1", "2", "3", "4", "5"] as const).map((tier) => {
+                    const isEditing = editingTier?.idx === idx && editingTier?.tier === tier;
+                    return (
+                      <div key={tier} className="flex items-start gap-3 py-3 border-b border-[var(--color-line-soft)] last:border-b-0 group/tier">
+                        <span className="mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-govdoc-primary)] font-mono text-[10px] font-bold text-white">{tier}</span>
+                        {isEditing ? (
+                          <div className="flex-1 space-y-2">
+                            <textarea defaultValue={cat.tiers[tier]} rows={2} className="w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-xs" autoFocus onBlur={(e) => { onUpdateTier(idx, tier, e.target.value); setEditingTier(null); }} />
+                            <div className="flex gap-2">
+                              <button type="button" onClick={() => setEditingTier(null)} className="rounded-md bg-[var(--color-govdoc-primary)] px-3 py-1 text-xs font-semibold text-white hover:bg-[var(--color-govdoc-deep)]">Save</button>
+                              <button type="button" onClick={() => setEditingTier(null)} className="rounded-md border border-[var(--color-line)] px-3 py-1 text-xs text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Add question button */}
-                    <button className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--color-line)] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-mute)] transition-colors hover:border-[var(--color-govdoc-primary)] hover:text-[var(--color-govdoc-primary)]">
-                      <Plus className="size-3" />
-                      Add question to this section
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Version History */}
-        <div className="mt-10">
-          <div className="mb-4 flex items-center justify-between font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-mute)]">
-            <div>
-              <span className="mr-2 text-[var(--color-line)]">━━━</span>
-              VERSION HISTORY
+                        ) : (
+                          <>
+                            <span className="flex-1 text-[13px] leading-[1.5] text-[var(--color-ink-soft)]">
+                              {cat.tiers[tier] || <span className="italic text-[var(--color-ink-faint)]">Not defined</span>}
+                            </span>
+                            <button type="button" onClick={() => setEditingTier({ idx, tier })} className="opacity-0 group-hover/tier:opacity-100 transition-opacity inline-flex items-center gap-1 rounded border border-[var(--color-line)] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">
+                              <Pencil className="size-2.5" /> Edit
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-6 text-[var(--color-ink-faint)]">
-              <span>
-                TOTAL VERSIONS:{" "}
-                <span className="font-bold text-[var(--color-ink-soft)]">
-                  {String(VERSION_HISTORY.length).padStart(2, "0")}
-                </span>
-              </span>
-              <span>RETENTION: 90 DAYS</span>
-            </div>
+          );
+        })}
+      </div>
+      {adding ? (
+        <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/50 p-4">
+          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.1em] text-emerald-700">New Category</div>
+          <input autoFocus type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Category name..." className="w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" />
+          <div className="mt-3 flex gap-2">
+            <button type="button" onClick={() => { if (newName.trim()) { onAddCategory(newName.trim()); setNewName(""); setAdding(false); } }} disabled={!newName.trim()} className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">Add Category</button>
+            <button type="button" onClick={() => { setAdding(false); setNewName(""); }} className="rounded-md border border-[var(--color-line)] px-3 py-1.5 text-xs font-medium text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
           </div>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setAdding(true)} className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--color-line)] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-mute)] transition-colors hover:border-[var(--color-govdoc-primary)] hover:text-[var(--color-govdoc-primary)]">
+          <Plus className="size-3" /> Add category
+        </button>
+      )}
+      {categories.length === 0 && !adding && <p className="py-8 text-center text-sm text-[var(--color-ink-faint)] italic">No categories loaded.</p>}
+    </div>
+  );
+}
 
-          <div className="space-y-3">
-            {VERSION_HISTORY.map((v) => (
-              <div
-                key={v.version}
-                className="flex items-start gap-4 rounded-[8px] border border-[var(--color-line)] bg-[var(--color-paper)] px-5 py-4"
-              >
-                <span className="font-mono text-[12px] font-bold text-[var(--color-ink-soft)]">
-                  {v.version}
-                </span>
-                {v.current && (
-                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-emerald-700">
-                    Current
-                  </span>
-                )}
+/* ─── Narrative (CUCP) Tab ─── */
+function NarrativeTab({ data, onUpdateCriterion, onAddCriterion, onDeleteCriterion }: { data: CucpData; onUpdateCriterion: (sNo: number, u: Partial<CucpL3>) => void; onAddCriterion: (name: string, pass: string, fail: string) => void; onDeleteCriterion: (sNo: number) => void }) {
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [editing, setEditing] = useState<number | null>(null);
+  const [adding, setAdding] = useState(false);
+
+  return (
+    <div>
+      <div className="space-y-0">
+        {data.l3.map((crit, idx) => {
+          const isOpen = expanded === crit.s_no;
+          const isEditing = editing === crit.s_no;
+          return (
+            <div key={crit.s_no} className={`border border-[var(--color-line)] ${idx === 0 ? "rounded-t-[8px]" : ""} ${idx === data.l3.length - 1 ? "rounded-b-[8px]" : ""} ${idx > 0 ? "-mt-px" : ""} ${isOpen ? "bg-[var(--color-paper)]" : "bg-[var(--color-cream-soft)]"}`}>
+              <div role="button" tabIndex={0} onClick={() => setExpanded(isOpen ? null : crit.s_no)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setExpanded(isOpen ? null : crit.s_no); }} className="flex w-full items-center gap-4 px-5 py-4 text-left cursor-pointer">
+                <span className="font-mono text-[12px] font-bold text-[var(--color-ink-faint)]">{String(crit.s_no).padStart(2, "0")}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="font-mono text-[11px] text-[var(--color-ink-faint)]">
-                    {v.date}&nbsp;&nbsp;AUTHOR: {v.author}
-                  </div>
-                  <div className="mt-1 text-[13px] text-[var(--color-ink-mute)]">{v.note}</div>
+                  <div className="text-[14px] font-semibold text-[var(--color-ink)]">{crit.title ?? crit.name}</div>
+                  {crit.rule && <div className="mt-0.5 text-[12px] text-[var(--color-ink-mute)]">{crit.rule}</div>}
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <button className="inline-flex items-center gap-1 rounded border border-[var(--color-line)] px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-cream)]">
-                    &#8634; Restore
+                {isOpen && (
+                  <button type="button" aria-label={`Edit ${crit.title ?? crit.name}`} onClick={(e) => { e.stopPropagation(); setEditing(isEditing ? null : crit.s_no); }} className="inline-flex items-center gap-1.5 rounded border border-[var(--color-line)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-cream)]">
+                    <Pencil className="size-3" /> Edit
                   </button>
-                  <button className="inline-flex items-center justify-center rounded border border-[var(--color-line)] p-1.5 text-[var(--color-ink-faint)] transition-colors hover:bg-red-50 hover:text-red-500">
-                    <Trash2 className="size-3" />
+                )}
+                {isOpen && (
+                  <button type="button" aria-label={`Delete ${crit.title ?? crit.name}`} onClick={(e) => { e.stopPropagation(); onDeleteCriterion(crit.s_no); }} className="inline-flex items-center justify-center rounded border border-[var(--color-line)] p-1.5 text-[var(--color-ink-faint)] transition-colors hover:bg-red-50 hover:text-red-500">
+                    <Trash2 className="size-3.5" />
                   </button>
-                </div>
+                )}
+                <span className="text-[var(--color-ink-faint)]">{isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</span>
               </div>
-            ))}
-          </div>
-        </div>
+              {isOpen && !isEditing && (
+                <div className="border-t border-[var(--color-line-soft)] px-5 pb-5 pt-4 space-y-3">
+                  {crit.pass && <div className="flex items-start gap-2"><span className="mt-0.5 inline-flex shrink-0 items-center rounded bg-emerald-100 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase text-emerald-700">Pass</span><span className="text-[13px] leading-[1.5] text-[var(--color-ink-soft)]">{crit.pass}</span></div>}
+                  {crit.fail && <div className="flex items-start gap-2"><span className="mt-0.5 inline-flex shrink-0 items-center rounded bg-red-100 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase text-red-700">Fail</span><span className="text-[13px] leading-[1.5] text-[var(--color-ink-soft)]">{crit.fail}</span></div>}
+                </div>
+              )}
+              {isOpen && isEditing && (
+                <CriterionEditForm criterion={crit} onSave={(u) => { onUpdateCriterion(crit.s_no, u); setEditing(null); }} onCancel={() => setEditing(null)} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {adding ? (
+        <AddCriterionForm onAdd={(name, pass, fail) => { onAddCriterion(name, pass, fail); setAdding(false); }} onCancel={() => setAdding(false)} />
+      ) : (
+        <button type="button" onClick={() => setAdding(true)} className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--color-line)] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-mute)] transition-colors hover:border-[var(--color-govdoc-primary)] hover:text-[var(--color-govdoc-primary)]">
+          <Plus className="size-3" /> Add criterion
+        </button>
+      )}
+      {data.l3.length === 0 && !adding && <p className="py-8 text-center text-sm text-[var(--color-ink-faint)] italic">No criteria loaded.</p>}
+    </div>
+  );
+}
 
-        {/* Bottom status bar */}
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[var(--color-line)] bg-[var(--color-paper)] px-5 py-3">
-          <span className="inline-flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.1em] text-emerald-600">
-            <span>&#9670;</span>
-            NO UNSAVED CHANGES
-          </span>
-          <div className="flex items-center gap-2">
-            <button className="rounded-md border border-[var(--color-line)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-cream)]">
-              Save Section
-            </button>
-            <button className="rounded-md bg-[var(--color-ink)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-white transition-colors hover:bg-[var(--color-ink-soft)]">
-              Save
-            </button>
-            <button className="rounded-md bg-[var(--color-govdoc-primary)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-white transition-colors hover:bg-[var(--color-govdoc-deep)]">
-              &#10003; Send
-            </button>
-          </div>
-        </div>
+function AddCriterionForm({ onAdd, onCancel }: { onAdd: (name: string, pass: string, fail: string) => void; onCancel: () => void }) {
+  const [name, setName] = useState("");
+  const [pass, setPass] = useState("");
+  const [fail, setFail] = useState("");
+  return (
+    <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50/50 p-4 space-y-3">
+      <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-emerald-700">New Criterion</div>
+      <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-faint)]">Name *</span><input autoFocus type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Criterion name..." className="mt-1 w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" /></label>
+      <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Pass criteria</span><textarea value={pass} onChange={(e) => setPass(e.target.value)} rows={2} placeholder="What constitutes a pass..." className="mt-1 w-full rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 text-sm" /></label>
+      <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-red-700">Fail criteria</span><textarea value={fail} onChange={(e) => setFail(e.target.value)} rows={2} placeholder="What constitutes a fail..." className="mt-1 w-full rounded-md border border-red-200 bg-white px-2.5 py-1.5 text-sm" /></label>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => { if (name.trim()) onAdd(name.trim(), pass, fail); }} disabled={!name.trim()} className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">Add Criterion</button>
+        <button type="button" onClick={onCancel} className="rounded-md border border-[var(--color-line)] px-3 py-1.5 text-xs font-medium text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function CriterionEditForm({ criterion, onSave, onCancel }: { criterion: CucpL3; onSave: (u: Partial<CucpL3>) => void; onCancel: () => void }) {
+  const [pass, setPass] = useState(criterion.pass ?? "");
+  const [fail, setFail] = useState(criterion.fail ?? "");
+  const [rule, setRule] = useState(criterion.rule ?? "");
+  return (
+    <div className="border-t border-[var(--color-line-soft)] bg-amber-50/40 px-5 py-4 space-y-3">
+      <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-amber-700"><Pencil className="inline size-3 mr-1" />Editing Criterion</div>
+      <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-faint)]">Rule / Note</span><input type="text" value={rule} onChange={(e) => setRule(e.target.value)} className="mt-1 w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" /></label>
+      <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Pass criteria</span><textarea value={pass} onChange={(e) => setPass(e.target.value)} rows={2} className="mt-1 w-full rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 text-sm" /></label>
+      <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-red-700">Fail criteria</span><textarea value={fail} onChange={(e) => setFail(e.target.value)} rows={2} className="mt-1 w-full rounded-md border border-red-200 bg-white px-2.5 py-1.5 text-sm" /></label>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => onSave({ pass, fail, rule: rule || undefined })} className="rounded-md bg-[var(--color-govdoc-primary)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-govdoc-deep)]">Save</button>
+        <button type="button" onClick={onCancel} className="rounded-md border border-[var(--color-line)] px-3 py-1.5 text-xs font-medium text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
+      </div>
     </div>
   );
 }

@@ -21,32 +21,36 @@ function validateCmgc(data: unknown): ShapeResult {
     }
   }
   if (!isObj(weights)) return { ok: false, error: "`weights` must be an object" };
-  for (const k of ["A", "B", "C", "D", "E", "F"]) {
-    if (typeof weights[k] !== "number") {
+  for (const [k, v] of Object.entries(weights)) {
+    if (typeof v !== "number") {
       return { ok: false, error: `weights.${k} must be a number` };
     }
+  }
+  if (Object.keys(weights).length === 0) {
+    return { ok: false, error: "`weights` must have at least one section key" };
   }
   return { ok: true };
 }
 
 function validateCucp(data: unknown): ShapeResult {
   if (!isObj(data)) return { ok: false, error: "Rubric must be a JSON object" };
-  // CUCP's structured rubric carries categories + criteria. Keep the guard
-  // permissive (only field-presence) — prompt builders are hardcoded today,
-  // so over-strict validation here would just block valid uploads.
-  if (!Array.isArray(data.categories)) {
-    return { ok: false, error: "`categories` must be an array" };
+  if (!Array.isArray(data.l2) && !Array.isArray(data.categories)) {
+    return { ok: false, error: "`l2` (or `categories`) must be an array" };
   }
-  if (!Array.isArray(data.criteria)) {
-    return { ok: false, error: "`criteria` must be an array" };
+  if (!Array.isArray(data.l3) && !Array.isArray(data.criteria)) {
+    return { ok: false, error: "`l3` (or `criteria`) must be an array" };
   }
   return { ok: true };
 }
 
 function validateRow(data: unknown): ShapeResult {
   if (!isObj(data)) return { ok: false, error: "Rubric must be a JSON object" };
-  if (!Array.isArray(data.categories)) {
-    return { ok: false, error: "`categories` must be an array" };
+  const keys = Object.keys(data);
+  if (keys.length === 0) return { ok: false, error: "Rubric must have at least one category" };
+  if (Array.isArray(data.categories)) return { ok: true };
+  for (const key of keys) {
+    const val = data[key];
+    if (!isObj(val)) return { ok: false, error: `"${key}" must be an object with tier keys` };
   }
   return { ok: true };
 }
