@@ -1,6 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { embedQuery, findTopKChunks, type DocumentChunk } from "./documents";
+import type { DocumentChunk } from "./documents";
 import { createLogger } from "@/lib/logging";
+
+export type ScoredChunk = DocumentChunk & { score: number };
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -18,22 +20,13 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-/**
- * Answer a question using semantic search and Claude
- */
 export async function answerQuestion(
   question: string,
-  allChunks: DocumentChunk[],
-  chatHistory: ChatMessage[] = []
+  topChunks: ScoredChunk[],
+  chatHistory: ChatMessage[] = [],
 ): Promise<ChatMessage> {
   const log = createLogger({ correlationId: crypto.randomUUID(), useCase: "search-ask" });
   log.info("chat.query.start", { questionLength: question.length, historySize: chatHistory.length });
-
-  // Generate query embedding
-  const queryEmbedding = await embedQuery(question);
-
-  // Find top 5 most relevant chunks
-  const topChunks = findTopKChunks(queryEmbedding, allChunks, 5);
 
   // Build context from retrieved chunks
   const context = topChunks
@@ -52,7 +45,6 @@ export async function answerQuestion(
     },
   ];
 
-  // Call Claude with adaptive thinking
   const response = await anthropic.messages.create({
     model: "claude-opus-4-7",
     max_tokens: 4096,

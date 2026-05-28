@@ -8,11 +8,8 @@ import {
   ChevronsRight,
   Columns2,
   Copy,
-  Download,
   FileText,
-  FolderOpen,
   ListFilter,
-  Mic,
   PanelLeftClose,
   Paperclip,
   Pencil,
@@ -20,17 +17,15 @@ import {
   RotateCcw,
   Search,
   Send,
-  Settings,
-  Share2,
   Square,
-  ThumbsUp,
+  Trash2,
   X,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const USER_ID = "dev";
-const USER_NAME = "JOTHI";
+const FALLBACK_USER_ID = "dev";
+const FALLBACK_USER_NAME = "User";
 
 const QUICK_ACTIONS = [
   { label: "Summarize", icon: ListFilter },
@@ -39,78 +34,12 @@ const QUICK_ACTIONS = [
   { label: "Find", icon: Search },
 ] as const;
 
-type SidebarGroup = {
-  label: string;
-  items: Array<{ title: string; age: string; active?: boolean }>;
-};
-
-const PROJECT_COUNT = 4;
-const REFERENCE_CHAT_HISTORY: ChatMessage[] = [
-  {
-    role: "user",
-    content: "What are the contractor's response obligations when a grievance is filed under our standard procurement contract?",
-    timestamp: "2026-05-26T14:14:00",
-  },
-  {
-    role: "assistant",
-    timestamp: "2026-05-26T14:14:00",
-    sources: [
-      {
-        documentName: "Gov §11130",
-        chunkIndex: 0,
-        score: 0.94,
-        excerpt: "Contractor response obligations and grievance acknowledgment timing.",
-      },
-      {
-        documentName: "CCR §15.04",
-        chunkIndex: 0,
-        score: 0.91,
-        excerpt: "Procedural breach window and audit trail retention.",
-      },
-    ],
-    content:
-      "Under California's standard procurement contract framework, a contractor's response obligations when a grievance is filed are set across two governing references [Gov §11130] [CCR §15.04].\n\n" +
-      "KEY OBLIGATIONS\n" +
-      "1. Acknowledge receipt of the grievance in writing within 10 business days.\n" +
-      "2. Investigate and provide a documented response within 45 business days of acknowledgment.\n" +
-      "3. Maintain a complete audit trail of all communications and corrective actions for no less than 7 years.\n\n" +
-      "Failure to meet the 45-day window constitutes a procedural breach and may trigger Tier-2 review under [CCR §15.04(b)]. Want me to check a specific contract against these requirements?",
-  },
-  {
-    role: "user",
-    content: "What happens if the contractor misses the 45-day window?",
-    timestamp: "2026-05-26T14:16:00",
-  },
-  {
-    role: "assistant",
-    content: "Missing the 45-day window has cascading consequences under California procurement law:",
-    timestamp: "2026-05-26T14:16:00",
-  },
-];
-
-const REFERENCE_SIDEBAR_GROUPS: SidebarGroup[] = [
-  {
-    label: "TODAY",
-    items: [
-      { title: "Q3 vendor contract review", age: "2h ago", active: true },
-      { title: "Summarize grievance procedure", age: "5h ago" },
-    ],
-  },
-  {
-    label: "YESTERDAY",
-    items: [
-      { title: "What are the contractor's response ...", age: "1d ago" },
-      { title: "What does this document say?", age: "1d ago" },
-    ],
-  },
-  {
-    label: "EARLIER THIS WEEK",
-    items: [
-      { title: "Compare new policy vs. v2.3", age: "2d ago" },
-      { title: "Extract deadlines from CCR §15", age: "3d ago" },
-    ],
-  },
-];
+interface ConversationSummary {
+  id: string;
+  title: string;
+  createdAt: string;
+  lastMessageAt: string | null;
+}
 
 function formatTime(timestamp: string): string {
   const d = new Date(timestamp);
@@ -121,84 +50,102 @@ function formatTime(timestamp: string): string {
   return `${h12}:${m} ${ampm}`;
 }
 
-function formatObligationText(text: string): React.ReactNode {
-  const durationPattern = /(no less than \d+ years|no less than \w+ years)/gi;
-  const actionWordsPattern = /\b(retain|maintaining|maintain|preserves|preserve|documenting|document|submitting|submit|publishing|publish|reporting|report|notifying|notify|reviewing|review|auditing|audit|verifying|verify|complying|comply|store|storing|keep|keeping|disclose|disclosing|provide|providing|assess|assessing|evaluation|evaluating|evaluate|implement|implementing|monitoring|monitor|shall|must|acknowledge|investigate)\b/gi;
-
-  const parts = text.split(durationPattern);
-  return parts.map((part, i) => {
-    if (i % 2 === 1) {
-      return <em key={i} className="italic font-medium text-[#0E1410]">{part}</em>;
-    }
-    const subParts = part.split(actionWordsPattern);
-    return (
-      <span key={i}>
-        {subParts.map((subPart, j) => {
-          if (j % 2 === 1) return <strong key={j} className="font-semibold text-[#0E1410]">{subPart}</strong>;
-          return subPart;
-        })}
-      </span>
-    );
-  });
+function relativeDate(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return d.toLocaleDateString();
 }
 
-function extractKeyObligations(content: string): { intro: string; title: string; items: { num: string; text: string }[]; outro: string } | null {
-  const lines = content.split("\n");
-  const numberedPattern = /^\s*(\d+)[.)]\s+(.+)/;
-  const items: { num: string; text: string }[] = [];
-  let firstIdx = -1;
-  let lastIdx = -1;
-
-  for (let i = 0; i < lines.length; i++) {
-    const match = lines[i]!.match(numberedPattern);
-    if (match) {
-      if (firstIdx === -1) firstIdx = i;
-      lastIdx = i;
-      items.push({ num: match[1]!.padStart(2, "0"), text: match[2]!.trim() });
-    }
-  }
-
-  if (items.length < 2) return null;
-
-  let title = "KEY OBLIGATIONS";
-  let titleLineIdx = -1;
-  for (let i = firstIdx - 1; i >= Math.max(0, firstIdx - 3); i--) {
-    const line = lines[i]!.trim();
-    if (line && (line.includes("obligation") || line.includes("Obligation") || line.includes("KEY") || line.toUpperCase() === line) && line.length < 80) {
-      title = line.replace(/^[#*\-_]+/, "").trim().toUpperCase();
-      titleLineIdx = i;
-      break;
-    }
-  }
-
-  const intro = lines.slice(0, firstIdx).filter((l, i) => i !== titleLineIdx && l.trim()).join("\n");
-  const outro = lines.slice(lastIdx + 1).filter((l) => l.trim()).join("\n");
-
-  return { intro, title: `${title} · ${items.length} FOUND`, items, outro };
-}
 
 export default function SearchAskPage() {
   const [documents, setDocuments] = useState<ProcessedDocument[]>([]);
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>(REFERENCE_CHAT_HISTORY);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isAnswering, setIsAnswering] = useState(false);
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
   const [thinkingPhase, setThinkingPhase] = useState("");
   const [sidebarSearch, setSidebarSearch] = useState("");
-  const [responseTimes, setResponseTimes] = useState<Record<number, number>>({ 1: 1.8 });
-  const [sendTimestamp, setSendTimestamp] = useState<number | null>(null);
+  const [responseTimes, setResponseTimes] = useState<Record<number, number>>({});
   const didMountRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const [selectedModel, setSelectedModel] = useState("Claude Opus");
-  const [citationsEnabled, setCitationsEnabled] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [, setUserId] = useState(FALLBACK_USER_ID);
+  const [userName, setUserName] = useState(FALLBACK_USER_NAME);
+
+  // Load conversations list + documents on mount
+  useEffect(() => {
+    async function init() {
+      try {
+        const [meRes, convsRes, docsRes] = await Promise.all([
+          fetch("/api/auth/me"),
+          fetch("/api/conversations"),
+          fetch("/api/storage/load-documents"),
+        ]);
+        if (meRes.ok) {
+          const me = await meRes.json();
+          if (me?.userId) setUserId(me.userId);
+          if (me?.username) setUserName(me.username);
+        }
+        if (convsRes.ok) {
+          const data = await convsRes.json();
+          if (data?.success && data.conversations?.length > 0) {
+            setConversations(data.conversations);
+            // Load the most recent conversation
+            const latest = data.conversations[0];
+            setActiveConvId(latest.id);
+            await loadConversation(latest.id);
+          }
+        }
+        if (docsRes.ok) {
+          const docs = await docsRes.json();
+          if (docs?.success && docs.documents?.length > 0) setDocuments(docs.documents);
+        }
+      } catch {}
+      setIsLoading(false);
+    }
+    init();
+  }, []);
+
+  async function loadConversation(convId: string) {
+    try {
+      const res = await fetch(`/api/conversations/${convId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.success) {
+          setChatHistory(data.messages ?? []);
+          setResponseTimes({});
+        }
+      }
+    } catch {}
+  }
+
+  async function refreshConversations() {
+    try {
+      const res = await fetch("/api/conversations");
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.success) setConversations(data.conversations ?? []);
+      }
+    } catch {}
+  }
 
   useEffect(() => {
     if (!didMountRef.current) {
@@ -220,12 +167,11 @@ export default function SearchAskPage() {
     setIsUploading(true);
     try {
       const formData = new FormData();
-      formData.append("userId", USER_ID);
       Array.from(files).forEach((file) => formData.append("files", file));
       const response = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await response.json();
       if (data.success) {
-        const docsRes = await fetch(`/api/storage/load-documents?userId=${USER_ID}`);
+        const docsRes = await fetch("/api/storage/load-documents");
         const docsData = await docsRes.json();
         if (docsData.success) setDocuments(docsData.documents);
       } else {
@@ -240,10 +186,6 @@ export default function SearchAskPage() {
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isAnswering) return;
-    if (documents.length === 0) {
-      alert("Please upload at least one document first.");
-      return;
-    }
 
     const userMessage: ChatMessage = {
       role: "user",
@@ -251,22 +193,36 @@ export default function SearchAskPage() {
       timestamp: new Date().toISOString(),
     };
 
-    await fetch("/api/storage/save-message", {
+    // Save user message — create conversation if needed
+    const saveRes = await fetch("/api/storage/save-message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ...userMessage,
-        userId: USER_ID,
-        messageId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        role: userMessage.role,
+        content: userMessage.content,
+        conversationId: activeConvId,
       }),
     });
+    const saveData = await saveRes.json();
+    const convId = saveData?.conversationId ?? activeConvId;
+
+    // If this was the first message in a new conversation, set title
+    if (!activeConvId && convId) {
+      setActiveConvId(convId);
+      await fetch(`/api/conversations/${convId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: userMessage.content.slice(0, 80) }),
+      });
+      refreshConversations();
+    }
 
     const newHistory = [...chatHistory, userMessage];
     setChatHistory(newHistory);
     setInputValue("");
     setIsAnswering(true);
     setThinkingPhase("Searching documents...");
-    setSendTimestamp(Date.now());
+    const startedAt = Date.now();
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -276,12 +232,12 @@ export default function SearchAskPage() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userMessage.content, userId: USER_ID, chatHistory }),
+        body: JSON.stringify({ question: userMessage.content, chatHistory }),
         signal: controller.signal,
       });
       const data = await response.json();
       if (data.success) {
-        const elapsed = sendTimestamp ? (Date.now() - (sendTimestamp || Date.now())) / 1000 : 0;
+        const elapsed = (Date.now() - startedAt) / 1000;
         const answerIdx = newHistory.length;
         setResponseTimes((prev) => ({ ...prev, [answerIdx]: elapsed }));
 
@@ -289,12 +245,14 @@ export default function SearchAskPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ...data.answer,
-            userId: USER_ID,
-            messageId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            role: data.answer.role,
+            content: data.answer.content,
+            sources: data.answer.sources,
+            conversationId: convId,
           }),
         });
         setChatHistory([...newHistory, data.answer]);
+        refreshConversations();
       } else {
         setChatHistory([...newHistory, { role: "assistant", content: `Error: ${data.error}`, timestamp: new Date().toISOString() }]);
       }
@@ -309,7 +267,6 @@ export default function SearchAskPage() {
       setIsAnswering(false);
       setThinkingPhase("");
       abortRef.current = null;
-      setSendTimestamp(null);
     }
   };
 
@@ -321,19 +278,26 @@ export default function SearchAskPage() {
   };
 
   const handleNewChat = async () => {
-    if (chatHistory.length === 0) return;
-    try {
-      await fetch("/api/storage/clear", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: USER_ID }),
-      });
+    setActiveConvId(null);
+    setChatHistory([]);
+    setResponseTimes({});
+  };
+
+  const handleSwitchConversation = async (convId: string) => {
+    if (convId === activeConvId) return;
+    setActiveConvId(convId);
+    setChatHistory([]);
+    setResponseTimes({});
+    await loadConversation(convId);
+  };
+
+  const handleDeleteConversation = async (convId: string) => {
+    await fetch(`/api/conversations/${convId}`, { method: "DELETE" });
+    if (convId === activeConvId) {
+      setActiveConvId(null);
       setChatHistory([]);
-      setDocuments([]);
-      setResponseTimes({});
-    } catch {
-      alert("Failed to start new chat.");
     }
+    refreshConversations();
   };
 
   const handleStop = useCallback(() => {
@@ -380,14 +344,13 @@ export default function SearchAskPage() {
     textareaRef.current?.focus();
   };
 
-  const groupedHistory = REFERENCE_SIDEBAR_GROUPS.map((group) => ({
-    ...group,
-    items: sidebarSearch
-      ? group.items.filter((item) => item.title.toLowerCase().includes(sidebarSearch.toLowerCase()))
-      : group.items,
-  })).filter((group) => group.items.length > 0);
+  const filteredConversations = sidebarSearch
+    ? conversations.filter((c) => c.title.toLowerCase().includes(sidebarSearch.toLowerCase()))
+    : conversations;
 
-  const sessionTitle = "Q3 vendor contract review";
+  const sessionTitle = chatHistory.length > 0
+    ? chatHistory[0]?.content.slice(0, 50) + (chatHistory[0]?.content.length! > 50 ? "..." : "")
+    : "New Chat";
 
   if (isLoading) {
     return (
@@ -399,22 +362,23 @@ export default function SearchAskPage() {
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      {/* ─── LEFT SIDEBAR ─── */}
-      <aside className="flex w-[280px] shrink-0 flex-col border-r border-[#d6cfba] bg-[#f7f2e6]">
-        {/* Sidebar header */}
-        <div className="flex h-[70px] items-center justify-between border-b border-[#d6cfba] bg-[#fcfaf3] px-[19px]">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-[36px] items-center justify-center rounded-[5px] bg-[#0e1410] text-[#fcfaf3]">
-              <Search className="size-3.5" />
+      {/* LEFT SIDEBAR */}
+      {sidebarOpen && (
+      <aside className="flex w-[240px] shrink-0 flex-col border-r border-[#d6cfba] bg-[#f7f2e6]">
+        <div className="flex h-[52px] items-center justify-between border-b border-[#d6cfba] bg-[#fcfaf3] px-[14px]">
+          <div className="flex items-center gap-2">
+            <div className="flex size-[28px] items-center justify-center rounded-[4px] bg-[#0e1410] text-[#fcfaf3]">
+              <Search className="size-3" />
             </div>
             <span
               className="text-[#0e1410]"
-              style={{ fontFamily: "var(--font-display)", fontSize: "17px", fontWeight: 700, letterSpacing: "-0.02em" }}
+              style={{ fontFamily: "var(--font-display)", fontSize: "14px", fontWeight: 700, letterSpacing: "-0.02em" }}
             >
               Search & <em style={{ fontStyle: "italic", fontWeight: 400, color: "#48654b" }}>Ask</em>
             </span>
           </div>
           <button
+            onClick={() => setSidebarOpen(false)}
             className="flex size-[29px] items-center justify-center rounded-[5px] border border-[#d6cfba] bg-[#fcfaf3] text-[#6E706A] transition-colors hover:border-[#8B877D] hover:text-[#0E1410]"
             title="Collapse sidebar"
             type="button"
@@ -423,103 +387,86 @@ export default function SearchAskPage() {
           </button>
         </div>
 
-        <div className="px-[19px] pb-[13px] pt-[17px]">
-          {/* New chat button */}
+        <div className="px-[14px] pb-[10px] pt-[12px]">
           <button
             onClick={handleNewChat}
-            className="flex h-[52px] w-full items-center gap-3 rounded-[6px] border border-[#d6cfba] bg-[#fcfaf3] px-[15px] transition-colors hover:border-[#8B877D]"
-            style={{ fontFamily: "var(--font-sans)", fontSize: "15px", fontWeight: 500 }}
+            className="flex h-[38px] w-full items-center gap-2.5 rounded-[6px] border border-[#d6cfba] bg-[#fcfaf3] px-[12px] transition-colors hover:border-[#8B877D]"
+            style={{ fontFamily: "var(--font-sans)", fontSize: "13px", fontWeight: 500 }}
           >
-            <div className="flex size-6 items-center justify-center rounded-full bg-[#0e1410] text-[#FCFAF3]">
-              <Plus className="size-3" />
+            <div className="flex size-5 items-center justify-center rounded-full bg-[#0e1410] text-[#FCFAF3]">
+              <Plus className="size-2.5" />
             </div>
             <span className="text-[#0E1410]">New chat</span>
           </button>
 
-          {/* Projects link */}
-          <div className="mt-[15px] flex h-[32px] items-center justify-between rounded-md px-[12px] transition-colors hover:bg-[#FCFAF3]">
-            <div className="flex items-center gap-3">
-              <FolderOpen className="size-4 text-[#6E706A]" />
-              <span className="text-[14px] text-[#556157]" style={{ fontFamily: "var(--font-sans)" }}>Projects</span>
-            </div>
-            <span
-              className="text-[#8B877D]"
-              style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700 }}
-            >
-              {PROJECT_COUNT}
-            </span>
-          </div>
-
-          {/* Search input */}
-          <div className="relative mt-[13px]">
-            <Search className="absolute left-[12px] top-1/2 size-3.5 -translate-y-1/2 text-[#8B877D]" />
+          <div className="relative mt-[10px]">
+            <Search className="absolute left-[10px] top-1/2 size-3 -translate-y-1/2 text-[#8B877D]" />
             <input
               type="text"
               value={sidebarSearch}
               onChange={(e) => setSidebarSearch(e.target.value)}
               placeholder="Search chats..."
-              className="h-[38px] w-full rounded-[6px] border border-[#d6cfba] bg-[#FCFAF3] pl-[34px] pr-10 text-[13px] text-[#0E1410] placeholder:text-[#8B877D] focus:border-[#3D5740] focus:outline-none"
+              className="h-[32px] w-full rounded-[5px] border border-[#d6cfba] bg-[#FCFAF3] pl-[30px] pr-8 text-[12px] text-[#0E1410] placeholder:text-[#8B877D] focus:border-[#3D5740] focus:outline-none"
               style={{ fontFamily: "var(--font-sans)" }}
             />
-            <kbd
-              className="absolute right-[9px] top-1/2 -translate-y-1/2 rounded border border-[#d6cfba] bg-[#F3EEE0] px-1 text-[#8B877D]"
-              style={{ fontFamily: "var(--font-mono)", fontSize: "9px" }}
-            >
-              ⌘K
-            </kbd>
           </div>
         </div>
 
-        {/* Chat history grouped by date */}
-        <div className="activity-scroll flex-1 overflow-y-auto px-[19px] py-0">
-          {groupedHistory.map((group) => (
-            <div key={group.label}>
+        {/* Conversation list */}
+        <div className="activity-scroll flex-1 overflow-y-auto px-[14px] py-0">
+          {filteredConversations.length > 0 ? (
+            filteredConversations.map((conv) => (
               <div
-                className="px-[5px] pb-[9px] pt-[8px] uppercase text-[#8B877D]"
-                style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}
+                key={conv.id}
+                onClick={() => handleSwitchConversation(conv.id)}
+                className={`group mb-[3px] cursor-pointer rounded-[6px] px-[12px] py-[8px] transition-colors ${
+                  conv.id === activeConvId
+                    ? "border-l-[3px] border-l-[#48654b] bg-[#ebe6d5]"
+                    : "hover:bg-[#FCFAF3]"
+                }`}
               >
-                {group.label}
-              </div>
-              {group.items.map((item) => (
-                <div
-                  key={`${group.label}-${item.title}`}
-                  className={`mb-[3px] cursor-pointer rounded-[6px] px-[12px] py-[8px] transition-colors ${
-                    item.active === true
-                      ? "border-l-[3px] border-l-[#48654b] bg-[#ebe6d5]"
-                      : "hover:bg-[#FCFAF3]"
-                  }`}
-                >
-                  <div className="truncate text-[13px] text-[#0E1410]" style={{ fontFamily: "var(--font-sans)" }}>
-                    {item.title}
+                <div className="flex items-center justify-between">
+                  <div className="min-w-0 flex-1 truncate text-[13px] text-[#0E1410]" style={{ fontFamily: "var(--font-sans)" }}>
+                    {conv.title}
                   </div>
-                  <div className="mt-0.5 text-[#8B877D]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>
-                    {item.age}
-                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}
+                    className="ml-1 flex size-5 shrink-0 items-center justify-center rounded text-[#8B877D] opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100"
+                    title="Delete conversation"
+                    type="button"
+                  >
+                    <Trash2 className="size-3" />
+                  </button>
                 </div>
-              ))}
-            </div>
-          ))}
-          {groupedHistory.length === 0 && (
+                <div className="mt-0.5 text-[#8B877D]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>
+                  {relativeDate(conv.lastMessageAt ?? conv.createdAt)}
+                </div>
+              </div>
+            ))
+          ) : (
             <div className="px-3 py-6 text-center text-[12px] text-[#8B877D]" style={{ fontFamily: "var(--font-sans)" }}>
               No chat history
             </div>
           )}
         </div>
-
-        {/* Bottom: Settings */}
-        <div className="border-t border-[#d6cfba] p-[19px]">
-          <div className="flex items-center gap-3 rounded-md px-[12px] py-2 text-[14px] text-[#556157] transition-colors hover:bg-[#FCFAF3] hover:text-[#0E1410]">
-            <Settings className="size-4" />
-            <span style={{ fontFamily: "var(--font-sans)" }}>Settings</span>
-          </div>
-        </div>
       </aside>
+      )}
 
-      {/* ─── MAIN CHAT AREA ─── */}
+      {/* MAIN CHAT AREA */}
       <main className="relative flex flex-1 flex-col overflow-hidden bg-[#F3EEE0]">
         {/* Top bar */}
-        <div className="relative z-10 flex h-[60px] shrink-0 items-center justify-between border-b border-[#d6cfba] bg-[#F7F2E6] px-[39px]">
+        <div className="relative z-10 flex h-[44px] shrink-0 items-center justify-between border-b border-[#d6cfba] bg-[#F7F2E6] px-[24px]">
           <div className="flex items-center gap-3">
+            {!sidebarOpen && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="flex size-8 items-center justify-center rounded-[5px] border border-[#d6cfba] bg-[#fcfaf3] text-[#6E706A] transition-colors hover:border-[#8B877D] hover:text-[#0E1410]"
+                title="Open sidebar"
+                type="button"
+              >
+                <PanelLeftClose className="size-4 rotate-180" />
+              </button>
+            )}
             <span
               className="bg-[#e8eadf] px-[10px] py-[3px] uppercase text-[#48654b]"
               style={{ fontFamily: "var(--font-mono)", fontSize: "9px", fontWeight: 700, letterSpacing: "2px" }}
@@ -536,19 +483,13 @@ export default function SearchAskPage() {
               style={{ fontFamily: "var(--font-mono)", fontSize: "9px", fontWeight: 700, letterSpacing: "2px" }}
             >
               <span className={`size-1.5 rounded-full bg-[#3D5740] ${isAnswering ? "animate-pulse" : ""}`} />
-              SESSION ACTIVE
+              CLAUDE OPUS
             </span>
-            <button className="flex size-8 items-center justify-center rounded-[5px] border border-[#d6cfba] bg-[#fcfaf3] text-[#8B877D] transition-colors hover:border-[#8B877D] hover:text-[#0E1410]" title="Share">
-              <Share2 className="size-3.5" />
-            </button>
-            <button className="flex size-8 items-center justify-center rounded-[5px] border border-[#d6cfba] bg-[#fcfaf3] text-[#8B877D] transition-colors hover:border-[#8B877D] hover:text-[#0E1410]" title="Download">
-              <Download className="size-3.5" />
-            </button>
           </div>
         </div>
 
         {chatHistory.length === 0 ? (
-          /* ─── EMPTY STATE ─── */
+          /* EMPTY STATE */
           <div className="flex flex-1 flex-col items-center justify-center px-4">
             <h1
               className="mb-1 text-[#0E1410]"
@@ -592,18 +533,14 @@ export default function SearchAskPage() {
                 fileInputRef={fileInputRef}
                 textareaRef={textareaRef}
                 onQuickAction={handleQuickAction}
-                selectedModel={selectedModel}
-                setSelectedModel={setSelectedModel}
-                citationsEnabled={citationsEnabled}
-                setCitationsEnabled={setCitationsEnabled}
               />
             </div>
           </div>
         ) : (
-          /* ─── CONVERSATION ACTIVE ─── */
+          /* CONVERSATION ACTIVE */
           <>
             <div className="flex-1 overflow-y-auto">
-              <div className="flex min-h-full w-full flex-col gap-[18px] px-[38px] pb-[28px] pt-[28px]">
+              <div className="flex min-h-full w-full flex-col gap-[24px] px-[28px] pb-[28px] pt-[24px]">
                 {chatHistory.map((msg, i) =>
                   msg.role === "user" ? (
                     <UserMessage
@@ -616,6 +553,7 @@ export default function SearchAskPage() {
                       onEditStart={handleEditStart}
                       onEditCancel={handleEditCancel}
                       onEditSubmit={handleEditSubmit}
+                      displayName={userName}
                     />
                   ) : (
                     <AssistantMessage
@@ -643,7 +581,7 @@ export default function SearchAskPage() {
                     <div className="flex flex-col gap-2 pt-1">
                       <div className="flex items-center gap-2">
                         <span className="uppercase text-[#6E706A]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}>GOVDOC</span>
-                        <span className="uppercase text-[#3D5740]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700 }}>· STREAMING</span>
+                        <span className="uppercase text-[#3D5740]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700 }}>· THINKING</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5">
@@ -669,8 +607,8 @@ export default function SearchAskPage() {
             </div>
 
             {/* Bottom input */}
-            <div className="shrink-0 px-4 pb-[30px] pt-3">
-              <div className="mx-auto w-full max-w-[920px]">
+            <div className="shrink-0 px-4 pb-[14px] pt-2">
+              <div className="mx-auto w-full max-w-[720px]">
                 <DocumentPills documents={documents} onRemove={removeDocument} />
                 <InputBox
                   inputValue={inputValue}
@@ -684,10 +622,6 @@ export default function SearchAskPage() {
                   fileInputRef={fileInputRef}
                   textareaRef={textareaRef}
                   onQuickAction={handleQuickAction}
-                  selectedModel={selectedModel}
-                  setSelectedModel={setSelectedModel}
-                  citationsEnabled={citationsEnabled}
-                  setCitationsEnabled={setCitationsEnabled}
                 />
               </div>
             </div>
@@ -698,19 +632,19 @@ export default function SearchAskPage() {
   );
 }
 
-/* ─── SUB-COMPONENTS ─── */
+/* SUB-COMPONENTS */
 
-function UserMessage({ msg, idx, editingIdx, editValue, setEditValue, onEditStart, onEditCancel, onEditSubmit }: {
+function UserMessage({ msg, idx, editingIdx, editValue, setEditValue, onEditStart, onEditCancel, onEditSubmit, displayName }: {
   msg: ChatMessage; idx: number; editingIdx: number | null; editValue: string;
   setEditValue: (v: string) => void; onEditStart: (i: number, c: string) => void;
-  onEditCancel: () => void; onEditSubmit: (i: number) => void;
+  onEditCancel: () => void; onEditSubmit: (i: number) => void; displayName: string;
 }) {
   return (
     <div className="group flex items-start justify-end gap-3">
       <div className="flex flex-col items-end">
         <div className="mb-1.5 flex items-center gap-2 pr-1">
           <span className="uppercase text-[#6E706A]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}>
-            {USER_NAME}
+            {displayName}
           </span>
           <span className="text-[#8B877D]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>
             · {formatTime(msg.timestamp)}
@@ -754,7 +688,7 @@ function UserMessage({ msg, idx, editingIdx, editValue, setEditValue, onEditStar
         className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-[#48654b] text-[#fcfaf3]"
         style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: 700 }}
       >
-        {USER_NAME[0]?.toUpperCase() ?? "J"}
+        {displayName[0]?.toUpperCase() ?? "U"}
       </div>
     </div>
   );
@@ -765,7 +699,7 @@ function AssistantMessage({ msg, idx, isLast, isAnswering, responseTimes, copied
   responseTimes: Record<number, number>; copiedIdx: number | null;
   onCopy: (t: string, i: number) => void; onRetry: () => void;
 }) {
-  const structured = extractKeyObligations(msg.content);
+  const [citationsOpen, setCitationsOpen] = useState(false);
 
   return (
     <div className="group flex items-start gap-3">
@@ -775,83 +709,107 @@ function AssistantMessage({ msg, idx, isLast, isAnswering, responseTimes, copied
       >
         G
       </div>
-      <div className="max-w-[870px] flex-1 text-[#202821]" style={{ fontFamily: "var(--font-sans)", fontSize: "16px", lineHeight: "1.55", letterSpacing: "-0.01em" }}>
-        {/* Header */}
+      <div className="flex-1">
         <div className="mb-2 flex items-center gap-2">
           <span className="uppercase text-[#6E706A]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}>GOVDOC</span>
           <span className="text-[#8B877D]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>· {formatTime(msg.timestamp)}</span>
           {responseTimes[idx] != null && (
             <span className="uppercase text-[#8B877D]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>
-              · ANSWERED IN {responseTimes[idx].toFixed(1)}S
+              · {responseTimes[idx].toFixed(1)}s
             </span>
           )}
-          {(isAnswering && isLast) || msg.content.startsWith("Missing the 45-day window") ? (
-            <span className="uppercase text-[#3D5740]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700 }}>· STREAMING</span>
-          ) : null}
         </div>
 
-        {/* Content */}
-        {structured ? (
-          <div>
-            {structured.intro && (
-              <div className="mb-4">
-                <ContentWithCitations content={structured.intro} sources={msg.sources} />
-              </div>
-            )}
-            <div className="mb-4 rounded-[6px] border border-[#d6cfba] border-l-4 border-l-[#4d6b50] bg-[#fcfaf3] px-5 py-4 shadow-[0_8px_20px_rgba(30,24,14,0.07)]">
-              <div className="mb-3 uppercase text-[#48654b]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "0.28em" }}>
-                ━━━ {structured.title}
-              </div>
-              <div className="space-y-2.5">
-                {structured.items.map((item, si) => (
-                  <div key={si} className="flex gap-3">
-                    <span className="flex h-[22px] min-w-[28px] shrink-0 items-center justify-center rounded-[4px] bg-[#e2e7da] font-bold text-[#3D5740]" style={{ fontFamily: "var(--font-mono)", fontSize: "11px" }}>{item.num}</span>
-                    <span className="text-[13px] leading-[1.65] text-[#0E1410]" style={{ fontFamily: "var(--font-sans)" }}>{formatObligationText(item.text)}</span>
+        <div className="text-[15.5px] leading-[1.7] text-[#202821]" style={{ fontFamily: "var(--font-sans)" }}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              p({ children }) { return <p className="my-2.5 leading-[1.7]">{children}</p>; },
+              strong({ children }) { return <strong className="font-semibold text-[#0E1410]">{children}</strong>; },
+              em({ children }) { return <em className="italic">{children}</em>; },
+              h1({ children }) { return <h1 className="mb-2 mt-5 text-[20px] font-semibold tracking-[-0.012em] text-[#0E1410]">{children}</h1>; },
+              h2({ children }) { return <h2 className="mb-2 mt-4 text-[17.5px] font-semibold tracking-[-0.012em] text-[#0E1410]">{children}</h2>; },
+              h3({ children }) { return <h3 className="mb-1 mt-3 text-[16px] font-semibold text-[#0E1410]">{children}</h3>; },
+              ul({ children }) { return <ul className="my-2.5 list-disc space-y-1 pl-5">{children}</ul>; },
+              ol({ children }) { return <ol className="my-2.5 list-decimal space-y-1 pl-5">{children}</ol>; },
+              li({ children }) { return <li className="leading-[1.6]">{children}</li>; },
+              blockquote({ children }) { return <blockquote className="my-3 border-l-[3px] border-[#3D5740]/50 pl-3 text-[15px] italic leading-[1.6] text-[#556157]">{children}</blockquote>; },
+              a({ href, children }) { return <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#3D5740] underline underline-offset-[3px] hover:text-[#0E1410]">{children}</a>; },
+              code({ className, children }) {
+                const lang = (className ?? "").replace(/^language-/, "");
+                if (!className) {
+                  return <code className="rounded bg-[#F3EEE0] px-1.5 py-0.5 text-[13px] font-mono text-[#0E1410]">{children}</code>;
+                }
+                return (
+                  <div className="my-3 overflow-hidden rounded-xl border border-[#d6cfba] bg-[#1f1f1d]">
+                    <div className="flex items-center justify-between border-b border-white/10 bg-[#0f0f0e] px-3 py-1.5">
+                      <span className="text-[11px] font-medium uppercase tracking-wider text-white/60">{lang || "code"}</span>
+                    </div>
+                    <pre className="overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-[1.55] text-[#e8e6df]"><code>{children}</code></pre>
+                  </div>
+                );
+              },
+              pre({ children }) { return <>{children}</>; },
+              table({ children }) {
+                return (
+                  <div className="my-4 overflow-hidden rounded-xl border border-[#d6cfba] bg-[#FCFAF3] shadow-[0_4px_12px_-8px_rgba(40,69,53,0.2)]">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full border-separate border-spacing-0 text-[14px] [&_tbody_tr:nth-child(even)]:bg-[#f7f5ed] [&_tbody_tr:hover]:bg-[#e8eadf]">{children}</table>
+                    </div>
+                  </div>
+                );
+              },
+              thead({ children }) { return <thead className="bg-[#f7f2e6] text-[11px] font-semibold uppercase tracking-[0.12em] text-[#556157]">{children}</thead>; },
+              th({ children }) { return <th className="border-b border-[#d6cfba] px-4 py-2.5 text-left">{children}</th>; },
+              td({ children }) { return <td className="border-b border-[#d6cfba]/50 px-4 py-3 leading-[1.5] text-[#0E1410]">{children}</td>; },
+            }}
+          >
+            {msg.content}
+          </ReactMarkdown>
+        </div>
+
+        {/* Citations */}
+        {msg.sources && msg.sources.length > 0 && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={() => setCitationsOpen((v) => !v)}
+              className="flex items-center gap-1.5 rounded-full border border-[#d6cfba] bg-[#FCFAF3] px-2.5 py-1 text-[11px] font-semibold text-[#556157] transition-colors hover:border-[#3D5740] hover:bg-[#e8eadf] hover:text-[#3D5740]"
+            >
+              <FileText className="size-2.5" />
+              {msg.sources.length} citation{msg.sources.length === 1 ? "" : "s"}
+              <svg className={`size-3 transition-transform ${citationsOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {citationsOpen && (
+              <div className="mt-2 space-y-1.5">
+                {msg.sources.map((source, si) => (
+                  <div key={si} className="rounded-md border border-[#d6cfba] bg-[#FCFAF3] px-3 py-2">
+                    <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#556157]">
+                      <FileText className="size-2.5" />
+                      {source.documentName} · chunk {source.chunkIndex + 1}
+                      <span className="ml-auto text-[10px] text-[#8B877D]">{(source.score * 100).toFixed(0)}% match</span>
+                    </div>
+                    <p className="text-[12.5px] italic leading-[1.55] text-[#6E706A]">
+                      &ldquo;{source.excerpt}&rdquo;
+                    </p>
                   </div>
                 ))}
               </div>
-            </div>
-            {structured.outro && (
-              <div><ContentWithCitations content={structured.outro} sources={msg.sources} /></div>
             )}
-          </div>
-        ) : (
-          <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:mb-1 prose-headings:mt-3 prose-headings:text-[#0E1410] prose-code:rounded prose-code:bg-[#F3EEE0] prose-code:px-1 prose-code:py-0.5 prose-code:text-[12px] prose-pre:rounded-lg prose-pre:bg-[#F3EEE0]">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
-          </div>
-        )}
-
-        {/* Citation pills */}
-        {!structured && msg.sources && msg.sources.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {msg.sources.map((source, si) => (
-              <span key={si} className="inline-flex items-center gap-1.5 rounded-full bg-[#dfe3d5] px-2.5 py-0.5 text-[10px] font-bold text-[#314436]">
-                <FileText className="size-2.5" />
-                {source.documentName} · p.{source.chunkIndex + 1}
-              </span>
-            ))}
           </div>
         )}
 
         {/* Actions */}
-        <div className="mt-3 flex items-center gap-3">
-          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <button onClick={() => onCopy(msg.content, idx)} className="flex size-6 items-center justify-center rounded-md text-[#8B877D] transition-colors hover:bg-[#F3EEE0] hover:text-[#6E706A]" title="Copy">
-              {copiedIdx === idx ? <Check className="size-3" /> : <Copy className="size-3" />}
+        <div className="mt-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <button onClick={() => onCopy(msg.content, idx)} className="flex size-6 items-center justify-center rounded-md text-[#8B877D] transition-colors hover:bg-[#F3EEE0] hover:text-[#6E706A]" title="Copy">
+            {copiedIdx === idx ? <Check className="size-3" /> : <Copy className="size-3" />}
+          </button>
+          {isLast && !isAnswering && (
+            <button onClick={onRetry} className="flex size-6 items-center justify-center rounded-md text-[#8B877D] transition-colors hover:bg-[#F3EEE0] hover:text-[#6E706A]" title="Retry">
+              <RotateCcw className="size-3" />
             </button>
-            {isLast && (
-              <button onClick={onRetry} className="flex size-6 items-center justify-center rounded-md text-[#8B877D] transition-colors hover:bg-[#F3EEE0] hover:text-[#6E706A]" title="Retry">
-                <RotateCcw className="size-3" />
-              </button>
-            )}
-            <button className="flex size-6 items-center justify-center rounded-md text-[#8B877D] transition-colors hover:bg-[#F3EEE0] hover:text-[#6E706A]" title="Helpful">
-              <ThumbsUp className="size-3" />
-            </button>
-          </div>
-          {msg.sources && msg.sources.length > 0 && (
-            <span className="text-[#8B877D]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px" }}>
-              {msg.sources.length} source{msg.sources.length !== 1 ? "s" : ""} cited · audit-logged
-            </span>
           )}
         </div>
       </div>
@@ -859,34 +817,6 @@ function AssistantMessage({ msg, idx, isLast, isAnswering, responseTimes, copied
   );
 }
 
-function ContentWithCitations({ content }: { content: string; sources?: ChatMessage["sources"] }) {
-  const citationPattern = /\[([^\]]+)\]/g;
-  const parts: (string | { citation: string })[] = [];
-  let lastIndex = 0;
-  let match;
-
-  while ((match = citationPattern.exec(content)) !== null) {
-    if (match.index > lastIndex) parts.push(content.slice(lastIndex, match.index));
-    parts.push({ citation: match[1]! });
-    lastIndex = match.index + match[0].length;
-  }
-  if (lastIndex < content.length) parts.push(content.slice(lastIndex));
-  if (parts.length === 0) return <span>{content}</span>;
-
-  return (
-    <span>
-      {parts.map((part, i) =>
-        typeof part === "string" ? (
-          <span key={i}>{part}</span>
-        ) : (
-          <span key={i} className="mx-0.5 inline-flex items-center rounded-full bg-[#3D5740] px-2 py-0.5 text-[10px] font-medium text-[#FCFAF3]">
-            {part.citation}
-          </span>
-        ),
-      )}
-    </span>
-  );
-}
 
 function DocumentPills({ documents, onRemove }: { documents: ProcessedDocument[]; onRemove: (id: string) => void }) {
   if (documents.length === 0) return null;
@@ -913,7 +843,6 @@ function DocumentPills({ documents, onRemove }: { documents: ProcessedDocument[]
 function InputBox({
   inputValue, setInputValue, handleKeyDown, handleSendMessage, handleFileUpload,
   isUploading, isAnswering, onStop, fileInputRef, textareaRef, onQuickAction,
-  selectedModel, setSelectedModel, citationsEnabled, setCitationsEnabled,
 }: {
   inputValue: string; setInputValue: (v: string) => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
@@ -922,12 +851,10 @@ function InputBox({
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   onQuickAction: (action: string) => void;
-  selectedModel: string; setSelectedModel: (v: string) => void;
-  citationsEnabled: boolean; setCitationsEnabled: (v: boolean) => void;
 }) {
   return (
-    <div className="relative z-10 min-h-[176px] rounded-[14px] border border-[#d6cfba] bg-[#fcfaf3] shadow-[0_14px_28px_rgba(30,24,14,0.07)] transition-all focus-within:border-[#48654b]">
-      <div className="px-[19px] pb-[11px] pt-[16px]">
+    <div className="relative z-10 rounded-[12px] border border-[#d6cfba] bg-[#fcfaf3] shadow-[0_8px_20px_rgba(30,24,14,0.06)] transition-all focus-within:border-[#48654b]">
+      <div className="px-[16px] pb-[8px] pt-[12px]">
         <input
           ref={fileInputRef}
           type="file"
@@ -942,101 +869,67 @@ function InputBox({
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask anything — attach a PDF or DOCX to ground the answer in its contents."
-          className="max-h-[112px] min-h-[52px] w-full resize-none bg-transparent text-[16px] leading-relaxed text-[#0E1410] placeholder:text-[#9a9a91] focus:outline-none"
+          className="max-h-[80px] min-h-[36px] w-full resize-none bg-transparent text-[14px] leading-relaxed text-[#0E1410] placeholder:text-[#9a9a91] focus:outline-none"
           style={{ fontFamily: "var(--font-sans)" }}
-          rows={2}
+          rows={1}
           disabled={isAnswering}
         />
       </div>
 
       {/* Quick action chips */}
-      <div className="flex min-h-[38px] items-center gap-2 px-[16px] pb-[8px]">
+      <div className="flex items-center gap-1.5 px-[14px] pb-[6px]">
         {QUICK_ACTIONS.map(({ label, icon: Icon }) => (
           <button
             key={label}
             onClick={() => onQuickAction(label)}
-            className="flex h-[30px] items-center gap-2 rounded-full border border-[#d6cfba] bg-[#FCFAF3] px-[12px] text-[#556157] transition-all hover:bg-[#F3EEE0] hover:text-[#0E1410]"
-            style={{ fontFamily: "var(--font-sans)", fontSize: "13px", fontWeight: 500 }}
+            className="flex h-[26px] items-center gap-1.5 rounded-full border border-[#d6cfba] bg-[#FCFAF3] px-[10px] text-[#556157] transition-all hover:bg-[#F3EEE0] hover:text-[#0E1410]"
+            style={{ fontFamily: "var(--font-sans)", fontSize: "11px", fontWeight: 500 }}
             type="button"
           >
-            <Icon className="size-3.5" strokeWidth={1.7} />
+            <Icon className="size-3" strokeWidth={1.7} />
             {label}
           </button>
         ))}
       </div>
 
-      {/* Bottom metadata row */}
-      <div className="flex h-[58px] items-center justify-between border-t border-[#d6cfba]/70 px-[20px]">
-        <div className="flex items-center gap-[14px]">
+      {/* Bottom row */}
+      <div className="flex h-[42px] items-center justify-between border-t border-[#d6cfba]/70 px-[16px]">
+        <div className="flex items-center gap-[10px]">
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#74766f] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410]"
+            className="flex size-5 shrink-0 items-center justify-center rounded text-[#74766f] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410]"
             title="Attach PDF or DOCX"
             type="button"
           >
             {isUploading ? (
-              <div className="size-4 animate-spin rounded-full border-2 border-[#d6cfba] border-t-[#3D5740]" />
+              <div className="size-3.5 animate-spin rounded-full border-2 border-[#d6cfba] border-t-[#3D5740]" />
             ) : (
-              <Paperclip className="size-4" />
+              <Paperclip className="size-3.5" />
             )}
           </button>
-          <button className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#74766f] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410]" title="Voice input" type="button">
-            <Mic className="size-4" />
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex size-6 shrink-0 items-center justify-center rounded-md text-[#74766f] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410]"
-            title="Upload document"
-            type="button"
-          >
-            <FolderOpen className="size-4" />
-          </button>
-          <span className="flex items-center gap-2 text-[#A19D91]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", letterSpacing: "2px" }}>
-            <kbd className="rounded-[3px] border border-[#d6cfba] bg-[#FCFAF3] px-1 py-0.5 text-[9px] leading-none">↵</kbd>
+          <span className="flex items-center gap-1.5 text-[#A19D91]" style={{ fontFamily: "var(--font-mono)", fontSize: "9px", letterSpacing: "1.5px" }}>
+            <kbd className="rounded-[2px] border border-[#d6cfba] bg-[#FCFAF3] px-0.5 py-0 text-[8px] leading-none">↵</kbd>
             SEND
             <span>·</span>
-            <kbd className="rounded-[3px] border border-[#d6cfba] bg-[#FCFAF3] px-1 py-0.5 text-[9px] leading-none">⇧↵</kbd>
+            <kbd className="rounded-[2px] border border-[#d6cfba] bg-[#FCFAF3] px-0.5 py-0 text-[8px] leading-none">⇧↵</kbd>
             NEW LINE
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex h-[32px] items-center gap-2 rounded-full border border-[#d6cfba] bg-[#fcfaf3] px-[12px] text-[#48654b]">
-            <span className="size-1.5 rounded-full bg-[#48654b]" />
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              className="appearance-none bg-transparent uppercase focus:outline-none"
-              style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}
-              aria-label="Model"
-            >
-              <option value="Claude Opus">Claude Opus</option>
-              <option value="Claude Sonnet">Claude Sonnet</option>
-              <option value="GPT-4o">GPT-4o</option>
-              <option value="Gemini Flash">Gemini Flash</option>
-            </select>
-            <button
-              type="button"
-              onClick={() => setCitationsEnabled(!citationsEnabled)}
-              className="border-l border-[#d6cfba] pl-2 uppercase transition-colors hover:text-[#0E1410]"
-              style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}
-            >
-              Citations {citationsEnabled ? "On" : "Off"}
-            </button>
-          </div>
+        <div className="flex items-center gap-1.5">
           {isAnswering ? (
-            <button onClick={onStop} className="flex size-[38px] shrink-0 items-center justify-center rounded-[8px] bg-[#0E1410] text-[#FCFAF3] transition-colors hover:bg-[#1C221D]" title="Stop generating" type="button">
-              <Square className="size-3" fill="currentColor" />
+            <button onClick={onStop} className="flex size-[30px] shrink-0 items-center justify-center rounded-[6px] bg-[#0E1410] text-[#FCFAF3] transition-colors hover:bg-[#1C221D]" title="Stop generating" type="button">
+              <Square className="size-2.5" fill="currentColor" />
             </button>
           ) : (
             <button
               onClick={handleSendMessage}
               disabled={!inputValue.trim()}
-              className="flex size-[38px] shrink-0 items-center justify-center rounded-[8px] bg-[#48654b] text-[#fcfaf3] shadow-[0_5px_12px_rgba(30,24,14,0.18)] transition-colors hover:bg-[#3D5740] disabled:cursor-not-allowed disabled:bg-[#d6cfba] disabled:text-[#8B877D] disabled:shadow-none"
+              className="flex size-[30px] shrink-0 items-center justify-center rounded-[6px] bg-[#48654b] text-[#fcfaf3] shadow-[0_3px_8px_rgba(30,24,14,0.15)] transition-colors hover:bg-[#3D5740] disabled:cursor-not-allowed disabled:bg-[#d6cfba] disabled:text-[#8B877D] disabled:shadow-none"
               type="button"
             >
-              <Send className="size-4" />
+              <Send className="size-3.5" />
             </button>
           )}
         </div>

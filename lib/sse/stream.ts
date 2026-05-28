@@ -4,6 +4,9 @@ export function sseStream(gen: () => AsyncGenerator<StepEvent>): Response {
   const enc = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
+      const heartbeat = setInterval(() => {
+        controller.enqueue(enc.encode(": heartbeat\n\n"));
+      }, 25000);
       try {
         for await (const ev of gen()) {
           controller.enqueue(enc.encode(`data: ${JSON.stringify(ev)}\n\n`));
@@ -12,6 +15,7 @@ export function sseStream(gen: () => AsyncGenerator<StepEvent>): Response {
         const message = e instanceof Error ? e.message : "Unknown error";
         controller.enqueue(enc.encode(`data: ${JSON.stringify({ type: "error", stage: "stream", message })}\n\n`));
       } finally {
+        clearInterval(heartbeat);
         controller.close();
       }
     },
