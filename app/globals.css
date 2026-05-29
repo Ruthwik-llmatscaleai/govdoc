@@ -32,6 +32,14 @@
   --font-document: var(--font-tinos, "Tinos"), "Times New Roman", "Georgia", serif;
 }
 
+@keyframes radiate {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(95, 155, 114, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(95, 155, 114, 0); }
+}
+.dot-radiate {
+  animation: radiate 2s ease-in-out infinite;
+}
+
 @layer base {
   .activity-scroll::-webkit-scrollbar {
     width: 3px;

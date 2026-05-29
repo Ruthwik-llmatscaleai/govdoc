@@ -16,7 +16,7 @@ export function PageHeader({ showAuth = true, variant = "landing" }: PageHeaderP
         className="flex w-full items-center justify-center gap-3 bg-[#0E1410]"
         style={{ height: "38px" }}
       >
-        <span className="inline-block h-[10px] w-[10px] rounded-full bg-[#5f9b72] shadow-[0_0_0_3px_rgba(95,155,114,0.2)]" />
+        <span className="dot-radiate inline-block h-[10px] w-[10px] rounded-full bg-[#5f9b72]" />
         <span
           className="uppercase text-[#C8D1C1]"
           style={{
@@ -29,7 +29,7 @@ export function PageHeader({ showAuth = true, variant = "landing" }: PageHeaderP
         >
           POLICY COMPLIANCE EVALUATION · POWERED BY AGENTIC AI
         </span>
-        <span className="inline-block h-[10px] w-[10px] rounded-full bg-[#5f9b72] shadow-[0_0_0_3px_rgba(95,155,114,0.2)]" />
+        <span className="dot-radiate inline-block h-[10px] w-[10px] rounded-full bg-[#5f9b72]" />
       </div>
 
       {/* Header Bar */}
