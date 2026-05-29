@@ -106,7 +106,7 @@ export default function UseCasePage({ params }: { params: Promise<RouteParams> }
         <WorkBreadcrumbs
           crumbs={[
             { label: "Workspace", href: "/workspace" },
-            { label: "Validate Documents", href: "/work/review" },
+            { label: "Review Documents", href: "/work/review" },
             { label: "Unknown" },
           ]}
         />
@@ -133,7 +133,7 @@ export default function UseCasePage({ params }: { params: Promise<RouteParams> }
       <WorkBreadcrumbs
         crumbs={[
           { label: "Workspace", href: "/workspace" },
-          { label: "Validate Documents", href: "/work/review" },
+          { label: "Review Documents", href: "/work/review" },
           { label: uc.label },
         ]}
       />

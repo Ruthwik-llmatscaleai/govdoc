@@ -32,7 +32,7 @@ export function CapabilityGrid() {
       <CapabilityCard
         number="03"
         icon={CheckCircle2}
-        title="Validate &"
+        title="Review &"
         accent="Comply"
         description="Check documents against policy. Pass/fail with reasoning."
         href="/work/review"

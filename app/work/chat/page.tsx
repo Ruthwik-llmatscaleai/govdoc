@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { ProcessedDocument } from "@/features/search-ask/documents";
 import type { ChatMessage } from "@/features/search-ask/service";
 import {
+  ArrowLeft,
   Check,
   ChevronsRight,
   Columns2,
@@ -454,38 +455,28 @@ export default function SearchAskPage() {
 
       {/* MAIN CHAT AREA */}
       <main className="relative flex flex-1 flex-col overflow-hidden bg-[#F3EEE0]">
-        {/* Top bar */}
-        <div className="relative z-10 flex h-[44px] shrink-0 items-center justify-between border-b border-[#d6cfba] bg-[#F7F2E6] px-[24px]">
-          <div className="flex items-center gap-3">
-            {!sidebarOpen && (
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="flex size-8 items-center justify-center rounded-[5px] border border-[#d6cfba] bg-[#fcfaf3] text-[#6E706A] transition-colors hover:border-[#8B877D] hover:text-[#0E1410]"
-                title="Open sidebar"
-                type="button"
-              >
-                <PanelLeftClose className="size-4 rotate-180" />
-              </button>
-            )}
-            <span
-              className="bg-[#e8eadf] px-[10px] py-[3px] uppercase text-[#48654b]"
-              style={{ fontFamily: "var(--font-mono)", fontSize: "9px", fontWeight: 700, letterSpacing: "2px" }}
+        {/* Minimal top bar */}
+        <div className="relative z-10 flex h-[40px] shrink-0 items-center gap-3 border-b border-[#d6cfba]/60 bg-[#F7F2E6] px-[16px]">
+          {!sidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="flex size-7 items-center justify-center rounded-[5px] text-[#6E706A] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410]"
+              title="Open sidebar"
+              type="button"
             >
-              02 · SEARCH & ASK
-            </span>
-            <span className="text-[16px] font-semibold text-[#0E1410]" style={{ fontFamily: "var(--font-display)" }}>
-              {sessionTitle}
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span
-              className="flex items-center gap-1.5 rounded-full border border-[#3D5740]/30 bg-[#3D5740]/5 px-2.5 py-0.5 uppercase text-[#3D5740]"
-              style={{ fontFamily: "var(--font-mono)", fontSize: "9px", fontWeight: 700, letterSpacing: "2px" }}
-            >
-              <span className={`size-1.5 rounded-full bg-[#3D5740] ${isAnswering ? "animate-pulse" : ""}`} />
-              CLAUDE OPUS
-            </span>
-          </div>
+              <PanelLeftClose className="size-4 rotate-180" />
+            </button>
+          )}
+          <a
+            href="/workspace"
+            className="flex size-7 items-center justify-center rounded-[5px] text-[#6E706A] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410]"
+            title="Back to workspace"
+          >
+            <ArrowLeft className="size-4" />
+          </a>
+          <span className="text-[14px] font-medium text-[#0E1410]" style={{ fontFamily: "var(--font-display)" }}>
+            {sessionTitle}
+          </span>
         </div>
 
         {chatHistory.length === 0 ? (

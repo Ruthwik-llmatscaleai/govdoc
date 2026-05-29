@@ -5,11 +5,66 @@ import { AppLogo } from "@/components/brand/app-logo";
 
 type Props = {
   user: string;
-  variant?: "workspace" | "full" | "rubric";
+  variant?: "workspace" | "full" | "rubric" | "compact";
 };
 
-export function TopBar({ variant = "full" }: Props) {
+export function TopBar({ user, variant = "full" }: Props) {
+  const displayName = user?.toUpperCase() || "USER";
+  const initial = displayName[0] || "U";
   const isRubric = variant === "rubric";
+  const isCompact = variant === "compact";
+
+  if (isCompact) {
+    return (
+      <header
+        className="govdoc-page-pad flex items-center justify-between border-b border-[#D5CFBA] bg-[#F7F2E6]"
+        style={{ height: "44px" }}
+      >
+        <Link
+          href={"/workspace" as any}
+          className="flex items-center gap-0 outline-none focus-visible:ring-2 focus-visible:ring-[rgba(61,87,64,0.35)]"
+        >
+          <AppLogo size={28} />
+          <div className="mx-2.5 h-[22px] w-px bg-[#D4CDB8]" />
+          <span
+            className="text-[#0E1410]"
+            style={{ fontFamily: "var(--font-display)", fontSize: "14px", fontWeight: 500, whiteSpace: "nowrap" }}
+          >
+            Policy Compliance · Agentic AI
+          </span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <div
+            className="flex items-center border border-[#D4CDB8] bg-[#FCFAF3]"
+            style={{ height: "32px", borderRadius: "16px", gap: "8px", padding: "0 12px 0 6px" }}
+          >
+            <div
+              className="flex items-center justify-center rounded-full bg-[#47644A] text-[#FCFAF3]"
+              style={{ width: "22px", height: "22px", fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700 }}
+            >
+              {initial}
+            </div>
+            <span
+              className="hidden uppercase text-[#0E1410] sm:inline"
+              style={{ fontFamily: "var(--font-mono)", fontSize: "9px", letterSpacing: "2px", fontWeight: 700 }}
+            >
+              {displayName} <span className="font-normal text-[#6E706A]">· ADMIN</span>
+            </span>
+          </div>
+          <form action="/api/auth/logout" method="post">
+            <button
+              type="submit"
+              title="Sign out"
+              className="cursor-pointer border border-[#D4CDB8] bg-[#FCFAF3] uppercase text-[#0E1410] transition-colors hover:border-[#8B877D]"
+              style={{ height: "26px", borderRadius: "13px", padding: "0 12px", fontFamily: "var(--font-mono)", fontSize: "9px", letterSpacing: "2px", fontWeight: 700 }}
+            >
+              ↪ SIGN OUT
+            </button>
+          </form>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <>
@@ -57,7 +112,7 @@ export function TopBar({ variant = "full" }: Props) {
               whiteSpace: "nowrap",
             }}
           >
-            {isRubric ? "Policy Compliance · Agentic AI" : "GovDoc"}
+            Policy Compliance · Agentic AI
           </span>
         </Link>
 
@@ -100,7 +155,7 @@ export function TopBar({ variant = "full" }: Props) {
                 fontWeight: 700,
               }}
             >
-              J
+              {initial}
             </div>
             <span
               className="hidden uppercase text-[#0E1410] sm:inline"
@@ -112,7 +167,7 @@ export function TopBar({ variant = "full" }: Props) {
                 fontWeight: 700,
               }}
             >
-              JOTHI <span className="font-normal text-[#6E706A]">· ADMIN</span>
+              {displayName} <span className="font-normal text-[#6E706A]">· ADMIN</span>
             </span>
           </div>
 

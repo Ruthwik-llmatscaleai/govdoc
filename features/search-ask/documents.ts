@@ -1,11 +1,7 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { GoogleAuth } from "google-auth-library";
 
-const GCP_PROJECT = process.env.GCP_PROJECT_ID || "genai-poc-424806";
-const GCP_LOCATION = "us-central1";
-const EMBEDDING_MODEL = "text-embedding-005";
-
-const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
+const EMBEDDING_MODEL = "text-embedding-3-small";
+export const EMBEDDING_DIM = 1536;
 
 export interface DocumentChunk {
   documentId: string;
@@ -28,11 +24,25 @@ export interface ProcessedDocument {
  * Extract text from PDF buffer
  */
 async function extractTextFromPDF(pdfBuffer: Buffer): Promise<{ text: string; pageCount: number }> {
-  const pdfParse = require("pdf-parse").PDFParse;
-  const data = await pdfParse(pdfBuffer);
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const pdfjsWorker = await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
+  (globalThis as Record<string, unknown>).pdfjsWorker = pdfjsWorker;
+
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(pdfBuffer) }).promise;
+  const pages: string[] = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    pages.push(
+      content.items
+        .map((item: { str?: string }) => item.str ?? "")
+        .join(" ")
+        .trim(),
+    );
+  }
   return {
-    text: data.text,
-    pageCount: data.numpages,
+    text: pages.join("\n\n"),
+    pageCount: doc.numPages,
   };
 }
 
@@ -83,82 +93,43 @@ async function chunkText(text: string): Promise<string[]> {
 }
 
 /**
- * Call Google Vertex AI text-embedding-005
+ * Call the OpenAI embeddings API (text-embedding-3-small, 1536-dim).
  */
-async function callGoogleEmbeddings(texts: string[], taskType: "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY"): Promise<number[][]> {
-  const client = await auth.getClient();
-  const token = await client.getAccessToken();
-
-  const url = `https://${GCP_LOCATION}-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT}/locations/${GCP_LOCATION}/publishers/google/models/${EMBEDDING_MODEL}:predict`;
-
-  const instances = texts.map((text) => ({ content: text, task_type: taskType }));
-
-  const response = await fetch(url, {
+async function callOpenAiEmbeddings(texts: string[]): Promise<number[][]> {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw new Error("OPENAI_API_KEY not set");
+  const res = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token.token}`,
-    },
-    body: JSON.stringify({ instances }),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({ model: EMBEDDING_MODEL, input: texts }),
   });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Google Embeddings API error: ${response.status} ${error}`);
+  if (!res.ok) {
+    throw new Error(`OpenAI Embeddings API error: ${res.status} ${await res.text()}`);
   }
-
-  const data = await response.json();
-  return data.predictions.map((p: { embeddings: { values: number[] } }) => p.embeddings.values);
+  const json = (await res.json()) as { data: { embedding: number[]; index: number }[] };
+  return json.data.sort((a, b) => a.index - b.index).map((d) => d.embedding);
 }
 
 /**
- * Generate embeddings for text chunks — batched (max 250 per request for Google)
+ * Generate embeddings for text chunks — batched.
  */
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
-  const BATCH_SIZE = 50;
+  const BATCH_SIZE = 100;
   const results: number[][] = [];
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
     const batch = texts.slice(i, i + BATCH_SIZE);
     console.log(`[embed] Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(texts.length / BATCH_SIZE)} (${batch.length} chunks)`);
-    const embeddings = await callGoogleEmbeddings(batch, "RETRIEVAL_DOCUMENT");
-    results.push(...embeddings);
+    results.push(...(await callOpenAiEmbeddings(batch)));
   }
   return results;
 }
 
 /**
- * Generate query embedding
+ * Generate a single query embedding.
  */
 export async function embedQuery(query: string): Promise<number[]> {
-  const embeddings = await callGoogleEmbeddings([query], "RETRIEVAL_QUERY");
+  const embeddings = await callOpenAiEmbeddings([query]);
   return embeddings[0]!;
-}
-
-/**
- * Calculate cosine similarity between two vectors
- */
-export function cosineSimilarity(a: number[], b: number[]): number {
-  const dotProduct = a.reduce((sum, val, i) => sum + val * (b[i] ?? 0), 0);
-  const magnitudeA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
-  const magnitudeB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
-  return dotProduct / (magnitudeA * magnitudeB);
-}
-
-/**
- * Find top K most relevant chunks based on cosine similarity
- */
-export function findTopKChunks(
-  queryEmbedding: number[],
-  allChunks: DocumentChunk[],
-  k: number = 5
-): Array<DocumentChunk & { score: number }> {
-  const chunksWithScores = allChunks.map((chunk) => ({
-    ...chunk,
-    score: cosineSimilarity(queryEmbedding, chunk.embedding),
-  }));
-
-  chunksWithScores.sort((a, b) => b.score - a.score);
-  return chunksWithScores.slice(0, k);
 }
 
 /**

@@ -18,14 +18,14 @@ export default function ReviewPicker() {
       <WorkBreadcrumbs
         crumbs={[
           { label: "Workspace", href: "/workspace" },
-          { label: "Validate Documents" },
+          { label: "Review Documents" },
         ]}
       />
 
       <WorkPageHeader
         icon={CheckCircle2}
-        eyebrow="Validate & Comply"
-        title="Validate"
+        eyebrow="Review & Comply"
+        title="Review"
         accent="Documents"
         blurb="Score, redline, and approve customer-submitted documents against the applicable rubric."
       />
