@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processPDFDocument, processDOCXDocument, processDOCDocument } from "@/features/search-ask/documents";
-import { saveDocument } from "@/lib/bigquery-storage";
+import { saveDocument } from "@/lib/document-store";
+import { getRequestSession } from "@/lib/auth/require-user";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -10,21 +11,20 @@ const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".doc"];
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   try {
-    const formData = await request.formData();
-    const userId = formData.get("userId") as string;
-    const files = formData.getAll("files") as File[];
-
-    if (!userId) {
-      console.warn("[upload] Missing userId");
-      return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
+    const session = await getRequestSession(request);
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
+    const userId = session.userId;
+    const formData = await request.formData();
+    const files = formData.getAll("files") as File[];
+    const conversationId = formData.get("conversationId") as string | null;
 
     if (files.length === 0) {
-      console.warn("[upload] No files from", userId);
       return NextResponse.json({ success: false, error: "No files provided" }, { status: 400 });
     }
 
-    console.log("[upload] Starting:", files.length, "file(s) from", userId, files.map((f) => `${f.name} (${(f.size / 1024).toFixed(0)}KB)`).join(", "));
+    console.log("[upload] Starting:", files.length, "file(s) from", userId, "conv:", conversationId ?? "none");
 
     const processedDocuments = [];
 
@@ -39,8 +39,6 @@ export async function POST(request: NextRequest) {
       const buffer = Buffer.from(await file.arrayBuffer());
       const documentId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-      console.log("[upload] Processing", file.name, "(" + ext + ",", buffer.length, "bytes)");
-
       const processed =
         ext === ".pdf"
           ? await processPDFDocument(buffer, documentId, file.name)
@@ -50,27 +48,22 @@ export async function POST(request: NextRequest) {
 
       console.log("[upload] Extracted", processed.pageCount, "pages,", processed.chunks.length, "chunks from", file.name, "in", Date.now() - fileStart, "ms");
 
-      await saveDocument({
-        userId,
-        documentId: processed.id,
-        documentName: processed.name,
-        pageCount: processed.pageCount,
-        chunks: processed.chunks.map((c) => ({
-          chunkIndex: c.chunkIndex,
-          text: c.text,
-          embedding: c.embedding,
-        })),
-        uploadedAt: processed.uploadedAt,
-      });
+      await saveDocument(userId, processed, conversationId ?? undefined);
 
-      console.log("[upload] Saved to BigQuery:", file.name);
+      console.log("[upload] Saved to Postgres:", file.name);
       processedDocuments.push(processed);
     }
 
     const duration = Date.now() - startTime;
     console.log("[upload] Complete:", processedDocuments.length, "doc(s) in", duration, "ms");
 
-    return NextResponse.json({ success: true, documents: processedDocuments });
+    const summary = processedDocuments.map((d) => ({
+      id: d.id,
+      name: d.name,
+      pageCount: d.pageCount,
+      uploadedAt: d.uploadedAt,
+    }));
+    return NextResponse.json({ success: true, documents: summary });
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error("[upload] Error after", duration, "ms:", error instanceof Error ? error.stack : error);

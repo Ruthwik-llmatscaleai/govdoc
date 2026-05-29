@@ -1,0 +1,438 @@
+// Prisma schema for GovDoc — California document-intelligence platform.
+// Separate database (govdoc) in the LLM AWS account (881490114847).
+// Conventions mirror the Claude_ai_athena reference app:
+//   - uuid PKs, camelCase fields -> snake_case columns via @map
+//   - models -> snake_case tables via @@map
+//   - created_at/updated_at timestamps, soft-delete deleted_at where useful
+//   - JSON columns for flexible/large blobs, explicit @@index, cascade rules
+//
+// NOT in Postgres (kept elsewhere, by design — see RECOMMENDATIONS below):
+//   - Raw file bytes (uploaded PDFs/DOCX/XLSX, generated exports) -> S3
+//   - Chunk embeddings -> pgvector column (this schema) OR OpenSearch at scale
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../lib/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [vector]
+}
+
+// ============================================================================
+// IDENTITY & RBAC  (GovDoc Phase 2: real auth + roles)
+// ============================================================================
+
+model Role {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  description  String?
+  isSystemRole Boolean  @default(false) @map("is_system_role")
+  permissions  Json     @default("[]")
+  allowedUseCases Json  @default("[]") @map("allowed_use_cases") // ["cmgc-pde","cucp-reevals","row-appraisal"]
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  users       User[]
+  invitations Invitation[]
+
+  @@map("roles")
+}
+
+model User {
+  id                  String    @id @default(uuid())
+  email               String    @unique
+  passwordHash        String    @map("password_hash")
+  name                String?
+  avatarUrl           String?   @map("avatar_url")
+  roleId              String?   @map("role_id")
+  isAdmin             Boolean   @default(false) @map("is_admin")
+  status              String    @default("ACTIVE") // ACTIVE | DISABLED | INVITED
+  forcePasswordChange Boolean   @default(false) @map("force_password_change")
+  passwordChangedAt   DateTime? @map("password_changed_at")
+  emailVerified       Boolean   @default(false) @map("email_verified")
+  preferences         Json      @default("{}")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  lastLogin           DateTime? @map("last_login")
+
+  role           Role?            @relation(fields: [roleId], references: [id])
+  sessions       Session[]
+  sessionLogs    UserSessionLog[]
+  auditLogs      AuditLog[]
+  usageRecords   UsageRecord[]
+  invitationsSent Invitation[]    @relation("InvitedByUser")
+  conversations  Conversation[]
+  documents      Document[]
+  evaluationRuns EvaluationRun[]
+  runOverrides   RunOverride[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Session {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  token      String    @unique
+  expiresAt  DateTime  @map("expires_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  userAgent  String?   @map("user_agent")
+  ipAddress  String?   @map("ip_address")
+  lastUsedAt DateTime? @map("last_used_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("sessions")
+}
+
+enum SessionStatus {
+  ACTIVE
+  CLOSED_LOGOUT
+  CLOSED_IDLE
+  CLOSED_ADMIN
+  CLOSED_EXPIRED
+
+  @@map("session_status")
+}
+
+model UserSessionLog {
+  id               String        @id @default(uuid())
+  userId           String        @map("user_id")
+  sessionTokenHash String?       @unique @map("session_token_hash")
+  loginTime        DateTime      @default(now()) @map("login_time")
+  logoutTime       DateTime?     @map("logout_time")
+  lastActivityAt   DateTime      @default(now()) @map("last_activity_at")
+  idleSeconds      Int           @default(0) @map("idle_seconds")
+  sessionStatus    SessionStatus @default(ACTIVE) @map("session_status")
+  closedReason     String?       @map("closed_reason")
+  loginIp          String?       @map("login_ip")
+  loginUserAgent   String?       @map("login_user_agent")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, loginTime(sort: Desc)])
+  @@index([sessionStatus])
+  @@map("user_session_logs")
+}
+
+model Invitation {
+  id          String    @id @default(uuid())
+  email       String
+  roleId      String    @map("role_id")
+  invitedById String    @map("invited_by_id")
+  token       String    @unique
+  status      String    @default("PENDING")
+  expiresAt   DateTime  @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  role      Role @relation(fields: [roleId], references: [id])
+  invitedBy User @relation("InvitedByUser", fields: [invitedById], references: [id])
+
+  @@index([token])
+  @@index([email])
+  @@map("invitations")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  email     String
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([token])
+  @@index([email])
+  @@map("password_reset_tokens")
+}
+
+// ============================================================================
+// AUDIT & USAGE  ("court-ready audit trail" + LLM cost tracking)
+// ============================================================================
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String   // e.g. RUN_STARTED, OVERRIDE_APPLIED, RUBRIC_PUBLISHED
+  targetType String?  @map("target_type") // evaluation_run | rubric | document | user
+  targetId   String?  @map("target_id")
+  metadata   Json     @default("{}")
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model UsageRecord {
+  id                  String   @id @default(uuid())
+  userId              String   @map("user_id")
+  runId               String?  @map("run_id")
+  provider            String   // openai | anthropic | groq
+  model               String
+  inputTokens         Int      @map("input_tokens")
+  outputTokens        Int      @map("output_tokens")
+  cacheCreationTokens Int      @default(0) @map("cache_creation_tokens")
+  cacheReadTokens     Int      @default(0) @map("cache_read_tokens")
+  requestDurationMs   Int?     @map("request_duration_ms")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([runId])
+  @@index([model])
+  @@map("usage_records")
+}
+
+// ============================================================================
+// PROJECTS, DOCUMENTS & CORPUS  (file bytes live in S3; only metadata here)
+// ============================================================================
+
+model Project {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  slug      String    // derived projectId (currently from filename)
+  name      String
+  useCaseId String?   @map("use_case_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  documents      Document[]
+  evaluationRuns EvaluationRun[]
+
+  @@unique([userId, slug])
+  @@index([userId])
+  @@map("projects")
+}
+
+model Document {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  projectId      String?   @map("project_id")
+  conversationId String?   @map("conversation_id")
+  name           String
+  mimeType       String?   @map("mime_type")
+  sizeBytes      Int?      @map("size_bytes")
+  pageCount      Int?      @map("page_count")
+  s3Bucket       String?   @map("s3_bucket")  // raw bytes in S3, not in Postgres
+  s3Key          String?   @map("s3_key")
+  status         String    @default("UPLOADED") // UPLOADED | PARSED | INDEXED | FAILED
+  classification String?   // for Classify & Tag capability
+  metadata       Json      @default("{}")
+  uploadedAt     DateTime  @default(now()) @map("uploaded_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  chunks  DocumentChunk[]
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([conversationId])
+  @@index([status])
+  @@map("documents")
+}
+
+model DocumentChunk {
+  id         String  @id @default(uuid())
+  documentId String  @map("document_id")
+  chunkIndex Int     @map("chunk_index")
+  text       String
+  tokens     Int?
+  // Embedding for semantic search. pgvector for moderate scale; switch the
+  // search path to OpenSearch if the corpus grows large. 1536 = OpenAI
+  // text-embedding-3-small; adjust to your embedding model's dimension.
+  embedding  Unsupported("vector(1536)")?
+  metadata   Json    @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@index([documentId])
+  @@map("document_chunks")
+}
+
+// ============================================================================
+// RUBRICS  (migrated off the filesystem store, with versioning)
+// ============================================================================
+
+model Rubric {
+  id         String    @id @default(uuid())
+  useCaseId  String    @map("use_case_id") // cmgc-pde | cucp-reevals | row-appraisal
+  slug       String    // the kebab id used today (e.g. "default")
+  label      String
+  isDefault  Boolean   @default(false) @map("is_default")
+  content    Json?     // current live rubric JSON; null = use bundled default
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  versions RubricVersion[]
+
+  @@unique([useCaseId, slug])
+  @@index([useCaseId])
+  @@map("rubrics")
+}
+
+model RubricVersion {
+  id        String   @id @default(uuid())
+  rubricId  String   @map("rubric_id")
+  versionId String   @map("version_id") // v1, v1.2, legacy v001
+  source    String   // edit | upload | clone | restore | seed
+  label     String?
+  note      String?
+  content   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  rubric Rubric @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+
+  @@unique([rubricId, versionId])
+  @@index([rubricId])
+  @@map("rubric_versions")
+}
+
+// ============================================================================
+// EVALUATION PIPELINE  (currently NOT persisted anywhere — new)
+// ============================================================================
+
+enum RunStatus {
+  RUNNING
+  NEEDS_INPUT
+  PASS
+  FAIL
+  REVIEW
+  ERROR
+  ABORTED
+
+  @@map("run_status")
+}
+
+model EvaluationRun {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  projectId       String?   @map("project_id")
+  useCaseId       String    @map("use_case_id")
+  rubricId        String?   @map("rubric_id")          // rubric slug (may be the synthetic "default")
+  rubricVersionId String?   @map("rubric_version_id")
+  status          RunStatus @default(RUNNING)
+  primaryDocumentName String? @map("primary_document_name") // feeds Recent Activity
+  inputs          Json      @default("{}") // form inputs / model picks
+  result          Json?     // final ctx.prior result blob
+  errorMessage    String?   @map("error_message")
+  startedAt       DateTime  @default(now()) @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  overrides RunOverride[]
+  exports   RunExport[]
+
+  @@index([userId, startedAt(sort: Desc)])
+  @@index([useCaseId])
+  @@index([status])
+  @@map("evaluation_runs")
+}
+
+// Human approve/override gate events — the audit core of the override+undo UX.
+model RunOverride {
+  id            String   @id @default(uuid())
+  runId         String   @map("run_id")
+  userId        String   @map("user_id")
+  level         Int?     // CUCP levels 1/2/3
+  category      String?  // CMGC category / criterion key
+  action        String   // APPROVE | OVERRIDE | UNDO | CLEAR
+  proposed      Json?    // model's proposed { decision, rationale }
+  finalDecision String?  @map("final_decision")
+  rationale     String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  run  EvaluationRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@map("run_overrides")
+}
+
+// CUCP "institutional memory" — migrated off artifacts/precedents/*.json.
+model Precedent {
+  id             String   @id @default(uuid())
+  projectId      String   @map("project_id") // project slug (derived from filename), not user-scoped
+  level          Int      // 1 | 2 | 3
+  target         String
+  correction     String
+  humanReasoning String   @map("human_reasoning")
+  factId         String?  @map("fact_id") // L2 link
+  sNo            Int?     @map("s_no")     // L3 link
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([projectId, level])
+  @@map("precedents")
+}
+
+// Generated XLSX/DOCX/JSON exports — bytes in S3, metadata here.
+model RunExport {
+  id          String   @id @default(uuid())
+  runId       String   @map("run_id")
+  exporterId  String   @map("exporter_id") // xlsx | docx | json | rubric-xlsx
+  contentType String   @map("content_type")
+  s3Bucket    String?  @map("s3_bucket")
+  s3Key       String?  @map("s3_key")
+  sizeBytes   Int?     @map("size_bytes")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  run EvaluationRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@map("run_exports")
+}
+
+// ============================================================================
+// CHAT / SEARCH & ASK  (migrated from BigQuery)
+// ============================================================================
+
+model Conversation {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  title         String    @default("New Conversation")
+  isPinned      Boolean   @default(false) @map("is_pinned")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  lastMessageAt DateTime? @map("last_message_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@index([userId, deletedAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  role           String   // user | assistant
+  content        String
+  sources        Json?    // [{ documentName, chunkIndex, score, excerpt }]
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
