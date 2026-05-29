@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         }
 
         const response = await anthropic.messages.stream({
-          model: "claude-sonnet-4-5-20250514",
+          model: "claude-opus-4-7",
           max_tokens: 4096,
           system: systemPrompt,
           messages,
