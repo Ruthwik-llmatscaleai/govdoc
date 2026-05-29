@@ -29,11 +29,9 @@ export async function POST(request: NextRequest) {
 
   const userId = session.userId;
 
-  // Search for relevant chunks scoped to this conversation
   const queryEmbedding = await embedQuery(question);
   const topChunks = await searchChunks(userId, queryEmbedding, 5, conversationId);
 
-  // Build messages
   const messages: Array<{ role: "user" | "assistant"; content: string }> = [
     ...chatHistory.slice(-10).map((msg) => ({
       role: msg.role,
@@ -58,12 +56,10 @@ export async function POST(request: NextRequest) {
     ? "You are a helpful assistant that answers questions based on the provided document context. Only answer based on the information in the context. If the answer is not in the context, say so clearly. Be concise and accurate."
     : "You are GovDoc, an AI assistant for government document review. You can answer general questions, greet users, and help them understand how to use the system. When no documents are uploaded, let the user know they can upload PDF or DOCX files to ask questions about their contents. Be friendly and concise.";
 
-  // Stream response
   const enc = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // Send sources first if we have them
         if (hasDocContext) {
           const sources = topChunks.map((chunk) => ({
             documentName: chunk.documentName,

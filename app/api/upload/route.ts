@@ -24,18 +24,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No files provided" }, { status: 400 });
     }
 
-    console.log("[upload] Starting:", files.length, "file(s) from", userId, "conv:", conversationId ?? "none");
-
     const processedDocuments = [];
 
     for (const file of files) {
       const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
-      if (!SUPPORTED_EXTENSIONS.includes(ext)) {
-        console.warn("[upload] Skipping unsupported:", file.name);
-        continue;
-      }
+      if (!SUPPORTED_EXTENSIONS.includes(ext)) continue;
 
-      const fileStart = Date.now();
       const buffer = Buffer.from(await file.arrayBuffer());
       const documentId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
@@ -46,11 +40,7 @@ export async function POST(request: NextRequest) {
             ? await processDOCDocument(buffer, documentId, file.name)
             : await processDOCXDocument(buffer, documentId, file.name);
 
-      console.log("[upload] Extracted", processed.pageCount, "pages,", processed.chunks.length, "chunks from", file.name, "in", Date.now() - fileStart, "ms");
-
       await saveDocument(userId, processed, conversationId ?? undefined);
-
-      console.log("[upload] Saved to Postgres:", file.name);
       processedDocuments.push(processed);
     }
 
@@ -65,8 +55,7 @@ export async function POST(request: NextRequest) {
     }));
     return NextResponse.json({ success: true, documents: summary });
   } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error("[upload] Error after", duration, "ms:", error instanceof Error ? error.stack : error);
+    console.error("[upload] Error:", error instanceof Error ? error.stack : error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "Upload failed" },
       { status: 500 },

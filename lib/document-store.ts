@@ -22,7 +22,7 @@ export async function saveDocument(
       name: doc.name,
       pageCount: doc.pageCount,
       status: "INDEXED",
-      conversationId: conversationId ?? null,
+      ...(conversationId ? { conversationId } : {}),
     },
   });
   for (const chunk of doc.chunks) {
@@ -60,8 +60,6 @@ export async function searchChunks(
   conversationId?: string,
 ): Promise<ScoredChunk[]> {
   const vec = `[${queryEmbedding.join(",")}]`;
-
-  // If conversationId is provided, only search docs in that conversation
   const convFilter = conversationId
     ? `AND d.conversation_id = '${conversationId}'`
     : "";
