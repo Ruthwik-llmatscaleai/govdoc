@@ -10,8 +10,10 @@ import {
   Columns2,
   Copy,
   FileText,
+  FolderOpen,
   ListFilter,
   PanelLeftClose,
+  PanelRightClose,
   Paperclip,
   Pencil,
   Plus,
@@ -88,6 +90,7 @@ export default function SearchAskPage() {
   const abortRef = useRef<AbortController | null>(null);
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [artifactsOpen, setArtifactsOpen] = useState(false);
   const [, setUserId] = useState(FALLBACK_USER_ID);
   const [userName, setUserName] = useState(FALLBACK_USER_NAME);
 
@@ -95,10 +98,9 @@ export default function SearchAskPage() {
   useEffect(() => {
     async function init() {
       try {
-        const [meRes, convsRes, docsRes] = await Promise.all([
+        const [meRes, convsRes] = await Promise.all([
           fetch("/api/auth/me"),
           fetch("/api/conversations"),
-          fetch("/api/storage/load-documents"),
         ]);
         if (meRes.ok) {
           const me = await meRes.json();
@@ -110,10 +112,6 @@ export default function SearchAskPage() {
           if (data?.success && data.conversations?.length > 0) {
             setConversations(data.conversations);
           }
-        }
-        if (docsRes.ok) {
-          const docs = await docsRes.json();
-          if (docs?.success && docs.documents?.length > 0) setDocuments(docs.documents);
         }
       } catch {}
       setIsLoading(false);
@@ -163,12 +161,30 @@ export default function SearchAskPage() {
     if (!files || files.length === 0) return;
     setIsUploading(true);
     try {
+      // Ensure we have a conversation for these files
+      let convId = activeConvId;
+      if (!convId) {
+        const res = await fetch("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: files[0].name.slice(0, 60) }),
+        });
+        const data = await res.json();
+        if (data?.success) {
+          convId = data.id;
+          setActiveConvId(convId);
+          refreshConversations();
+        }
+      }
+
       const formData = new FormData();
       Array.from(files).forEach((file) => formData.append("files", file));
+      if (convId) formData.append("conversationId", convId);
+
       const response = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await response.json();
       if (data.success) {
-        const docsRes = await fetch("/api/storage/load-documents");
+        const docsRes = await fetch(`/api/storage/load-documents?conversationId=${convId ?? ""}`);
         const docsData = await docsRes.json();
         if (docsData.success) setDocuments(docsData.documents);
       } else {
@@ -203,7 +219,6 @@ export default function SearchAskPage() {
     const saveData = await saveRes.json();
     const convId = saveData?.conversationId ?? activeConvId;
 
-    // If this was the first message in a new conversation, set title
     if (!activeConvId && convId) {
       setActiveConvId(convId);
       await fetch(`/api/conversations/${convId}`, {
@@ -224,34 +239,71 @@ export default function SearchAskPage() {
     const controller = new AbortController();
     abortRef.current = controller;
 
+    let fullText = "";
+    let sources: ChatMessage["sources"] = undefined;
+
     try {
-      setTimeout(() => { if (abortRef.current === controller) setThinkingPhase("Generating answer..."); }, 2000);
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userMessage.content, chatHistory }),
+        body: JSON.stringify({ question: userMessage.content, chatHistory, conversationId: convId }),
         signal: controller.signal,
       });
-      const data = await response.json();
-      if (data.success) {
-        const elapsed = (Date.now() - startedAt) / 1000;
-        const answerIdx = newHistory.length;
-        setResponseTimes((prev) => ({ ...prev, [answerIdx]: elapsed }));
 
+      if (!response.ok || !response.body) {
+        const errData = await response.json().catch(() => ({ error: "Request failed" }));
+        setChatHistory([...newHistory, { role: "assistant", content: `Error: ${errData.error}`, timestamp: new Date().toISOString() }]);
+        return;
+      }
+
+      setThinkingPhase("");
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6);
+          try {
+            const event = JSON.parse(json);
+            if (event.type === "sources") {
+              sources = event.sources;
+            } else if (event.type === "text") {
+              fullText += event.text;
+              setChatHistory([...newHistory, { role: "assistant", content: fullText, sources, timestamp: new Date().toISOString() }]);
+            } else if (event.type === "error") {
+              setChatHistory([...newHistory, { role: "assistant", content: `Error: ${event.error}`, timestamp: new Date().toISOString() }]);
+            }
+          } catch {}
+        }
+      }
+
+      // Save final assistant message
+      const elapsed = (Date.now() - startedAt) / 1000;
+      setResponseTimes((prev) => ({ ...prev, [newHistory.length]: elapsed }));
+
+      if (fullText) {
         await fetch("/api/storage/save-message", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            role: data.answer.role,
-            content: data.answer.content,
-            sources: data.answer.sources,
+            role: "assistant",
+            content: fullText,
+            sources,
             conversationId: convId,
           }),
         });
-        setChatHistory([...newHistory, data.answer]);
+        setChatHistory([...newHistory, { role: "assistant", content: fullText, sources, timestamp: new Date().toISOString() }]);
         refreshConversations();
-      } else {
-        setChatHistory([...newHistory, { role: "assistant", content: `Error: ${data.error}`, timestamp: new Date().toISOString() }]);
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
@@ -277,6 +329,7 @@ export default function SearchAskPage() {
   const handleNewChat = async () => {
     setActiveConvId(null);
     setChatHistory([]);
+    setDocuments([]);
     setResponseTimes({});
   };
 
@@ -284,8 +337,15 @@ export default function SearchAskPage() {
     if (convId === activeConvId) return;
     setActiveConvId(convId);
     setChatHistory([]);
+    setDocuments([]);
     setResponseTimes({});
     await loadConversation(convId);
+    // Load docs for this conversation
+    try {
+      const docsRes = await fetch(`/api/storage/load-documents?conversationId=${convId}`);
+      const docsData = await docsRes.json();
+      if (docsData.success) setDocuments(docsData.documents);
+    } catch {}
   };
 
   const handleDeleteConversation = async (convId: string) => {
@@ -470,9 +530,24 @@ export default function SearchAskPage() {
           >
             <ArrowLeft className="size-4" />
           </a>
-          <span className="text-[14px] font-medium text-[#0E1410]" style={{ fontFamily: "var(--font-display)" }}>
+          <span className="flex-1 text-[14px] font-medium text-[#0E1410]" style={{ fontFamily: "var(--font-display)" }}>
             {sessionTitle}
           </span>
+          {documents.length > 0 && (
+            <button
+              onClick={() => setArtifactsOpen(!artifactsOpen)}
+              className={`flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[11px] transition-colors ${
+                artifactsOpen
+                  ? "bg-[#3D5740] text-white"
+                  : "text-[#6E706A] hover:bg-[#F3EEE0] hover:text-[#0E1410]"
+              }`}
+              style={{ fontFamily: "var(--font-mono)", fontWeight: 600, letterSpacing: "0.5px" }}
+              type="button"
+            >
+              <FolderOpen className="size-3.5" />
+              {documents.length} file{documents.length !== 1 ? "s" : ""}
+            </button>
+          )}
         </div>
 
         {chatHistory.length === 0 ? (
@@ -615,6 +690,91 @@ export default function SearchAskPage() {
           </>
         )}
       </main>
+
+      {/* RIGHT ARTIFACTS PANEL */}
+      {artifactsOpen && (
+        <aside className="flex w-[280px] shrink-0 flex-col border-l border-[#d6cfba] bg-[#f7f2e6]">
+          <div className="flex h-[40px] items-center justify-between border-b border-[#d6cfba]/60 bg-[#fcfaf3] px-[14px]">
+            <span
+              className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#0E1410]"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              Artifacts
+            </span>
+            <button
+              onClick={() => setArtifactsOpen(false)}
+              className="flex size-6 items-center justify-center rounded-[4px] text-[#6E706A] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410]"
+              type="button"
+            >
+              <PanelRightClose className="size-4" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-3">
+            {documents.length > 0 ? (
+              <div className="space-y-2">
+                {documents.map((doc) => {
+                  const isPdf = doc.name?.toLowerCase().endsWith(".pdf");
+                  return (
+                    <div
+                      key={doc.id}
+                      className="group flex items-start gap-3 rounded-lg border border-[#d6cfba] bg-[#FCFAF3] p-3 transition-colors hover:border-[#8B877D]"
+                    >
+                      <span className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded ${isPdf ? "bg-red-600" : "bg-blue-600"} text-[8px] font-bold text-white`}>
+                        {isPdf ? "PDF" : "DOC"}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[12px] font-medium text-[#0E1410]" style={{ fontFamily: "var(--font-sans)" }}>
+                          {doc.name}
+                        </div>
+                        <div className="mt-0.5 text-[10px] text-[#8B877D]" style={{ fontFamily: "var(--font-mono)" }}>
+                          {doc.pageCount} pages · {new Date(doc.uploadedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeDocument(doc.id)}
+                        className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded text-[#8B877D] opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
+                        title="Remove from conversation"
+                        type="button"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <FolderOpen className="mb-3 size-8 text-[#d6cfba]" />
+                <p className="text-[12px] text-[#8B877D]" style={{ fontFamily: "var(--font-sans)" }}>
+                  No files in this conversation
+                </p>
+                <p className="mt-1 text-[11px] text-[#A19D91]" style={{ fontFamily: "var(--font-sans)" }}>
+                  Upload a PDF or DOCX to get started
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Upload button at bottom */}
+          <div className="border-t border-[#d6cfba] p-3">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="flex w-full items-center justify-center gap-2 rounded-[6px] border border-[#d6cfba] bg-[#FCFAF3] px-3 py-2 text-[12px] font-medium text-[#0E1410] transition-colors hover:border-[#3D5740] hover:bg-[#e8eadf]"
+              style={{ fontFamily: "var(--font-sans)" }}
+              type="button"
+            >
+              {isUploading ? (
+                <div className="size-3.5 animate-spin rounded-full border-2 border-[#d6cfba] border-t-[#3D5740]" />
+              ) : (
+                <Paperclip className="size-3.5" />
+              )}
+              Upload File
+            </button>
+          </div>
+        </aside>
+      )}
     </div>
   );
 }
