@@ -109,10 +109,6 @@ export default function SearchAskPage() {
           const data = await convsRes.json();
           if (data?.success && data.conversations?.length > 0) {
             setConversations(data.conversations);
-            // Load the most recent conversation
-            const latest = data.conversations[0];
-            setActiveConvId(latest.id);
-            await loadConversation(latest.id);
           }
         }
         if (docsRes.ok) {

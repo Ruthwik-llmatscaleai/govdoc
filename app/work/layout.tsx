@@ -10,7 +10,7 @@ export default async function WorkLayout({ children }: { children: React.ReactNo
   if (!session) redirect("/login");
 
   const pathname = (await headers()).get("x-pathname") || "";
-  const isChat = pathname === "/work/chat";
+  const isChat = pathname === "/work/chat" || pathname.startsWith("/work/chat");
   const isRubricHub = pathname === "/work/search";
   const isRubricDetail = pathname === "/work/search/preview" || pathname === "/work/search/edit";
 
