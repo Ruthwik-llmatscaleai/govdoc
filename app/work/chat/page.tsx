@@ -239,71 +239,33 @@ export default function SearchAskPage() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    let fullText = "";
-    let sources: ChatMessage["sources"] = undefined;
-
     try {
+      setTimeout(() => { if (abortRef.current === controller) setThinkingPhase("Generating answer..."); }, 2000);
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: userMessage.content, chatHistory, conversationId: convId }),
         signal: controller.signal,
       });
+      const data = await response.json();
+      if (data.success) {
+        const elapsed = (Date.now() - startedAt) / 1000;
+        setResponseTimes((prev) => ({ ...prev, [newHistory.length]: elapsed }));
 
-      if (!response.ok || !response.body) {
-        const errData = await response.json().catch(() => ({ error: "Request failed" }));
-        setChatHistory([...newHistory, { role: "assistant", content: `Error: ${errData.error}`, timestamp: new Date().toISOString() }]);
-        return;
-      }
-
-      setThinkingPhase("");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const json = line.slice(6);
-          try {
-            const event = JSON.parse(json);
-            if (event.type === "sources") {
-              sources = event.sources;
-            } else if (event.type === "text") {
-              fullText += event.text;
-              setChatHistory([...newHistory, { role: "assistant", content: fullText, sources, timestamp: new Date().toISOString() }]);
-            } else if (event.type === "error") {
-              setChatHistory([...newHistory, { role: "assistant", content: `Error: ${event.error}`, timestamp: new Date().toISOString() }]);
-            }
-          } catch {}
-        }
-      }
-
-      // Save final assistant message
-      const elapsed = (Date.now() - startedAt) / 1000;
-      setResponseTimes((prev) => ({ ...prev, [newHistory.length]: elapsed }));
-
-      if (fullText) {
         await fetch("/api/storage/save-message", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             role: "assistant",
-            content: fullText,
-            sources,
+            content: data.answer.content,
+            sources: data.answer.sources,
             conversationId: convId,
           }),
         });
-        setChatHistory([...newHistory, { role: "assistant", content: fullText, sources, timestamp: new Date().toISOString() }]);
+        setChatHistory([...newHistory, data.answer]);
         refreshConversations();
+      } else {
+        setChatHistory([...newHistory, { role: "assistant", content: `Error: ${data.error}`, timestamp: new Date().toISOString() }]);
       }
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
