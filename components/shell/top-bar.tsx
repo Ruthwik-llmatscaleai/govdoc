@@ -30,7 +30,7 @@ export function TopBar({ user, variant = "full" }: Props) {
             className="text-[#0E1410]"
             style={{ fontFamily: "var(--font-display)", fontSize: "14px", fontWeight: 500, whiteSpace: "nowrap" }}
           >
-            Policy Compliance · Agentic AI
+            GovDoc
           </span>
         </Link>
         <div className="flex items-center gap-2">
@@ -112,7 +112,7 @@ export function TopBar({ user, variant = "full" }: Props) {
               whiteSpace: "nowrap",
             }}
           >
-            Policy Compliance · Agentic AI
+            GovDoc
           </span>
         </Link>
 
