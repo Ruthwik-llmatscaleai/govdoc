@@ -76,3 +76,35 @@ export async function answerQuestion(
     timestamp: new Date().toISOString(),
   };
 }
+
+export async function answerGeneral(
+  question: string,
+  chatHistory: ChatMessage[] = [],
+): Promise<ChatMessage> {
+  const messages: Array<{ role: "user" | "assistant"; content: string }> = [
+    ...chatHistory.slice(-10).map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    })),
+    { role: "user" as const, content: question },
+  ];
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-5-20250514",
+    max_tokens: 2048,
+    system:
+      "You are GovDoc, an AI assistant for government document review. You can answer general questions, greet users, and help them understand how to use the system. When no documents are uploaded, let the user know they can upload PDF or DOCX files to ask questions about their contents. Be friendly and concise.",
+    messages,
+  });
+
+  const answerText = response.content
+    .filter((block) => block.type === "text")
+    .map((block) => (block.type === "text" ? block.text : ""))
+    .join("\n");
+
+  return {
+    role: "assistant",
+    content: answerText,
+    timestamp: new Date().toISOString(),
+  };
+}

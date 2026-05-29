@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { answerQuestion } from "@/features/search-ask/service";
+import { answerQuestion, answerGeneral } from "@/features/search-ask/service";
 import type { ChatMessage } from "@/features/search-ask/service";
 import { embedQuery } from "@/features/search-ask/documents";
 import { searchChunks } from "@/lib/document-store";
@@ -30,11 +30,12 @@ export async function POST(request: NextRequest) {
     const topChunks = await searchChunks(userId, queryEmbedding, 5);
     console.log("[chat] Retrieved", topChunks.length, "chunks for", userId);
 
+    // If no documents uploaded, respond conversationally without RAG
     if (topChunks.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "No documents found. Please upload a document first." },
-        { status: 400 },
-      );
+      const answer = await answerGeneral(question, chatHistory);
+      const duration = Date.now() - startTime;
+      console.log("[chat] General answer in", duration, "ms (no docs)");
+      return NextResponse.json({ success: true, answer });
     }
 
     const answer = await answerQuestion(question, topChunks, chatHistory);
