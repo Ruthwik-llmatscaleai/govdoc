@@ -36,7 +36,7 @@ export function ResultsTable({ results }: { results: EvaluationResult[] }) {
                   {status}
                 </td>
                 <td className="p-2 max-w-xs">{r.criteria_met}</td>
-                <td className="p-2 max-w-xs">{r.evidence}</td>
+                <td className="p-2 max-w-xs" style={{ fontFamily: "var(--font-document)" }}>{r.evidence}</td>
                 <td className="p-2 max-w-xs">{r.comments}</td>
               </tr>
             );

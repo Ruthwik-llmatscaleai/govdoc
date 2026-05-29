@@ -260,6 +260,7 @@ export function AnimatedDocPanel() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.4 }}
               className="text-[12.5px] leading-[1.7] text-[var(--color-ink-soft)]"
+              style={{ fontFamily: "var(--font-document)" }}
             >
               <p>
                 {scenario.excerpts.map((ex, i) => (

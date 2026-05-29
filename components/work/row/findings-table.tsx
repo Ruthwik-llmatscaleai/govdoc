@@ -103,7 +103,7 @@ export function FindingsTable({ results }: { results: EvaluationResult[] }) {
                   {f.status}
                 </span>
               </td>
-              <td className="p-2 max-w-md break-words">{f.evidence}</td>
+              <td className="p-2 max-w-md break-words" style={{ fontFamily: "var(--font-document)" }}>{f.evidence}</td>
             </tr>
           ))}
         </tbody>

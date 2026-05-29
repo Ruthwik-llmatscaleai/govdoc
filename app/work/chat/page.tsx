@@ -782,7 +782,7 @@ function AssistantMessage({ msg, idx, isLast, isAnswering, responseTimes, copied
                       {source.documentName} · chunk {source.chunkIndex + 1}
                       <span className="ml-auto text-[10px] text-[#8B877D]">{(source.score * 100).toFixed(0)}% match</span>
                     </div>
-                    <p className="text-[12.5px] italic leading-[1.55] text-[#6E706A]">
+                    <p className="text-[12.5px] italic leading-[1.55] text-[#6E706A]" style={{ fontFamily: "var(--font-document)" }}>
                       &ldquo;{source.excerpt}&rdquo;
                     </p>
                   </div>

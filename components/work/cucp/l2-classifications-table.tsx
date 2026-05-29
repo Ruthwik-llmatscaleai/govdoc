@@ -49,8 +49,8 @@ export function L2ClassificationsTable({
               <td className="p-2 font-medium whitespace-nowrap">
                 {r.category || "—"}
               </td>
-              <td className="p-2 max-w-md break-words">{r.summary || "—"}</td>
-              <td className="p-2 italic text-muted-foreground max-w-md break-words">
+              <td className="p-2 max-w-md break-words" style={{ fontFamily: "var(--font-document)" }}>{r.summary || "—"}</td>
+              <td className="p-2 italic text-muted-foreground max-w-md break-words" style={{ fontFamily: "var(--font-document)" }}>
                 {r.ai_reasoning || "—"}
               </td>
             </tr>

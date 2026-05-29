@@ -75,8 +75,8 @@ export function L3CriteriaTable({
                   {c.category || "—"}
                 </td>
                 <td className="p-2 max-w-xs">{c.qualification || "—"}</td>
-                <td className="p-2 text-xs max-w-md break-words">{evidence}</td>
-                <td className="p-2 text-xs italic text-muted-foreground max-w-lg break-words">
+                <td className="p-2 text-xs max-w-md break-words" style={{ fontFamily: "var(--font-document)" }}>{evidence}</td>
+                <td className="p-2 text-xs italic text-muted-foreground max-w-lg break-words" style={{ fontFamily: "var(--font-document)" }}>
                   {reasoning}
                 </td>
                 <td

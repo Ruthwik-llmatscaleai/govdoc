@@ -35,7 +35,7 @@ export function PrecedentsAdminTable({
             <tr key={i} className="border-t align-top">
               <td className="p-2 max-w-xs">{p.target}</td>
               <td className="p-2 font-medium">{p.correction}</td>
-              <td className="p-2 text-xs text-muted-foreground max-w-md break-words">{p.human_reasoning}</td>
+              <td className="p-2 text-xs text-muted-foreground max-w-md break-words" style={{ fontFamily: "var(--font-document)" }}>{p.human_reasoning}</td>
               <td className="p-2 font-mono text-xs">
                 {level === 2 ? (p.fact_id ?? "—") : level === 3 ? (p.s_no != null ? `s_no=${p.s_no}` : "—") : "—"}
               </td>
