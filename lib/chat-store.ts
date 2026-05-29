@@ -75,7 +75,8 @@ export async function saveChatMessage(
   msg: { role: "user" | "assistant"; content: string; sources?: unknown },
   conversationId?: string,
 ): Promise<{ conversationId: string }> {
-  const convId = conversationId ?? await getOrCreateDefaultConversation(userId);
+  // Always create a new conversation if none specified
+  const convId = conversationId ?? await createConversation(userId, msg.content.slice(0, 80) || "New Conversation");
 
   await prisma.$transaction([
     prisma.message.create({
