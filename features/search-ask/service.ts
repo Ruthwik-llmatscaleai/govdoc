@@ -46,7 +46,7 @@ export async function answerQuestion(
   ];
 
   const response = await anthropic.messages.create({
-    model: "claude-opus-4-8",
+    model: "claude-opus-4-7",
     max_tokens: 4096,
     thinking: {
       type: "adaptive",
