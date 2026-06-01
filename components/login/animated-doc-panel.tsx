@@ -179,7 +179,7 @@ export function AnimatedDocPanel() {
         }
         return prev + 1;
       });
-    }, 1200);
+    }, 700);
 
     return () => clearInterval(highlightTimer);
   }, [activeIdx, scenario.excerpts.length]);
@@ -194,21 +194,21 @@ export function AnimatedDocPanel() {
         }
         return prev + 1;
       });
-    }, 400);
+    }, 250);
 
     const stepTimer = setTimeout(() => {
       const si = setInterval(() => {
         setStepIdx((prev) => {
           if (prev >= scenario.steps.length - 1) {
             clearInterval(si);
-            setTimeout(() => setPhase("verdict"), 600);
+            setTimeout(() => setPhase("verdict"), 350);
             return prev;
           }
           return prev + 1;
         });
-      }, 500);
+      }, 300);
       return () => clearInterval(si);
-    }, scenario.facts.length * 400);
+    }, scenario.facts.length * 250);
 
     return () => {
       clearInterval(factTimer);
@@ -221,7 +221,7 @@ export function AnimatedDocPanel() {
     if (phase !== "verdict") return;
     const next = setTimeout(() => {
       setActiveIdx((prev) => (prev + 1) % SCENARIOS.length);
-    }, 4000);
+    }, 2500);
     return () => clearTimeout(next);
   }, [phase]);
 

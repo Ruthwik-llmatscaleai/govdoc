@@ -7,7 +7,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ showAuth = true, variant = "landing" }: PageHeaderProps) {
-  const title = "GovDoc";
+  const title = "Policy Compliance · Agentic AI";
 
   return (
     <>
@@ -46,7 +46,7 @@ export function PageHeader({ showAuth = true, variant = "landing" }: PageHeaderP
                 fontFamily: "var(--font-display)",
                 fontSize: "22px",
                 lineHeight: "24px",
-                fontWeight: 600,
+                fontWeight: 400,
                 letterSpacing: 0,
               }}
             >

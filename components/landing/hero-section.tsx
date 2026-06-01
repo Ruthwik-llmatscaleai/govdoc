@@ -26,7 +26,7 @@ export function HeroSection() {
           <span>Welcome · GovDoc Platform</span>
         </motion.div>
 
-        <motion.h1 variants={fadeUp} className="govdoc-display mb-6 max-w-[1180px]">
+        <motion.h1 variants={fadeUp} className="mb-6 max-w-[1180px]" style={{ fontFamily: "var(--font-document)", fontSize: "clamp(48px, 5.5vw, 82px)", fontWeight: 400, lineHeight: 1.05, letterSpacing: "-0.02em" }}>
           GovDoc is{" "}
           <em>beyond</em>{" "}
           Microsoft 365

@@ -4,7 +4,7 @@ import { saveDocument } from "@/lib/document-store";
 import { getRequestSession } from "@/lib/auth/require-user";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const SUPPORTED_EXTENSIONS = [".pdf", ".docx", ".doc"];
 
