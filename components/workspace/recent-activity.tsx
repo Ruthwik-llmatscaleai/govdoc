@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { RecentActivityItem } from "@/lib/bigquery-recent-activity";
+import type { RecentActivityItem } from "@/lib/recent-activity";
 
 interface RecentActivityProps {
   items: RecentActivityItem[];

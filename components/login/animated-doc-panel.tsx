@@ -170,51 +170,49 @@ export function AnimatedDocPanel() {
     setFactIdx(0);
     setStepIdx(0);
 
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
     const highlightTimer = setInterval(() => {
       setHighlightIdx((prev) => {
-        if (prev >= scenario.excerpts.length - 1) {
+        const next = prev + 1;
+        if (next >= scenario.excerpts.length) {
           clearInterval(highlightTimer);
-          setPhase("analyzing");
+          // Reveal 5th fact after short delay, then transition to analyzing
+          const t1 = setTimeout(() => {
+            setFactIdx(scenario.facts.length - 1);
+            const t2 = setTimeout(() => setPhase("analyzing"), 400);
+            timers.push(t2);
+          }, 300);
+          timers.push(t1);
           return prev;
         }
-        return prev + 1;
+        // Pair fact reveal with highlight
+        setFactIdx(next);
+        return next;
       });
     }, 700);
 
-    return () => clearInterval(highlightTimer);
-  }, [activeIdx, scenario.excerpts.length]);
+    return () => {
+      clearInterval(highlightTimer);
+      timers.forEach(clearTimeout);
+    };
+  }, [activeIdx, scenario.excerpts.length, scenario.facts.length]);
 
   useEffect(() => {
     if (phase !== "analyzing") return;
-    const factTimer = setInterval(() => {
-      setFactIdx((prev) => {
-        if (prev >= scenario.facts.length - 1) {
-          clearInterval(factTimer);
+    const stepTimer = setInterval(() => {
+      setStepIdx((prev) => {
+        if (prev >= scenario.steps.length - 1) {
+          clearInterval(stepTimer);
+          setTimeout(() => setPhase("verdict"), 350);
           return prev;
         }
         return prev + 1;
       });
-    }, 250);
+    }, 300);
 
-    const stepTimer = setTimeout(() => {
-      const si = setInterval(() => {
-        setStepIdx((prev) => {
-          if (prev >= scenario.steps.length - 1) {
-            clearInterval(si);
-            setTimeout(() => setPhase("verdict"), 350);
-            return prev;
-          }
-          return prev + 1;
-        });
-      }, 300);
-      return () => clearInterval(si);
-    }, scenario.facts.length * 250);
-
-    return () => {
-      clearInterval(factTimer);
-      clearTimeout(stepTimer);
-    };
-  }, [phase, scenario.facts.length, scenario.steps.length]);
+    return () => clearInterval(stepTimer);
+  }, [phase, scenario.steps.length]);
 
   // Cycle to next scenario after verdict shows
   useEffect(() => {
@@ -322,7 +320,7 @@ export function AnimatedDocPanel() {
                   key={`${activeIdx}-${i}`}
                   className="flex gap-4"
                   initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: i <= factIdx && phase !== "typing" ? 1 : 0, x: i <= factIdx && phase !== "typing" ? 0 : -8 }}
+                  animate={{ opacity: i <= factIdx ? 1 : 0, x: i <= factIdx ? 0 : -8 }}
                   transition={{ duration: 0.3 }}
                 >
                   <span className="w-[80px] text-[var(--color-ink-mute)]">{fact.label}</span>

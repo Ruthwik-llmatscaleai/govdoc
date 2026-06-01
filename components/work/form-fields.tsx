@@ -56,7 +56,7 @@ export function TextField({
       placeholder={placeholder}
       defaultValue={defaultValue}
       required={required}
-      className="h-10 w-full rounded-lg border border-input bg-muted/30 px-3 text-sm transition-colors placeholder:text-muted-foreground/60 focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
+      className="h-10 w-full rounded-lg border border-input bg-[var(--color-field-bg)] px-3 text-sm transition-colors placeholder:text-muted-foreground/60 focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
     />
   );
 }
@@ -78,7 +78,7 @@ export function SelectField({
         id={id}
         name={name}
         defaultValue={defaultValue}
-        className="h-10 w-full appearance-none rounded-lg border border-input bg-muted/30 px-3 pr-9 text-sm transition-colors focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
+        className="h-10 w-full appearance-none rounded-lg border border-input bg-[var(--color-field-bg)] px-3 pr-9 text-sm transition-colors focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -122,7 +122,7 @@ export function FilePicker({ id, name, accept, multiple, required, onChange }: F
         type="button"
         onClick={() => inputRef.current?.click()}
         aria-labelledby={labelId}
-        className="flex w-full items-center gap-3 rounded-lg border border-dashed border-input bg-muted/30 px-4 py-3 text-left text-sm transition-colors hover:border-primary/40 hover:bg-muted/50 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/15"
+        className="flex w-full items-center gap-3 rounded-lg border border-dashed border-input bg-[var(--color-field-bg)] px-4 py-3 text-left text-sm transition-colors hover:border-primary/40 hover:bg-muted/50 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/15"
       >
         <FileUp className="size-4 shrink-0 text-muted-foreground" />
         <span id={labelId} className="flex-1 text-muted-foreground">
@@ -232,7 +232,7 @@ export function RadioGroup({
       {options.map((o) => (
         <label
           key={o.value}
-          className="flex cursor-pointer items-start gap-3 rounded-lg border border-input bg-muted/30 p-3 text-sm transition-colors hover:border-primary/40 hover:bg-muted/50 has-checked:border-primary has-checked:bg-card"
+          className="flex cursor-pointer items-start gap-3 rounded-lg border border-input bg-[var(--color-field-bg)] p-3 text-sm transition-colors hover:border-primary/40 hover:bg-muted/50 has-checked:border-primary has-checked:bg-card"
         >
           <input
             type="radio"

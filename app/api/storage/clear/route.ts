@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clearUserData } from "@/lib/bigquery-storage";
+import { clearUserDocuments } from "@/lib/document-store";
+import { clearUserChat } from "@/lib/chat-store";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -12,7 +13,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "userId required" }, { status: 400 });
     }
 
-    await clearUserData(userId);
+    await clearUserDocuments(userId);
+    await clearUserChat(userId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { saveDocument, type StoredDocument } from "@/lib/bigquery-storage";
+import { saveDocument } from "@/lib/document-store";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
 
 export async function POST(request: NextRequest) {
   try {
-    const document = (await request.json()) as StoredDocument;
+    const { userId, documentName, chunks } = (await request.json()) as {
+      userId: string;
+      documentName: string;
+      chunks: { text: string; embedding: number[] }[];
+    };
 
-    await saveDocument(document);
+    await saveDocument(userId, documentName, chunks);
 
     return NextResponse.json({ success: true });
   } catch (error) {
