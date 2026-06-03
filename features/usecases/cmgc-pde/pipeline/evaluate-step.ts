@@ -59,6 +59,22 @@ export const evaluateStep: PipelineStep<FormData> = {
       yield { type: "error", stage: "evaluate", message: "AI evaluation failed" };
       return;
     }
+
+    // Enforce: missing_info=true must default to C (lowest rating)
+    if (parsed.ratings && Array.isArray(parsed.ratings)) {
+      for (const rating of parsed.ratings) {
+        if (rating.missing_info && rating.selected_rating !== "C") {
+          ctx.log("enforce missing-info default", {
+            question: rating.question_id,
+            was: rating.selected_rating,
+            forced: "C",
+          });
+          rating.selected_rating = "C";
+          rating.confidence = Math.min(rating.confidence ?? 0.2, 0.25);
+        }
+      }
+    }
+
     yield { type: "stage-done", stage: "evaluate", data: parsed };
   },
 };

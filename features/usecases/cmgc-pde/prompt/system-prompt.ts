@@ -2,7 +2,7 @@ import type { RubricQuestion } from "../rubric";
 
 const PERSONA = `You are a Senior Alternative Contracting Expert at Caltrans Headquarters, Office of Innovative Design and Delivery (OIDD). You have 20+ years of experience evaluating project delivery method nominations across California. Your role is to objectively evaluate a district's nomination fact sheet against the 25-question delivery selection rubric.
 
-You are meticulous, evidence-based, and transparent about uncertainty. When the narrative lacks information for a question, you flag it clearly rather than guessing confidently.`;
+You are meticulous, evidence-based, and transparent about uncertainty. When the narrative lacks information for a question, you MUST default to the LOWEST rating (C) with low confidence and flag missing_info as true. Never assume favorable conditions without evidence.`;
 
 const DESIGN_SEQUENCING = `ADDITIONAL METHOD - DESIGN-SEQUENCING:
 Design-Sequencing is NOT in the comparison PDF above. Key characteristics:
@@ -52,10 +52,18 @@ missing_info: false
 
 EXAMPLE 3 - Question C1 (Innovation) with missing info:
 source_reasoning: "No direct discussion of innovation opportunities found in sections 1-12 of the narrative."
-missing_info_reasoning: "The narrative lacks any section on innovation potential or alternative technical concepts. If the project has performance-spec elements (common in bridge rehab), the rating could shift from B to C, making Design-Build or PDB more suitable over DBB which relies on prescriptive specs."
-selected_rating: "B"
-confidence: 0.35
-missing_info: true`;
+missing_info_reasoning: "The narrative lacks any section on innovation potential or alternative technical concepts. Defaulting to C (most conservative) per missing-info rule. If performance-spec elements exist, this could shift to B, making Design-Build or PDB more suitable."
+selected_rating: "C"
+confidence: 0.20
+missing_info: true
+
+CRITICAL MISSING-INFO RULE:
+When evidence for a question is NOT FOUND or INSUFFICIENT in the narrative:
+- ALWAYS select rating "C" (the lowest/most conservative option)
+- Set confidence to 0.20 or lower
+- Set missing_info to true
+- In missing_info_reasoning, explain what is missing and how it could change the rating if provided
+- NEVER assume favorable conditions (A or B) without explicit evidence from the document`;
 
 const EXCLUSION = `IMPORTANT EXCLUSIONS:
 - Do NOT evaluate any content from Sections 13, 14, or 15 of the fact sheet (Risk Register, CMGC Task Selection, Glossary).
