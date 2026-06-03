@@ -275,6 +275,9 @@ export async function saveRubric(
   //    already exists with content, snapshot the previous content as v001
   //    (legacy id, source: "seed") BEFORE writing the new version. This
   //    guarantees history is complete from the moment versioning ships.
+  const vdir = versionsDir(usecaseId, rubricId);
+  if (!existsSync(vdir)) mkdirSync(vdir, { recursive: true });
+
   let versionsManifest = await readVersionsManifest(usecaseId, rubricId);
   if (versionsManifest.versions.length === 0 && existsSync(rubricFile(usecaseId, rubricId))) {
     const priorText = await fsp.readFile(rubricFile(usecaseId, rubricId), "utf-8");
@@ -337,8 +340,6 @@ export async function saveRubric(
   }
 
   // 4. Write the version snapshot file.
-  const vdir = versionsDir(usecaseId, rubricId);
-  if (!existsSync(vdir)) mkdirSync(vdir, { recursive: true });
   await fsp.writeFile(
     versionFile(usecaseId, rubricId, targetId),
     JSON.stringify(data, null, 2),

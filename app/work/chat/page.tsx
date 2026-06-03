@@ -209,7 +209,10 @@ export default function SearchAskPage() {
       if (data.success) {
         const docsRes = await fetch(`/api/storage/load-documents?conversationId=${convId ?? ""}`);
         const docsData = await docsRes.json();
-        if (docsData.success) setDocuments(docsData.documents);
+        if (docsData.success) {
+          setDocuments(docsData.documents);
+          setArtifactsOpen(true);
+        }
       } else {
         alert(`Upload failed: ${data.error ?? "Unknown error"}`);
       }
@@ -604,7 +607,6 @@ export default function SearchAskPage() {
             </div>
 
             <div className="w-full max-w-[680px]">
-              <DocumentPills documents={documents} onRemove={removeDocument} />
               <InputBox
                 inputValue={inputValue}
                 setInputValue={setInputValue}
@@ -693,7 +695,6 @@ export default function SearchAskPage() {
             {/* Bottom input */}
             <div className="shrink-0 px-4 pb-[14px] pt-2">
               <div className="mx-auto w-full max-w-[720px]">
-                <DocumentPills documents={documents} onRemove={removeDocument} />
                 <InputBox
                   inputValue={inputValue}
                   setInputValue={setInputValue}
