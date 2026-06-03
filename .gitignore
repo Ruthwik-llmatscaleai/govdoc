@@ -36,6 +36,10 @@ playwright.config.ts
 # private fixtures (PII-bearing real PDFs — never committed)
 tests/fixtures-private/
 
+# Sunnyvale Finance KB source PDFs + generated vision cache (provisioned at ingest time, not in repo)
+finance/*.pdf
+finance/.vision-cache/
+
 # misc
 *.log
 .cache/

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { ChatMessage } from "@/features/search-ask/service";
 import { embedQuery } from "@/features/search-ask/documents";
-import { searchChunks, loadSpreadsheetDocuments } from "@/lib/document-store";
+import { searchChunks, searchKbChunks, loadSpreadsheetDocuments } from "@/lib/document-store";
+import { detectFinanceIntent } from "@/features/search-ask/finance-intent";
 import { getRequestSession } from "@/lib/auth/require-user";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -31,8 +32,18 @@ export async function POST(request: NextRequest) {
 
   try {
     const queryEmbedding = await embedQuery(question);
-    const topChunks = await searchChunks(userId, queryEmbedding, 5, conversationId);
-    const spreadsheets = await loadSpreadsheetDocuments(userId, conversationId);
+
+    // Route Sunnyvale city finance questions to the curated Finance Knowledge Base.
+    // If the KB has no match (e.g. before ingestion has run), fall through to the
+    // normal per-user document path so existing behavior is never broken.
+    const isFinance = detectFinanceIntent(question, queryEmbedding);
+    const kbChunks = isFinance ? await searchKbChunks("sunnyvale-finance", queryEmbedding, 8) : [];
+    const useFinanceKb = kbChunks.length > 0;
+
+    const topChunks = useFinanceKb
+      ? kbChunks
+      : await searchChunks(userId, queryEmbedding, 5, conversationId);
+    const spreadsheets = useFinanceKb ? [] : await loadSpreadsheetDocuments(userId, conversationId);
 
     const messages: Array<{ role: "user" | "assistant"; content: string | Anthropic.Messages.ContentBlockParam[] }> = [
       ...chatHistory.slice(-10).map((msg) => ({
@@ -73,7 +84,9 @@ export async function POST(request: NextRequest) {
 
     messages.push({ role: "user" as const, content: userContent });
 
-    const systemPrompt = hasDocContext || hasSpreadsheets
+    const systemPrompt = useFinanceKb
+      ? "You answer questions about the City of Sunnyvale FY 2025/26 Adopted Budget using ONLY the provided budget excerpts. Always cite the volume and page that figures come from. If the excerpts do not contain the answer, say so plainly rather than guessing. Be concise and accurate. Never use emojis in your responses."
+      : hasDocContext || hasSpreadsheets
       ? "You are a helpful assistant that answers questions based on the provided document context. For spreadsheet/CSV data, you can analyze, summarize, find patterns, and answer specific questions about the data. Be concise and accurate. Never use emojis in your responses."
       : "You are GovDoc, an AI assistant for government document review. You can answer general questions, greet users, and help them understand how to use the system. When no documents are uploaded, let the user know they can upload PDF, DOCX, CSV, or Excel files to ask questions about their contents. Be friendly and concise. Never use emojis in your responses.";
 

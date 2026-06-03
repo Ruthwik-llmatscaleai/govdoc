@@ -117,6 +117,83 @@ export async function searchChunks(
   }));
 }
 
+// ============================================================================
+// Curated Knowledge Bases (shared, system-owned corpora — e.g. "sunnyvale-finance")
+//
+// KB documents are tagged via documents.metadata->>'kb' and owned by a system user,
+// so they are invisible to the per-user retrieval above (searchChunks filters by
+// user_id). No schema migration is required — only the existing JSON metadata columns.
+// ============================================================================
+
+/**
+ * Retrieve the top-k chunks from a curated Knowledge Base, scored by cosine
+ * similarity. NOT user-scoped — filtered by the documents.metadata.kb tag.
+ * The chunk's citation title (e.g. "FY25/26 Budget Vol 1, p.31") is returned in
+ * documentName so callers can reuse the existing document-block plumbing as-is.
+ */
+export async function searchKbChunks(
+  kb: string,
+  queryEmbedding: number[],
+  k = 8,
+): Promise<ScoredChunk[]> {
+  const vec = `[${queryEmbedding.join(",")}]`;
+  const rows = await prisma.$queryRawUnsafe<
+    Array<{ document_id: string; chunk_index: number; text: string; title: string | null; doc_name: string; score: number }>
+  >(`
+    SELECT dc.document_id, dc.chunk_index, dc.text,
+           dc.metadata->>'title' AS title, d.name AS doc_name,
+           1 - (dc.embedding <=> '${vec}'::vector) AS score
+    FROM document_chunks dc
+    JOIN documents d ON d.id = dc.document_id
+    WHERE d.metadata->>'kb' = $1 AND d.deleted_at IS NULL
+    ORDER BY dc.embedding <=> '${vec}'::vector
+    LIMIT $2
+  `, kb, k);
+
+  return rows.map((r) => ({
+    documentId: r.document_id,
+    documentName: r.title ?? r.doc_name,
+    chunkIndex: r.chunk_index,
+    text: r.text,
+    embedding: [],
+    score: Number(r.score),
+  }));
+}
+
+/** Delete every document (and its chunks, via cascade) belonging to a Knowledge Base. */
+export async function deleteKbDocuments(kb: string): Promise<void> {
+  await prisma.document.deleteMany({ where: { metadata: { path: ["kb"], equals: kb } } });
+}
+
+/**
+ * Persist a processed document into a curated Knowledge Base. Mirrors saveDocument
+ * but tags the document with { kb } and stores per-chunk citation metadata
+ * (title / volume / page) so retrieved chunks can cite their source page.
+ */
+export async function saveKbDocument(
+  ownerUserId: string,
+  kb: string,
+  doc: ProcessedDocument,
+  chunkMeta: (chunkIndex: number) => { title: string; volume: number; page?: number },
+): Promise<void> {
+  const created = await prisma.document.create({
+    data: {
+      userId: ownerUserId,
+      name: doc.name,
+      pageCount: doc.pageCount,
+      status: "INDEXED",
+      metadata: { kb },
+    },
+  });
+  for (const chunk of doc.chunks) {
+    const vec = `[${chunk.embedding.join(",")}]`;
+    const meta = JSON.stringify(chunkMeta(chunk.chunkIndex));
+    await prisma.$executeRaw`
+      INSERT INTO document_chunks (id, document_id, chunk_index, text, embedding, metadata, created_at)
+      VALUES (${randomUUID()}, ${created.id}, ${chunk.chunkIndex}, ${chunk.text}, ${vec}::vector, ${meta}::jsonb, now())`;
+  }
+}
+
 export async function saveSpreadsheetDocument(
   userId: string,
   documentId: string,
