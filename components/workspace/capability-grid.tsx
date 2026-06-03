@@ -16,8 +16,8 @@ export function CapabilityGrid() {
       <CapabilityCard
         number="01"
         icon={BookOpenCheck}
-        title=""
-        accent="Rubrics"
+        title="Rubric"
+        accent="Tools"
         description="Define and apply scoring rubrics. Reusable and audit-ready."
         href="/work/search"
       />
@@ -32,8 +32,8 @@ export function CapabilityGrid() {
       <CapabilityCard
         number="03"
         icon={CheckCircle2}
-        title="Review &"
-        accent="Comply"
+        title="Validate"
+        accent="Documents"
         description="Check documents against policy. Pass/fail with reasoning."
         href="/work/review"
       />

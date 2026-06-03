@@ -50,7 +50,7 @@ export function CapabilityCard({ number, icon: Icon, title, accent, description,
         }}
       >
         {title}{title ? " " : ""}
-        <em style={{ fontStyle: "italic", fontWeight: 500, color: "#3D5740" }}>
+        <em style={{ fontStyle: "italic", fontWeight: 700, color: "#3D5740" }}>
           {accent}
         </em>
       </h3>

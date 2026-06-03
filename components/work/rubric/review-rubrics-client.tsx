@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { CmgcRubricData } from "@/features/usecases/cmgc-pde/rubric-data";
 import type { CucpRubricData } from "@/features/usecases/cucp-reevals/rubric-data";
 import type { RowRubricData } from "@/features/usecases/row-appraisal/rubric-data";
@@ -51,6 +51,25 @@ export function ReviewRubricsClient({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["A"]),
   );
+  const [liveRubrics, setLiveRubrics] = useState<Record<TabId, readonly RubricsManifestEntry[]>>({
+    "cmgc-pde": cmgcRubrics,
+    "cucp-reevals": cucpRubrics,
+    "row-appraisal": rowRubrics,
+  });
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/usecases/${activeTab}/rubrics`);
+        if (!res.ok || !alive) return;
+        const body = (await res.json()) as { rubrics: RubricsManifestEntry[] };
+        if (!alive) return;
+        setLiveRubrics((prev) => ({ ...prev, [activeTab]: body.rubrics }));
+      } catch { /* silent */ }
+    })();
+    return () => { alive = false; };
+  }, [activeTab]);
 
 
   // Group CMGC questions by section
@@ -85,12 +104,7 @@ export function ReviewRubricsClient({
     });
   }
 
-  const currentRubrics =
-    activeTab === "cmgc-pde"
-      ? cmgcRubrics
-      : activeTab === "cucp-reevals"
-        ? cucpRubrics
-        : rowRubrics;
+  const currentRubrics = liveRubrics[activeTab];
 
   const selectedEntry =
     currentRubrics.find((r) => r.id === selectedRubricId) ?? currentRubrics[0];

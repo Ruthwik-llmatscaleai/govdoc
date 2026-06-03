@@ -15,7 +15,7 @@ export function RecentActivity({ items }: RecentActivityProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-[10px]">
-          <span className="inline-block h-[6px] w-[6px] rounded-full bg-[#3D5740]" />
+          <span className="govdoc-dot-glow inline-block h-[6px] w-[6px] rounded-full bg-[#3D5740]" />
           <span
             className="uppercase text-[#3D5740]"
             style={{

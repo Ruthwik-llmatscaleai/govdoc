@@ -1,15 +1,16 @@
 import type { PipelineStep, StepEvent } from "@/features/usecases/types";
 import { loadBundledMarkdownForFilename } from "@/features/usecases/row-appraisal/extract/load-bundled-md";
+import { extractTextFromPdf } from "@/lib/files/pdf";
 
 export const extractStep: PipelineStep<FormData> = {
   id: "extract",
-  label: "Load bundled OCR markdown for uploaded PDF",
+  label: "Extract text from uploaded PDF",
   async *run(formData, _ctx) {
     yield {
       type: "progress",
       stage: "extract",
       pct: 0,
-      message: "Loading bundled OCR markdown",
+      message: "Reading PDF…",
     } satisfies StepEvent;
 
     const pdf = formData.get("pdf");
@@ -24,22 +25,43 @@ export const extractStep: PipelineStep<FormData> = {
 
     const file = pdf as File;
     const pdfBuffer = Buffer.from(await file.arrayBuffer());
-    const result = await loadBundledMarkdownForFilename(file.name);
 
-    if (result === null) {
+    // Try bundled Landing AI markdown first (higher quality OCR for known samples)
+    const bundled = await loadBundledMarkdownForFilename(file.name);
+
+    let extractedText: string;
+    let source: string;
+
+    if (bundled) {
+      extractedText = bundled.text;
+      source = `bundled OCR (${bundled.asset})`;
+    } else {
+      // Fallback: extract text directly from PDF using pdfjs
       yield {
-        type: "error",
+        type: "progress",
         stage: "extract",
-        message: "No bundled Landing AI output for this PDF",
+        pct: 30,
+        message: "No bundled OCR — extracting text from PDF directly…",
       } satisfies StepEvent;
-      return;
+
+      extractedText = await extractTextFromPdf(pdfBuffer);
+
+      if (!extractedText.trim()) {
+        yield {
+          type: "error",
+          stage: "extract",
+          message: "Could not extract any text from this PDF. The file may be scanned/image-only.",
+        } satisfies StepEvent;
+        return;
+      }
+      source = "pdfjs text extraction";
     }
 
     yield {
       type: "progress",
       stage: "extract",
       pct: 100,
-      message: `Loaded ${result.asset}`,
+      message: `Text extracted via ${source}`,
     } satisfies StepEvent;
 
     yield {
@@ -48,8 +70,8 @@ export const extractStep: PipelineStep<FormData> = {
       data: {
         pdf_filename: file.name,
         pdf_bytes_b64: pdfBuffer.toString("base64"),
-        markdown_asset: result.asset,
-        extracted_text: result.text,
+        markdown_asset: bundled?.asset ?? null,
+        extracted_text: extractedText,
         provider: "openai",
         model: "gpt-4.1",
       },

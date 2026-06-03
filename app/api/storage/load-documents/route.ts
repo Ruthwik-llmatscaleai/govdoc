@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     const conversationId = request.nextUrl.searchParams.get("conversationId") ?? undefined;
-    const documents = await loadDocuments(session.userId, conversationId);
+    const documents = await loadDocuments(session.user, conversationId);
 
     return NextResponse.json({ success: true, documents });
   } catch (error) {

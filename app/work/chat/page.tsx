@@ -94,6 +94,8 @@ export default function SearchAskPage() {
   const [, setUserId] = useState(FALLBACK_USER_ID);
   const [userName, setUserName] = useState(FALLBACK_USER_NAME);
 
+  const [initError, setInitError] = useState<string | null>(null);
+
   // Load conversations list + documents on mount
   useEffect(() => {
     async function init() {
@@ -109,11 +111,20 @@ export default function SearchAskPage() {
         }
         if (convsRes.ok) {
           const data = await convsRes.json();
-          if (data?.success && data.conversations?.length > 0) {
-            setConversations(data.conversations);
+          if (data?.success) {
+            setConversations(data.conversations ?? []);
+          } else {
+            console.error("[chat] conversations API error:", data?.error);
+            setInitError(data?.error ?? "Failed to load conversations");
           }
+        } else {
+          console.error("[chat] conversations fetch failed:", convsRes.status);
+          setInitError(`Failed to load conversations (${convsRes.status})`);
         }
-      } catch {}
+      } catch (err) {
+        console.error("[chat] init error:", err);
+        setInitError(err instanceof Error ? err.message : "Failed to connect to server");
+      }
       setIsLoading(false);
     }
     init();
@@ -167,14 +178,17 @@ export default function SearchAskPage() {
         const res = await fetch("/api/conversations", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: files[0].name.slice(0, 60) }),
+          body: JSON.stringify({ title: files[0]?.name.slice(0, 60) ?? "New Conversation" }),
         });
         const data = await res.json();
-        if (data?.success) {
-          convId = data.id;
-          setActiveConvId(convId);
-          refreshConversations();
+        if (!data?.success) {
+          alert(`Could not create conversation: ${data?.error ?? "Unknown error"}`);
+          setIsUploading(false);
+          return;
         }
+        convId = data.id;
+        setActiveConvId(convId);
+        refreshConversations();
       }
 
       const formData = new FormData();
@@ -182,16 +196,26 @@ export default function SearchAskPage() {
       if (convId) formData.append("conversationId", convId);
 
       const response = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await response.json();
+      const text = await response.text();
+      let data: { success?: boolean; error?: string; documents?: unknown[] };
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.error("[chat] upload response not JSON:", response.status, text.slice(0, 200));
+        alert(`Upload failed (server error ${response.status}). Check server logs.`);
+        setIsUploading(false);
+        return;
+      }
       if (data.success) {
         const docsRes = await fetch(`/api/storage/load-documents?conversationId=${convId ?? ""}`);
         const docsData = await docsRes.json();
         if (docsData.success) setDocuments(docsData.documents);
       } else {
-        alert(`Upload failed: ${data.error}`);
+        alert(`Upload failed: ${data.error ?? "Unknown error"}`);
       }
-    } catch {
-      alert("Upload failed. Please try again.");
+    } catch (err) {
+      console.error("[chat] upload error:", err);
+      alert(`Upload failed: ${err instanceof Error ? err.message : "Please try again."}`);
     } finally {
       setIsUploading(false);
     }
@@ -299,7 +323,7 @@ export default function SearchAskPage() {
       const data = await res.json();
       if (data?.success) {
         setActiveConvId(data.id);
-        setConversations([{ id: data.id, title: "New Conversation", createdAt: new Date().toISOString(), lastMessageAt: new Date().toISOString(), isPinned: false }, ...conversations]);
+        setConversations([{ id: data.id, title: "New Conversation", createdAt: new Date().toISOString(), lastMessageAt: new Date().toISOString() }, ...conversations]);
       } else {
         setActiveConvId(null);
       }
@@ -311,19 +335,22 @@ export default function SearchAskPage() {
     setResponseTimes({});
   };
 
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
+
   const handleSwitchConversation = async (convId: string) => {
     if (convId === activeConvId) return;
     setActiveConvId(convId);
     setChatHistory([]);
     setDocuments([]);
     setResponseTimes({});
+    setIsLoadingConversation(true);
     await loadConversation(convId);
-    // Load docs for this conversation
     try {
       const docsRes = await fetch(`/api/storage/load-documents?conversationId=${convId}`);
       const docsData = await docsRes.json();
       if (docsData.success) setDocuments(docsData.documents);
     } catch {}
+    setIsLoadingConversation(false);
   };
 
   const handleDeleteConversation = async (convId: string) => {
@@ -409,13 +436,14 @@ export default function SearchAskPage() {
               className="text-[#0e1410]"
               style={{ fontFamily: "var(--font-display)", fontSize: "14px", fontWeight: 700, letterSpacing: "-0.02em" }}
             >
-              Search & <em style={{ fontStyle: "italic", fontWeight: 400, color: "#48654b" }}>Ask</em>
+              Search & <em style={{ fontStyle: "italic", fontWeight: 700, color: "#3D5740" }}>Ask</em>
             </span>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="flex size-[29px] items-center justify-center rounded-[5px] border border-[#d6cfba] bg-[#fcfaf3] text-[#6E706A] transition-colors hover:border-[#8B877D] hover:text-[#0E1410]"
+            className="flex size-[29px] items-center justify-center rounded-[5px] border border-[#d6cfba] bg-[#fcfaf3] text-[#6E706A] transition-colors hover:border-[#8B877D] hover:text-[#0E1410] focus:outline-none focus:ring-2 focus:ring-[#3D5740]/40"
             title="Collapse sidebar"
+            aria-label="Collapse sidebar"
             type="button"
           >
             <PanelLeftClose className="size-4" />
@@ -454,10 +482,10 @@ export default function SearchAskPage() {
               <div
                 key={conv.id}
                 onClick={() => handleSwitchConversation(conv.id)}
-                className={`group mb-[3px] cursor-pointer rounded-[6px] px-[12px] py-[8px] transition-colors ${
+                className={`group mb-[3px] cursor-pointer rounded-[6px] border-l-[3px] px-[12px] py-[8px] transition-colors ${
                   conv.id === activeConvId
-                    ? "border-l-[3px] border-l-[#48654b] bg-[#ebe6d5]"
-                    : "hover:bg-[#FCFAF3]"
+                    ? "border-l-[#48654b] bg-[#ebe6d5]"
+                    : "border-l-transparent hover:bg-[#FCFAF3]"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -466,8 +494,9 @@ export default function SearchAskPage() {
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteConversation(conv.id); }}
-                    className="ml-1 flex size-5 shrink-0 items-center justify-center rounded text-[#8B877D] opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100"
+                    className="ml-1 flex size-5 shrink-0 items-center justify-center rounded text-[#8B877D] opacity-40 transition-opacity hover:text-red-600 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[#3D5740]/40"
                     title="Delete conversation"
+                    aria-label={`Delete ${conv.title}`}
                     type="button"
                   >
                     <Trash2 className="size-3" />
@@ -478,6 +507,10 @@ export default function SearchAskPage() {
                 </div>
               </div>
             ))
+          ) : initError ? (
+            <div className="px-3 py-6 text-center text-[12px] text-red-600" style={{ fontFamily: "var(--font-sans)" }}>
+              {initError}
+            </div>
           ) : (
             <div className="px-3 py-6 text-center text-[12px] text-[#8B877D]" style={{ fontFamily: "var(--font-sans)" }}>
               No chat history
@@ -490,12 +523,13 @@ export default function SearchAskPage() {
       {/* MAIN CHAT AREA */}
       <main className="relative flex flex-1 flex-col overflow-hidden bg-[#F3EEE0]">
         {/* Minimal top bar */}
-        <div className="relative z-10 flex h-[40px] shrink-0 items-center gap-3 border-b border-[#d6cfba]/60 bg-[#F7F2E6] px-[16px]">
+        <div className="relative z-10 flex h-[52px] shrink-0 items-center gap-3 border-b border-[#d6cfba]/60 bg-[#F7F2E6] px-[16px]">
           {!sidebarOpen && (
             <button
               onClick={() => setSidebarOpen(true)}
-              className="flex size-7 items-center justify-center rounded-[5px] text-[#6E706A] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410]"
+              className="flex size-7 items-center justify-center rounded-[5px] text-[#6E706A] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410] focus:outline-none focus:ring-2 focus:ring-[#3D5740]/40"
               title="Open sidebar"
+              aria-label="Open sidebar"
               type="button"
             >
               <PanelLeftClose className="size-4 rotate-180" />
@@ -503,10 +537,12 @@ export default function SearchAskPage() {
           )}
           <a
             href="/workspace"
-            className="flex size-7 items-center justify-center rounded-[5px] text-[#6E706A] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410]"
+            className="flex items-center gap-1.5 rounded-[5px] border border-[#d6cfba] bg-[#FCFAF3] px-2.5 py-1 text-[#556157] transition-colors hover:border-[#8B877D] hover:text-[#0E1410] focus:outline-none focus:ring-2 focus:ring-[#3D5740]/40"
             title="Back to workspace"
+            aria-label="Back to workspace"
           >
-            <ArrowLeft className="size-4" />
+            <ArrowLeft className="size-3.5" />
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 600, letterSpacing: "0.5px" }}>BACK</span>
           </a>
           <span className="flex-1 text-[14px] font-medium text-[#0E1410]" style={{ fontFamily: "var(--font-display)" }}>
             {sessionTitle}
@@ -528,7 +564,15 @@ export default function SearchAskPage() {
           )}
         </div>
 
-        {chatHistory.length === 0 ? (
+        {isLoadingConversation ? (
+          /* LOADING STATE */
+          <div className="flex flex-1 items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="size-5 animate-spin rounded-full border-2 border-[#d6cfba] border-t-[#3D5740]" />
+              <span className="text-[12px] text-[#8B877D]" style={{ fontFamily: "var(--font-mono)", letterSpacing: "1px" }}>LOADING</span>
+            </div>
+          </div>
+        ) : chatHistory.length === 0 ? (
           /* EMPTY STATE */
           <div className="flex flex-1 flex-col items-center justify-center px-4">
             <h1
@@ -620,7 +664,7 @@ export default function SearchAskPage() {
                     </div>
                     <div className="flex flex-col gap-2 pt-1">
                       <div className="flex items-center gap-2">
-                        <span className="uppercase text-[#6E706A]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}>GOVDOC</span>
+                        <span className="uppercase text-[#556157]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "1.5px" }}>GOVDOC</span>
                         <span className="uppercase text-[#3D5740]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700 }}>· THINKING</span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -671,8 +715,8 @@ export default function SearchAskPage() {
 
       {/* RIGHT ARTIFACTS PANEL */}
       {artifactsOpen && (
-        <aside className="flex w-[280px] shrink-0 flex-col border-l border-[#d6cfba] bg-[#f7f2e6]">
-          <div className="flex h-[40px] items-center justify-between border-b border-[#d6cfba]/60 bg-[#fcfaf3] px-[14px]">
+        <aside className="flex w-[300px] shrink-0 flex-col border-l border-[#d6cfba] bg-[#f7f2e6]">
+          <div className="flex h-[52px] items-center justify-between border-b border-[#d6cfba]/60 bg-[#fcfaf3] px-[14px]">
             <span
               className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#0E1410]"
               style={{ fontFamily: "var(--font-mono)" }}
@@ -681,7 +725,8 @@ export default function SearchAskPage() {
             </span>
             <button
               onClick={() => setArtifactsOpen(false)}
-              className="flex size-6 items-center justify-center rounded-[4px] text-[#6E706A] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410]"
+              className="flex size-6 items-center justify-center rounded-[4px] text-[#6E706A] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410] focus:outline-none focus:ring-2 focus:ring-[#3D5740]/40"
+              aria-label="Close artifacts panel"
               type="button"
             >
               <PanelRightClose className="size-4" />
@@ -692,14 +737,18 @@ export default function SearchAskPage() {
             {documents.length > 0 ? (
               <div className="space-y-2">
                 {documents.map((doc) => {
-                  const isPdf = doc.name?.toLowerCase().endsWith(".pdf");
+                  const ext = doc.name?.toLowerCase().slice(doc.name.lastIndexOf(".")) ?? "";
+                  const tag = ext === ".pdf" ? { label: "PDF", color: "bg-red-600" }
+                    : ext === ".csv" ? { label: "CSV", color: "bg-emerald-700" }
+                    : ext === ".xlsx" || ext === ".xls" ? { label: "XLS", color: "bg-green-700" }
+                    : { label: "DOC", color: "bg-blue-600" };
                   return (
                     <div
                       key={doc.id}
                       className="group flex items-start gap-3 rounded-lg border border-[#d6cfba] bg-[#FCFAF3] p-3 transition-colors hover:border-[#8B877D]"
                     >
-                      <span className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded ${isPdf ? "bg-red-600" : "bg-blue-600"} text-[8px] font-bold text-white`}>
-                        {isPdf ? "PDF" : "DOC"}
+                      <span className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded ${tag.color} text-[8px] font-bold text-white`}>
+                        {tag.label}
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-[12px] font-medium text-[#0E1410]" style={{ fontFamily: "var(--font-sans)" }}>
@@ -724,11 +773,11 @@ export default function SearchAskPage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <FolderOpen className="mb-3 size-8 text-[#d6cfba]" />
-                <p className="text-[12px] text-[#8B877D]" style={{ fontFamily: "var(--font-sans)" }}>
+                <p className="text-[12px] text-[#556157]" style={{ fontFamily: "var(--font-sans)" }}>
                   No files in this conversation
                 </p>
-                <p className="mt-1 text-[11px] text-[#A19D91]" style={{ fontFamily: "var(--font-sans)" }}>
-                  Upload a PDF or DOCX to get started
+                <p className="mt-1 text-[11px] text-[#8B877D]" style={{ fontFamily: "var(--font-sans)" }}>
+                  Upload PDF, DOCX, CSV, or Excel to ground answers in content
                 </p>
               </div>
             )}
@@ -845,16 +894,16 @@ function AssistantMessage({ msg, idx, isLast, isAnswering, responseTimes, copied
           )}
         </div>
 
-        <div className="text-[15.5px] leading-[1.7] text-[#202821]" style={{ fontFamily: "var(--font-sans)" }}>
+        <div className="text-[15px] leading-[1.6] text-[#202821]" style={{ fontFamily: "var(--font-sans)" }}>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
-              p({ children }) { return <p className="my-2.5 leading-[1.7]">{children}</p>; },
+              p({ children }) { return <p className="my-2.5 leading-[1.6]">{children}</p>; },
               strong({ children }) { return <strong className="font-semibold text-[#0E1410]">{children}</strong>; },
               em({ children }) { return <em className="italic">{children}</em>; },
-              h1({ children }) { return <h1 className="mb-2 mt-5 text-[20px] font-semibold tracking-[-0.012em] text-[#0E1410]">{children}</h1>; },
-              h2({ children }) { return <h2 className="mb-2 mt-4 text-[17.5px] font-semibold tracking-[-0.012em] text-[#0E1410]">{children}</h2>; },
-              h3({ children }) { return <h3 className="mb-1 mt-3 text-[16px] font-semibold text-[#0E1410]">{children}</h3>; },
+              h1({ children }) { return <h1 className="mb-2 mt-5 text-[22px] font-semibold tracking-[-0.012em] text-[#0E1410]" style={{ fontFamily: "var(--font-display)" }}>{children}</h1>; },
+              h2({ children }) { return <h2 className="mb-2 mt-4 text-[19px] font-semibold tracking-[-0.012em] text-[#0E1410]" style={{ fontFamily: "var(--font-display)" }}>{children}</h2>; },
+              h3({ children }) { return <h3 className="mb-1 mt-3 text-[17px] font-medium text-[#0E1410]" style={{ fontFamily: "var(--font-display)" }}>{children}</h3>; },
               ul({ children }) { return <ul className="my-2.5 list-disc space-y-1 pl-5">{children}</ul>; },
               ol({ children }) { return <ol className="my-2.5 list-decimal space-y-1 pl-5">{children}</ol>; },
               li({ children }) { return <li className="leading-[1.6]">{children}</li>; },
@@ -863,14 +912,14 @@ function AssistantMessage({ msg, idx, isLast, isAnswering, responseTimes, copied
               code({ className, children }) {
                 const lang = (className ?? "").replace(/^language-/, "");
                 if (!className) {
-                  return <code className="rounded bg-[#F3EEE0] px-1.5 py-0.5 text-[13px] font-mono text-[#0E1410]">{children}</code>;
+                  return <code className="rounded bg-[#F3EEE0] px-1.5 py-0.5 text-[12.5px] font-mono text-[#0E1410]">{children}</code>;
                 }
                 return (
                   <div className="my-3 overflow-hidden rounded-xl border border-[#d6cfba] bg-[#1f1f1d]">
                     <div className="flex items-center justify-between border-b border-white/10 bg-[#0f0f0e] px-3 py-1.5">
                       <span className="text-[11px] font-medium uppercase tracking-wider text-white/60">{lang || "code"}</span>
                     </div>
-                    <pre className="overflow-x-auto px-4 py-3 font-mono text-[12.5px] leading-[1.55] text-[#e8e6df]"><code>{children}</code></pre>
+                    <pre className="overflow-x-auto px-4 py-3 font-mono text-[13.5px] leading-[1.55] text-[#e8e6df]"><code>{children}</code></pre>
                   </div>
                 );
               },
@@ -945,17 +994,26 @@ function AssistantMessage({ msg, idx, isLast, isAnswering, responseTimes, copied
 
 function DocumentPills({ documents, onRemove }: { documents: ProcessedDocument[]; onRemove: (id: string) => void }) {
   if (documents.length === 0) return null;
+
+  function fileTag(name: string): { label: string; color: string } {
+    const ext = name.toLowerCase().slice(name.lastIndexOf("."));
+    if (ext === ".pdf") return { label: "PDF", color: "bg-red-600" };
+    if (ext === ".csv") return { label: "CSV", color: "bg-emerald-700" };
+    if (ext === ".xlsx" || ext === ".xls") return { label: "XLS", color: "bg-green-700" };
+    return { label: "DOC", color: "bg-blue-600" };
+  }
+
   return (
     <div className="mb-3 flex flex-wrap gap-2">
       {documents.map((doc, index) => {
         const docName = doc.name ?? "document";
-        const isPdf = docName.toLowerCase().endsWith(".pdf");
+        const tag = fileTag(docName);
         return (
           <div key={`${doc.id}-${index}`} className="group flex items-center gap-2.5 rounded-lg border border-[#d6cfba] bg-[#FCFAF3] px-3 py-2 text-sm">
-            <span className={`flex size-6 items-center justify-center rounded ${isPdf ? "bg-red-600" : "bg-blue-600"} text-[9px] font-bold text-white`}>{isPdf ? "PDF" : "DOC"}</span>
+            <span className={`flex size-6 items-center justify-center rounded ${tag.color} text-[9px] font-bold text-white`}>{tag.label}</span>
             <span className="font-medium text-[#0E1410]" style={{ fontFamily: "var(--font-sans)" }}>{docName}</span>
             <span className="text-xs text-[#8B877D]">· {doc.pageCount}p</span>
-            <button onClick={() => onRemove(doc.id)} className="ml-1 flex size-5 items-center justify-center rounded-full text-[#8B877D] opacity-0 transition-opacity hover:bg-[#D4CDB8] hover:text-[#0E1410] group-hover:opacity-100">
+            <button onClick={() => onRemove(doc.id)} className="ml-1 flex size-5 items-center justify-center rounded-full text-[#8B877D] opacity-0 transition-opacity hover:bg-[#D4CDB8] hover:text-[#0E1410] group-hover:opacity-100" aria-label={`Remove ${docName}`}>
               <X className="size-3.5" />
             </button>
           </div>
@@ -983,7 +1041,7 @@ function InputBox({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pdf,.docx,.doc"
+          accept=".pdf,.docx,.doc,.csv,.xlsx,.xls"
           multiple
           className="hidden"
           onChange={(e) => handleFileUpload(e.target.files)}
@@ -993,7 +1051,8 @@ function InputBox({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask anything — attach a PDF or DOCX to ground the answer in its contents."
+          placeholder="Ask anything — attach a PDF, DOCX, CSV, or Excel file to ground the answer in its contents."
+          aria-label="Message input"
           className="max-h-[80px] min-h-[36px] w-full resize-none bg-transparent text-[14px] leading-relaxed text-[#0E1410] placeholder:text-[#9a9a91] focus:outline-none"
           style={{ fontFamily: "var(--font-sans)" }}
           rows={1}
@@ -1007,7 +1066,7 @@ function InputBox({
           <button
             key={label}
             onClick={() => onQuickAction(label)}
-            className="flex h-[26px] items-center gap-1.5 rounded-full border border-[#d6cfba] bg-[#FCFAF3] px-[10px] text-[#556157] transition-all hover:bg-[#F3EEE0] hover:text-[#0E1410]"
+            className="flex h-[26px] items-center gap-1.5 rounded-full border border-[#d6cfba] bg-[#FCFAF3] px-[10px] text-[#556157] transition-all hover:bg-[#F3EEE0] hover:text-[#0E1410] focus:outline-none focus:ring-2 focus:ring-[#3D5740]/40"
             style={{ fontFamily: "var(--font-sans)", fontSize: "11px", fontWeight: 500 }}
             type="button"
           >
@@ -1023,8 +1082,9 @@ function InputBox({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="flex size-5 shrink-0 items-center justify-center rounded text-[#74766f] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410]"
-            title="Attach PDF or DOCX"
+            className="flex size-5 shrink-0 items-center justify-center rounded text-[#74766f] transition-colors hover:bg-[#F3EEE0] hover:text-[#0E1410] focus:outline-none focus:ring-2 focus:ring-[#3D5740]/40"
+            title="Attach file (PDF, DOCX, CSV, Excel)"
+            aria-label="Attach file"
             type="button"
           >
             {isUploading ? (

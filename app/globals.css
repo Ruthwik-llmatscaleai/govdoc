@@ -22,7 +22,7 @@
   --color-line: #D4CDB8;
   --color-line-soft: #D5CFBA;
   --color-line-paper: #D4CDB8;
-  --color-field-bg: #F7F2E6;
+  --color-field-bg: #FFFFFF;
   --color-accent-soft: rgba(61, 87, 64, 0.08);
   --color-grid-line: #EAE6D8;
 
@@ -218,7 +218,7 @@
   .govdoc-display em {
     color: #3D5740;
     font-style: italic;
-    font-weight: 400;
+    font-weight: 500;
   }
 
   .govdoc-copy {
@@ -270,6 +270,20 @@
     height: 6px;
     border-radius: 999px;
     background: #3D5740;
+    animation: dot-glow 2s ease-in-out infinite;
+  }
+
+  .govdoc-dot-glow {
+    animation: dot-glow 2s ease-in-out infinite;
+  }
+}
+
+@keyframes dot-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(61, 87, 64, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 6px 3px rgba(61, 87, 64, 0.35);
   }
 }
 

@@ -17,6 +17,7 @@ export type RubricSectionProps = {
   // (false) keeps the larger display-font heading used on the standalone
   // Edit Rubrics page.
   compact?: boolean;
+  onRenameTitle?: (newTitle: string) => void;
   children: React.ReactNode;
 };
 
@@ -28,9 +29,12 @@ export function RubricSection({
   defaultOpen = false,
   weight,
   compact = false,
+  onRenameTitle,
   children,
 }: RubricSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(title);
   const countLine = `${count} ${countLabel}${count === 1 ? "" : "s"}`;
   const label =
     typeof weight === "number" ? `${countLine} · ${Math.round(weight * 100)}%` : countLine;
@@ -51,17 +55,49 @@ export function RubricSection({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className={buttonClass}
+        className={`group ${buttonClass}`}
       >
         <span className="font-mono text-[12px] font-semibold tracking-[0.1em] text-[var(--color-govdoc-primary)]">
           {sectionKey ?? ""}
         </span>
-        <span
-          className={titleClass}
-          style={compact ? undefined : { fontFamily: "var(--font-display)", fontVariationSettings: '"opsz" 48' }}
-        >
-          {title}
-        </span>
+        {editing && onRenameTitle ? (
+          <input
+            type="text"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={() => {
+              const trimmed = editValue.trim();
+              if (trimmed && trimmed !== title) onRenameTitle(trimmed);
+              setEditing(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); }
+              if (e.key === "Escape") { setEditValue(title); setEditing(false); }
+            }}
+            onClick={(e) => e.stopPropagation()}
+            autoFocus
+            className={`${titleClass} w-full rounded border border-[var(--color-govdoc-primary)] bg-[var(--color-field-bg)] px-1.5 focus:outline-none`}
+            style={compact ? undefined : { fontFamily: "var(--font-display)", fontVariationSettings: '"opsz" 48' }}
+          />
+        ) : (
+          <span
+            className={titleClass}
+            style={compact ? undefined : { fontFamily: "var(--font-display)", fontVariationSettings: '"opsz" 48' }}
+            onDoubleClick={onRenameTitle ? (e) => { e.stopPropagation(); setEditing(true); setEditValue(title); } : undefined}
+          >
+            {title}
+            {onRenameTitle && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setEditing(true); setEditValue(title); }}
+                className="ml-2 inline-flex size-5 items-center justify-center rounded text-[var(--color-ink-mute)] opacity-0 transition-opacity group-hover:opacity-100 hover:text-[var(--color-ink)]"
+                aria-label={`Rename ${title}`}
+              >
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" className="size-3"><path d="M11.5 2.5l2 2M2 14l1-4L11.5 1.5l2 2L5 12z"/></svg>
+              </button>
+            )}
+          </span>
+        )}
         <SectionCountChip>{label}</SectionCountChip>
         <span
           className={`flex transition-all ${

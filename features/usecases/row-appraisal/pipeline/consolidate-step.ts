@@ -6,7 +6,7 @@ import { fillMissingCategories } from "@/features/usecases/row-appraisal/parsing
 import { enforceConsistency } from "@/features/usecases/row-appraisal/parsing/enforce-consistency";
 
 type EvaluatePrior = { raw_results: EvaluationResult[] };
-type ExtractPrior = { pdf_filename: string; markdown_asset: string };
+type ExtractPrior = { pdf_filename: string; markdown_asset: string; extracted_text?: string };
 
 function renderMarkdownTable(results: EvaluationResult[]): string {
   const header = "| Category | Score | Criteria Met | Evidence | Status | Comments |";
@@ -29,6 +29,7 @@ export const consolidateStep: PipelineStep<unknown> = {
     const rawResults: EvaluationResult[] = evaluatePrior.raw_results ?? [];
     const pdf_filename = extractPrior.pdf_filename ?? "";
     const markdown_asset = extractPrior.markdown_asset ?? "";
+    const extractedText = extractPrior.extracted_text ?? "";
 
     yield { type: "progress", stage: "consolidate", pct: 0 } satisfies StepEvent;
 
@@ -40,7 +41,7 @@ export const consolidateStep: PipelineStep<unknown> = {
 
     yield { type: "progress", stage: "consolidate", pct: 66 } satisfies StepEvent;
 
-    const consistent = enforceConsistency(filled);
+    const consistent = enforceConsistency(filled, extractedText);
 
     // Sort by VALID_CATEGORIES order
     const categoryIndex = new Map<string, number>(VALID_CATEGORIES.map((cat, i) => [cat, i]));

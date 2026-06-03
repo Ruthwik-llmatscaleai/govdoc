@@ -130,7 +130,7 @@ export function TopBar({ user, variant = "full" }: Props) {
                 className="inline-flex items-center gap-2 rounded-full border border-[#D4CDB8] bg-[#FCFAF3] px-3 py-1 uppercase text-[#6E706A]"
                 style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "2px" }}
               >
-                <span className="inline-block h-[7px] w-[7px] rounded-full bg-[#3D5740]" />
+                <span className="govdoc-dot-glow inline-block h-[7px] w-[7px] rounded-full bg-[#3D5740]" />
                 V 1.0.0 Stable
               </span>
             </>

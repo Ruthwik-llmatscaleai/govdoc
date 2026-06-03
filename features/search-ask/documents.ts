@@ -35,7 +35,7 @@ async function extractTextFromPDF(pdfBuffer: Buffer): Promise<{ text: string; pa
     const content = await page.getTextContent();
     pages.push(
       content.items
-        .map((item: { str?: string }) => item.str ?? "")
+        .map((item: unknown) => (item as { str?: string }).str ?? "")
         .join(" ")
         .trim(),
     );

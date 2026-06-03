@@ -86,7 +86,7 @@ export function WorkPageHeader({
               {" "}
               <em
                 className="text-[var(--color-govdoc-primary)]"
-                style={{ fontStyle: "italic", fontWeight: 300 }}
+                style={{ fontStyle: "italic", fontWeight: 400 }}
               >
                 {accent}
               </em>
@@ -123,7 +123,10 @@ export function WorkCard({
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line-soft)] px-6 py-4">
           <div className="min-w-0">
             {title && (
-              <h2 className="text-base font-semibold tracking-tight text-[var(--color-ink)]">
+              <h2
+                className="text-[18px] font-medium tracking-[-0.01em] text-[var(--color-ink)]"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
                 {title}
               </h2>
             )}

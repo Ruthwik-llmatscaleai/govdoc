@@ -13,7 +13,7 @@ const TIERS: ("1" | "2" | "3" | "4" | "5")[] = ["1", "2", "3", "4", "5"];
 
 type ComposeTarget =
   | { kind: "addCategory" }
-  | { kind: "renameCategory"; name: string };
+  | { kind: "editCategory"; name: string };
 
 export function RowRubricEdit({
   initial,
@@ -43,14 +43,6 @@ export function RowRubricEdit({
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  function updateTier(category: string, tier: (typeof TIERS)[number], value: string) {
-    setSchema((prev) => ({
-      ...prev,
-      [category]: { ...prev[category]!, [tier]: value },
-    }));
-    setDirty(true);
-  }
-
   function applyEditor(values: Record<string, string>) {
     if (!target) return;
     if (target.kind === "addCategory") {
@@ -70,16 +62,23 @@ export function RowRubricEdit({
       setTarget(null);
       return;
     }
-    if (target.kind === "renameCategory") {
-      const next = (values.name ?? "").trim();
-      if (!next || next === target.name || schema[next]) {
-        setTarget(null);
-        return;
-      }
+    if (target.kind === "editCategory") {
+      const newName = (values.name ?? "").trim();
+      if (!newName) { setTarget(null); return; }
       setSchema((prev) => {
         const out: RowRubricData = {} as RowRubricData;
         for (const [k, v] of Object.entries(prev)) {
-          out[k === target.name ? next : k] = v;
+          if (k === target.name) {
+            out[newName] = {
+              "1": values.tier_1 ?? v["1"],
+              "2": values.tier_2 ?? v["2"],
+              "3": values.tier_3 ?? v["3"],
+              "4": values.tier_4 ?? v["4"],
+              "5": values.tier_5 ?? v["5"],
+            };
+          } else {
+            out[k] = v;
+          }
         }
         return out;
       });
@@ -101,7 +100,7 @@ export function RowRubricEdit({
           return next;
         });
         setDirty(true);
-        if (target?.kind === "renameCategory" && target.name === name) {
+        if (target?.kind === "editCategory" && target.name === name) {
           setTarget(null);
         }
         setConfirm(null);
@@ -174,7 +173,7 @@ export function RowRubricEdit({
 
   const categories = Object.entries(schema);
 
-  const compose = target ? buildCompose(target) : null;
+  const compose = target ? buildCompose(target, schema) : null;
 
   return (
     <div className="space-y-6 pb-2">
@@ -198,21 +197,32 @@ export function RowRubricEdit({
                 title={category}
                 count={TIERS.length}
                 countLabel="tier"
+                onRenameTitle={(newName) => {
+                  if (newName === category || schema[newName]) return;
+                  setSchema((prev) => {
+                    const out: RowRubricData = {} as RowRubricData;
+                    for (const [k, v] of Object.entries(prev)) {
+                      out[k === category ? newName : k] = v;
+                    }
+                    return out;
+                  });
+                  setDirty(true);
+                }}
               >
                 <div className="mb-3 flex items-center justify-end gap-2">
                   <button
                     type="button"
-                    onClick={() => setTarget({ kind: "renameCategory", name: category })}
+                    onClick={() => setTarget({ kind: "editCategory", name: category })}
                     className={chip()}
                   >
-                    Rename
+                    Edit section
                   </button>
                   <button
                     type="button"
                     onClick={() => deleteCategory(category)}
                     className={chipDanger()}
                   >
-                    Delete
+                    Delete section
                   </button>
                 </div>
                 <dl className="flex flex-col gap-2.5">
@@ -221,14 +231,9 @@ export function RowRubricEdit({
                       <span className="font-mono text-[10.5px] font-semibold tracking-[0.08em] text-[var(--color-ink-faint)]">
                         {tier}.
                       </span>
-                      <textarea
-                        aria-label={`Tier ${tier} for ${category}`}
-                        value={tiers[tier]}
-                        onChange={(e) => updateTier(category, tier, e.target.value)}
-                        rows={2}
-                        className="w-full rounded-md border border-[var(--color-line)] bg-[var(--color-paper)] px-2.5 py-1.5 text-[12.5px] leading-[1.5] text-[var(--color-ink-soft)] focus:border-[var(--color-govdoc-primary)] focus:outline-none"
-                        placeholder="—"
-                      />
+                      <span className="text-[12.5px] leading-[1.5] text-[var(--color-ink-soft)]">
+                        {tiers[tier] || <em className="text-[var(--color-ink-faint)]">—</em>}
+                      </span>
                     </div>
                   ))}
                 </dl>
@@ -287,34 +292,49 @@ function chipDanger() {
   return "rounded-md border border-destructive/30 px-2.5 py-1 text-[11px] font-medium text-destructive/80 transition hover:bg-destructive/5 hover:text-destructive";
 }
 
-function buildCompose(target: ComposeTarget): {
-  mode: "create" | "edit";
+function buildCompose(target: ComposeTarget, schema?: RowRubricData): {
+  mode: “create” | “edit”;
   title: string;
   saveLabel: string;
   fields: EditorField[];
   initial: Record<string, string>;
 } {
-  if (target.kind === "addCategory") {
+  if (target.kind === “addCategory”) {
     return {
-      mode: "create",
-      title: "Category",
-      saveLabel: "Add category",
+      mode: “create”,
+      title: “Category”,
+      saveLabel: “Add category”,
       fields: [
-        { name: "name", label: "Category name", type: "text", required: true },
-        { name: "tier_1", label: "Tier 1 — Unacceptable", type: "textarea" },
-        { name: "tier_2", label: "Tier 2 — Poor", type: "textarea" },
-        { name: "tier_3", label: "Tier 3 — Acceptable", type: "textarea" },
-        { name: "tier_4", label: "Tier 4 — Good", type: "textarea" },
-        { name: "tier_5", label: "Tier 5 — Excellent", type: "textarea" },
+        { name: “name”, label: “Category name”, type: “text”, required: true },
+        { name: “tier_1”, label: “Tier 1 — Unacceptable”, type: “textarea” },
+        { name: “tier_2”, label: “Tier 2 — Poor”, type: “textarea” },
+        { name: “tier_3”, label: “Tier 3 — Acceptable”, type: “textarea” },
+        { name: “tier_4”, label: “Tier 4 — Good”, type: “textarea” },
+        { name: “tier_5”, label: “Tier 5 — Excellent”, type: “textarea” },
       ],
-      initial: { name: "", tier_1: "", tier_2: "", tier_3: "", tier_4: "", tier_5: "" },
+      initial: { name: “”, tier_1: “”, tier_2: “”, tier_3: “”, tier_4: “”, tier_5: “” },
     };
   }
+  const tiers = schema?.[target.name];
   return {
-    mode: "edit",
-    title: `Rename “${target.name}”`,
-    saveLabel: "Rename",
-    fields: [{ name: "name", label: "New category name", type: "text", required: true }],
-    initial: { name: target.name },
+    mode: “edit”,
+    title: target.name,
+    saveLabel: “Save changes”,
+    fields: [
+      { name: “name”, label: “Category name”, type: “text”, required: true },
+      { name: “tier_1”, label: “Tier 1 — Unacceptable”, type: “textarea” },
+      { name: “tier_2”, label: “Tier 2 — Poor”, type: “textarea” },
+      { name: “tier_3”, label: “Tier 3 — Acceptable”, type: “textarea” },
+      { name: “tier_4”, label: “Tier 4 — Good”, type: “textarea” },
+      { name: “tier_5”, label: “Tier 5 — Excellent”, type: “textarea” },
+    ],
+    initial: {
+      name: target.name,
+      tier_1: tiers?.[“1”] ?? “”,
+      tier_2: tiers?.[“2”] ?? “”,
+      tier_3: tiers?.[“3”] ?? “”,
+      tier_4: tiers?.[“4”] ?? “”,
+      tier_5: tiers?.[“5”] ?? “”,
+    },
   };
 }

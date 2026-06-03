@@ -10,8 +10,16 @@ export async function GET(request: NextRequest) {
   if (!session) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
-  const conversations = await listConversations(session.userId);
-  return NextResponse.json({ success: true, conversations });
+  try {
+    const conversations = await listConversations(session.user);
+    return NextResponse.json({ success: true, conversations });
+  } catch (error) {
+    console.error("[conversations] GET error:", error instanceof Error ? error.message : error);
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : "Failed to load conversations" },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -21,6 +29,6 @@ export async function POST(request: NextRequest) {
   }
   const body = await request.json().catch(() => ({}));
   const title = typeof body?.title === "string" ? body.title : "New Conversation";
-  const id = await createConversation(session.userId, title);
+  const id = await createConversation(session.user, title);
   return NextResponse.json({ success: true, id });
 }

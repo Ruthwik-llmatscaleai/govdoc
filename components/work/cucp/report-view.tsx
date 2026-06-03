@@ -6,17 +6,17 @@ type Props = { markdown: string };
 
 const components: Components = {
   h1: ({ children, ...props }) => (
-    <h1 className="mb-3 text-xl font-semibold tracking-tight text-foreground" {...props}>
+    <h1 className="mb-3 text-xl font-medium tracking-[-0.01em] text-foreground" style={{ fontFamily: "var(--font-display)" }} {...props}>
       {children}
     </h1>
   ),
   h2: ({ children, ...props }) => (
-    <h2 className="mt-6 mb-2 text-lg font-semibold tracking-tight text-foreground" {...props}>
+    <h2 className="mt-6 mb-2 text-lg font-medium tracking-[-0.01em] text-foreground" style={{ fontFamily: "var(--font-display)" }} {...props}>
       {children}
     </h2>
   ),
   h3: ({ children, ...props }) => (
-    <h3 className="mt-6 mb-2 text-base font-semibold text-foreground" {...props}>
+    <h3 className="mt-6 mb-2 text-base font-medium text-foreground" style={{ fontFamily: "var(--font-display)" }} {...props}>
       {children}
     </h3>
   ),

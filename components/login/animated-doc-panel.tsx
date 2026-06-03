@@ -162,7 +162,7 @@ export function AnimatedDocPanel() {
   const [factIdx, setFactIdx] = useState(0);
   const [stepIdx, setStepIdx] = useState(0);
 
-  const scenario = SCENARIOS[activeIdx];
+  const scenario = SCENARIOS[activeIdx]!;
 
   useEffect(() => {
     setPhase("typing");

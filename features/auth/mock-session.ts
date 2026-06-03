@@ -8,10 +8,10 @@ function getSecret(): Uint8Array {
   return new TextEncoder().encode(s);
 }
 
-export type Session = { user: string };
+export type Session = { user: string; name?: string };
 
 export async function signSession(payload: Session): Promise<string> {
-  return await new SignJWT({ user: payload.user })
+  return await new SignJWT({ user: payload.user, name: payload.name })
     .setProtectedHeader({ alg: ALG })
     .setIssuedAt()
     .setExpirationTime("8h")
@@ -23,7 +23,7 @@ export async function verifySession(token: string | undefined): Promise<Session 
   try {
     const { payload } = await jwtVerify(token, getSecret());
     if (typeof payload.user !== "string") return null;
-    return { user: payload.user };
+    return { user: payload.user, name: (payload.name as string) ?? undefined };
   } catch {
     return null;
   }

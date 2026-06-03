@@ -24,7 +24,7 @@ export default async function WorkLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-cream)] text-[var(--color-ink)]">
-      <TopBar user={session.username} variant={isRubricDetail ? "rubric" : "full"} />
+      <TopBar user={session.name ?? session.user} variant={isRubricDetail ? "rubric" : "full"} />
       <main className="govdoc-grid-bg govdoc-page-pad w-full flex-1 py-[clamp(42px,5vw,72px)]">
         <div className={isRubricDetail ? "govdoc-reading-inner" : isRubricHub ? "govdoc-wide-inner" : "govdoc-page-inner"}>{children}</div>
       </main>

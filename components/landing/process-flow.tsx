@@ -9,12 +9,12 @@ const stagger = {
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
 };
 
 const scaleIn = {
   hidden: { opacity: 0, scale: 0.92 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
 };
 
 export function ProcessFlow() {
@@ -47,7 +47,7 @@ export function ProcessFlow() {
               Reads. Checks.
               <br />
               <em
-                className="text-[#2b4d3a]"
+                className="text-[#3D5740]"
                 style={{ fontStyle: "italic", fontWeight: 500 }}
               >
                 Decides.

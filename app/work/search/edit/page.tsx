@@ -92,7 +92,7 @@ export default function ManageRubricsPage() {
   const [rowCategories, setRowCategories] = useState<Array<{ name: string; tiers: Record<string, string> }>>([]);
   const [savedSnapshot, setSavedSnapshot] = useState("");
 
-  const usecaseId = USECASE_IDS[activeTab];
+  const usecaseId = USECASE_IDS[activeTab]!;
   const rubricId = selectedRubricId;
 
   // Fetch rubric list
@@ -189,6 +189,14 @@ export default function ManageRubricsPage() {
       setSavedSnapshot(JSON.stringify(payload));
       setDirty(false);
       setVersionNonce((n) => n + 1);
+      // Refresh rubric list dropdown
+      try {
+        const listRes = await fetch(`/api/usecases/${usecaseId}/rubrics`);
+        if (listRes.ok) {
+          const listBody = (await listRes.json()) as { rubrics: RubricsManifestEntry[] };
+          setRubrics(listBody.rubrics);
+        }
+      } catch { /* silent */ }
     } catch (e) {
       setSaveMsg(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally { setSaving(false); }
@@ -700,10 +708,43 @@ function AddQuestionForm({ onAdd, onCancel }: { onAdd: (q: string, a: string, b:
   );
 }
 
+function CategoryEditForm({ category, onSave, onCancel }: { category: { name: string; tiers: Record<string, string> }; onSave: (u: { name: string; tiers: Record<string, string> }) => void; onCancel: () => void }) {
+  const [name, setName] = useState(category.name);
+  const [t1, setT1] = useState(category.tiers["1"] ?? "");
+  const [t2, setT2] = useState(category.tiers["2"] ?? "");
+  const [t3, setT3] = useState(category.tiers["3"] ?? "");
+  const [t4, setT4] = useState(category.tiers["4"] ?? "");
+  const [t5, setT5] = useState(category.tiers["5"] ?? "");
+  return (
+    <div className="border-t border-[var(--color-line-soft)] bg-amber-50/40 px-5 py-4">
+      <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.1em] text-amber-700"><Pencil className="inline size-3 mr-1" />Editing Section</div>
+      <label className="mb-3 block"><span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-faint)]">Category Name</span><input type="text" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" /></label>
+      <div className="space-y-2">
+        {[
+          ["1", "Tier 1 — Unacceptable", t1, setT1],
+          ["2", "Tier 2 — Poor", t2, setT2],
+          ["3", "Tier 3 — Acceptable", t3, setT3],
+          ["4", "Tier 4 — Good", t4, setT4],
+          ["5", "Tier 5 — Excellent", t5, setT5],
+        ].map(([num, label, val, setter]) => (
+          <label key={num as string} className="block">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-faint)]">{label as string}</span>
+            <textarea value={val as string} onChange={(e) => (setter as (v: string) => void)(e.target.value)} rows={2} className="mt-1 w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-xs" />
+          </label>
+        ))}
+      </div>
+      <div className="mt-3 flex gap-2">
+        <button type="button" onClick={() => onSave({ name: name.trim(), tiers: { "1": t1, "2": t2, "3": t3, "4": t4, "5": t5 } })} className="rounded-md bg-[var(--color-govdoc-primary)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-govdoc-deep)]">Save</button>
+        <button type="button" onClick={onCancel} className="rounded-md border border-[var(--color-line)] px-3 py-1.5 text-xs font-medium text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Appraisal (ROW) Tab ─── */
 function AppraisalTab({ categories, onUpdateTier, onAddCategory, onDeleteCategory }: { categories: Array<{ name: string; tiers: Record<string, string> }>; onUpdateTier: (idx: number, tier: string, value: string) => void; onAddCategory: (name: string) => void; onDeleteCategory: (idx: number) => void }) {
   const [expanded, setExpanded] = useState<number | null>(null);
-  const [editingTier, setEditingTier] = useState<{ idx: number; tier: string } | null>(null);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
 
@@ -719,7 +760,7 @@ function AppraisalTab({ categories, onUpdateTier, onAddCategory, onDeleteCategor
                 <div className="min-w-0 flex-1"><div className="text-[14px] font-semibold text-[var(--color-ink)]">{cat.name}</div></div>
                 <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-ink-faint)]">{Object.values(cat.tiers).filter((v) => v).length} / 5 TIERS</span>
                 {isOpen && (
-                  <button type="button" aria-label={`Edit ${cat.name}`} onClick={(e) => { e.stopPropagation(); setEditingTier({ idx, tier: "1" }); }} className="inline-flex items-center gap-1.5 rounded border border-[var(--color-line)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-cream)]">
+                  <button type="button" aria-label={`Edit ${cat.name}`} onClick={(e) => { e.stopPropagation(); setEditingIdx(editingIdx === idx ? null : idx); }} className="inline-flex items-center gap-1.5 rounded border border-[var(--color-line)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--color-ink-mute)] transition-colors hover:bg-[var(--color-cream)]">
                     <Pencil className="size-3" /> Edit
                   </button>
                 )}
@@ -730,34 +771,34 @@ function AppraisalTab({ categories, onUpdateTier, onAddCategory, onDeleteCategor
                 )}
                 <span className="text-[var(--color-ink-faint)]">{isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</span>
               </div>
-              {isOpen && (
+
+              {/* Inline edit form — same pattern as CMGC SectionEditForm */}
+              {editingIdx === idx && (
+                <CategoryEditForm
+                  category={cat}
+                  onSave={(updated) => {
+                    for (const tier of ["1", "2", "3", "4", "5"]) {
+                      if (updated.tiers[tier] !== cat.tiers[tier]) {
+                        onUpdateTier(idx, tier, updated.tiers[tier] ?? "");
+                      }
+                    }
+                    setEditingIdx(null);
+                  }}
+                  onCancel={() => setEditingIdx(null)}
+                />
+              )}
+
+              {/* Read-only tier display */}
+              {isOpen && editingIdx !== idx && (
                 <div className="border-t border-[var(--color-line-soft)] px-5 pb-5">
-                  {(["1", "2", "3", "4", "5"] as const).map((tier) => {
-                    const isEditing = editingTier?.idx === idx && editingTier?.tier === tier;
-                    return (
-                      <div key={tier} className="flex items-start gap-3 py-3 border-b border-[var(--color-line-soft)] last:border-b-0 group/tier">
-                        <span className="mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-govdoc-primary)] font-mono text-[10px] font-bold text-white">{tier}</span>
-                        {isEditing ? (
-                          <div className="flex-1 space-y-2">
-                            <textarea defaultValue={cat.tiers[tier]} rows={2} className="w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-xs" autoFocus onBlur={(e) => { onUpdateTier(idx, tier, e.target.value); setEditingTier(null); }} />
-                            <div className="flex gap-2">
-                              <button type="button" onClick={() => setEditingTier(null)} className="rounded-md bg-[var(--color-govdoc-primary)] px-3 py-1 text-xs font-semibold text-white hover:bg-[var(--color-govdoc-deep)]">Save</button>
-                              <button type="button" onClick={() => setEditingTier(null)} className="rounded-md border border-[var(--color-line)] px-3 py-1 text-xs text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <span className="flex-1 text-[13px] leading-[1.5] text-[var(--color-ink-soft)]">
-                              {cat.tiers[tier] || <span className="italic text-[var(--color-ink-faint)]">Not defined</span>}
-                            </span>
-                            <button type="button" onClick={() => setEditingTier({ idx, tier })} className="opacity-0 group-hover/tier:opacity-100 transition-opacity inline-flex items-center gap-1 rounded border border-[var(--color-line)] px-2 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">
-                              <Pencil className="size-2.5" /> Edit
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {(["1", "2", "3", "4", "5"] as const).map((tier) => (
+                    <div key={tier} className="flex items-start gap-3 py-3 border-b border-[var(--color-line-soft)] last:border-b-0">
+                      <span className="mt-1 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-govdoc-primary)] font-mono text-[10px] font-bold text-white">{tier}</span>
+                      <span className="flex-1 text-[13px] leading-[1.5] text-[var(--color-ink-soft)]">
+                        {cat.tiers[tier] || <span className="italic text-[var(--color-ink-faint)]">Not defined</span>}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

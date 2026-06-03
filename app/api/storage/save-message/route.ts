@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await saveChatMessage(
-      session.userId,
+      session.user,
       { role: body.role, content: body.content, sources: body.sources },
       body.conversationId,
     );

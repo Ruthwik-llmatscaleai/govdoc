@@ -1,6 +1,6 @@
 import type { EvaluationResult } from "../types";
 
-export function enforceConsistency(results: EvaluationResult[]): EvaluationResult[] {
+export function enforceConsistency(results: EvaluationResult[], documentText = ""): EvaluationResult[] {
   const out = results.map((r) => ({ ...r }));
   const bycat = new Map(out.map((r) => [r.category, r]));
 
@@ -51,6 +51,42 @@ export function enforceConsistency(results: EvaluationResult[]): EvaluationResul
         `Enforced by consistency check: Score 4/5 requires an EXPLICIT most likely buyer statement. ` +
         `Original comments indicated this was missing or only implied, which fails the Score 4 prerequisite. ` +
         `Downgraded to Score 3 (concludes maximally productive use but no explicit buyer identification).`;
+    }
+  }
+
+  // Rule 4: Contingency-fee red-flag detector (Caltrans R/W Manual Ch 7)
+  if (documentText) {
+    const textLower = documentText.toLowerCase();
+    const contingencySignals = ["contingency fee", "contingent fee", "contingency compensation"];
+    let contingencyFound = contingencySignals.some((s) => textLower.includes(s));
+
+    if (!contingencyFound && textLower.includes("contingency")) {
+      const matches = [...textLower.matchAll(/contingency/g)];
+      for (const m of matches) {
+        const start = Math.max(0, m.index! - 200);
+        const end = Math.min(textLower.length, m.index! + 200);
+        const window = textLower.slice(start, end);
+        if (["damage", "compensation", "after analysis", "cost to cure", "remainder"].some((kw) => window.includes(kw))) {
+          contingencyFound = true;
+          break;
+        }
+      }
+    }
+
+    if (contingencyFound) {
+      for (const catName of ["After Analysis (if required)", "Cost to Cure"]) {
+        const target = bycat.get(catName);
+        if (target && target.score !== 1 && target.score !== -1) {
+          target.score = 1;
+          target.status = "❌ Fail";
+          target.criteria_met =
+            "Fails per Caltrans R/W Manual Chapter 7 — contingency fees in damages are prohibited.";
+          target.comments =
+            `Enforced by Rule 4 (contingency-fee red-flag detector). The document text ` +
+            `contains 'contingency' language in damages context. Per Caltrans R/W Manual Chapter 7, ` +
+            `contingency fees cannot be paid as damages. Original: ${target.comments}`;
+        }
+      }
     }
   }
 

@@ -229,7 +229,8 @@ model Document {
   pageCount    Int?      @map("page_count")
   s3Bucket     String?   @map("s3_bucket")  // raw bytes in S3, not in Postgres
   s3Key        String?   @map("s3_key")
-  status       String    @default("UPLOADED") // UPLOADED | PARSED | INDEXED | FAILED
+  status       String    @default("UPLOADED") // UPLOADED | PARSED | INDEXED | SPREADSHEET | FAILED
+  textContent  String?   @map("text_content")
   classification String? // for Classify & Tag capability
   metadata     Json      @default("{}")
   uploadedAt   DateTime  @default(now()) @map("uploaded_at")

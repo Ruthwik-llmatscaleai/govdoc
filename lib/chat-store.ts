@@ -138,14 +138,3 @@ export async function loadChatHistory(userId: string, limit = 200): Promise<Chat
   }));
 }
 
-async function getOrCreateDefaultConversation(userId: string): Promise<string> {
-  const existing = await prisma.conversation.findFirst({
-    where: { userId, deletedAt: null },
-    orderBy: { createdAt: "desc" },
-  });
-  if (existing) return existing.id;
-  const created = await prisma.conversation.create({
-    data: { userId, title: "New Conversation" },
-  });
-  return created.id;
-}

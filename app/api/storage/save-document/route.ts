@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 import { saveDocument } from "@/lib/document-store";
+import type { ProcessedDocument } from "@/features/search-ask/documents";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -12,7 +14,21 @@ export async function POST(request: NextRequest) {
       chunks: { text: string; embedding: number[] }[];
     };
 
-    await saveDocument(userId, documentName, chunks);
+    const doc: ProcessedDocument = {
+      id: randomUUID(),
+      name: documentName,
+      pageCount: 1,
+      chunks: chunks.map((c, i) => ({
+        documentId: "",
+        documentName,
+        chunkIndex: i,
+        text: c.text,
+        embedding: c.embedding,
+      })),
+      uploadedAt: new Date().toISOString(),
+    };
+
+    await saveDocument(userId, doc);
 
     return NextResponse.json({ success: true });
   } catch (error) {

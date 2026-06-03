@@ -96,7 +96,7 @@ export default function SearchAskPage() {
                 </Link>{" "}
                 <em
                   className="text-[var(--color-govdoc-primary)]"
-                  style={{ fontStyle: "italic", fontWeight: 400 }}
+                  style={{ fontStyle: "italic", fontWeight: 500 }}
                 >
                   Rubrics
                 </em>
@@ -121,7 +121,7 @@ export default function SearchAskPage() {
               <ul className="space-y-4">
                 {RECENT_RUBRICS.map((r) => (
                   <li key={r.name} className="flex items-center gap-3">
-                    <span className="inline-block size-[5px] shrink-0 rounded-full bg-[#107e54]" />
+                    <span className="govdoc-dot-glow inline-block size-[5px] shrink-0 rounded-full bg-[var(--color-govdoc-primary)]" />
                     <div className="min-w-0 flex-1">
                       <div className="text-[13px] font-semibold text-[var(--color-ink-soft)]">{r.name}</div>
                       <div className="text-[11px] text-[var(--color-ink-faint)]">{r.category} · {r.questions} questions</div>
@@ -140,12 +140,12 @@ export default function SearchAskPage() {
             {/* Footer */}
             <div className="flex items-center justify-between border-t border-[var(--color-line)] px-7 py-4 bg-[var(--color-cream-soft)]/20">
               <div className="flex gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)] bg-white/55">
-                  <span className="size-[5px] rounded-full bg-[#107e54]" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-govdoc-primary)] px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-govdoc-primary)]">
+                  <span className="govdoc-dot-glow size-[5px] rounded-full bg-[var(--color-govdoc-primary)]" />
                   12 RUBRICS
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)] bg-white/55">
-                  <span className="size-[5px] rounded-full bg-[#107e54]" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-govdoc-primary)] px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-govdoc-primary)]">
+                  <span className="govdoc-dot-glow size-[5px] rounded-full bg-[var(--color-govdoc-primary)]" />
                   VERSIONED
                 </span>
               </div>
@@ -189,7 +189,7 @@ export default function SearchAskPage() {
                 </Link>{" "}
                 <em
                   className="text-[var(--color-govdoc-primary)]"
-                  style={{ fontStyle: "italic", fontWeight: 400 }}
+                  style={{ fontStyle: "italic", fontWeight: 500 }}
                 >
                   Rubrics
                 </em>
@@ -251,12 +251,12 @@ export default function SearchAskPage() {
             {/* Footer */}
             <div className="flex items-center justify-between border-t border-[var(--color-line)] px-7 py-4 bg-[var(--color-cream-soft)]/20">
               <div className="flex gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50/50 px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-emerald-700">
-                  <span className="size-[5px] rounded-full bg-emerald-600" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-govdoc-primary)] px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-govdoc-primary)]">
+                  <span className="govdoc-dot-glow size-[5px] rounded-full bg-[var(--color-govdoc-primary)]" />
                   ADMIN
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50/50 px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.15em] text-emerald-700">
-                  <span className="size-[5px] rounded-full bg-emerald-600" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-govdoc-primary)] px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-govdoc-primary)]">
+                  <span className="govdoc-dot-glow size-[5px] rounded-full bg-[var(--color-govdoc-primary)]" />
                   AUDIT-LOG
                 </span>
               </div>

@@ -26,14 +26,14 @@ export default async function WorkspacePage() {
   const session = await verifySession(cookie);
   if (!session) redirect("/login");
 
-  const name = displayName(session.user);
+  const name = displayName(session.name ?? session.user);
   const dateStamp = formatDate();
   const recentActivity = await getRecentActivity(session.user);
 
   return (
     <div className="govdoc-grid-bg relative flex min-h-screen flex-col bg-[#F3EEE0]">
 
-      <TopBar user={session.user} />
+      <TopBar user={session.name ?? session.user} />
 
       <main className="govdoc-page-pad relative z-10 w-full flex-1 pb-10 pt-[clamp(48px,5vw,80px)]">
         <div className="govdoc-page-inner">
@@ -83,7 +83,7 @@ export default async function WorkspacePage() {
               }}
             >
               Choose a{" "}
-              <em style={{ fontStyle: "italic", fontWeight: 500, color: "#3D5740" }}>
+              <em style={{ fontStyle: "italic", fontWeight: 700, color: "#3D5740" }}>
                 capability
               </em>
             </h2>

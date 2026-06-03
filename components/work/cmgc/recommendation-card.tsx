@@ -26,7 +26,7 @@ export function RecommendationCard({ recommendation }: Props) {
         <p className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
           Recommended delivery method
         </p>
-        <h2 className="text-2xl font-semibold text-[var(--color-ink)]">
+        <h2 className="text-2xl font-medium tracking-[-0.01em] text-[var(--color-ink)]" style={{ fontFamily: "var(--font-display)" }}>
           {recommendation.recommended_method || "—"}
         </h2>
       </div>

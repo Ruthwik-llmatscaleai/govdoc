@@ -18,7 +18,7 @@ export async function GET(
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
-  const messages = await getConversationMessages(id, session.userId);
+  const messages = await getConversationMessages(id, session.user);
   return NextResponse.json({ success: true, messages });
 }
 
@@ -33,7 +33,7 @@ export async function PATCH(
   const { id } = await params;
   const body = await request.json();
   if (typeof body?.title === "string") {
-    await updateConversationTitle(id, session.userId, body.title);
+    await updateConversationTitle(id, session.user, body.title);
   }
   return NextResponse.json({ success: true });
 }
@@ -47,6 +47,6 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
-  await deleteConversation(id, session.userId);
+  await deleteConversation(id, session.user);
   return NextResponse.json({ success: true });
 }

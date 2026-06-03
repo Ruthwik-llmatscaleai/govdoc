@@ -56,7 +56,7 @@ export function TextField({
       placeholder={placeholder}
       defaultValue={defaultValue}
       required={required}
-      className="h-10 w-full rounded-lg border border-input bg-[var(--color-field-bg)] px-3 text-sm transition-colors placeholder:text-muted-foreground/60 focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
+      className="h-10 w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field-bg)] px-3 text-sm transition-colors placeholder:text-muted-foreground/60 focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
     />
   );
 }
@@ -78,7 +78,7 @@ export function SelectField({
         id={id}
         name={name}
         defaultValue={defaultValue}
-        className="h-10 w-full appearance-none rounded-lg border border-input bg-[var(--color-field-bg)] px-3 pr-9 text-sm transition-colors focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
+        className="h-10 w-full appearance-none rounded-lg border border-[var(--color-line)] bg-[var(--color-field-bg)] px-3 pr-9 text-sm transition-colors focus:border-primary/40 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/15"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -232,7 +232,7 @@ export function RadioGroup({
       {options.map((o) => (
         <label
           key={o.value}
-          className="flex cursor-pointer items-start gap-3 rounded-lg border border-input bg-[var(--color-field-bg)] p-3 text-sm transition-colors hover:border-primary/40 hover:bg-muted/50 has-checked:border-primary has-checked:bg-card"
+          className="flex cursor-pointer items-start gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-field-bg)] p-3 text-sm transition-colors hover:border-primary/40 hover:bg-muted/50 has-checked:border-primary has-checked:bg-card"
         >
           <input
             type="radio"

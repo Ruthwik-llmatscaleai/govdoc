@@ -8,5 +8,16 @@ export type RowRubricData = Record<
 >;
 
 export function defaultRowRubric(): RowRubricData {
-  return rubricSchema as RowRubricData;
+  const raw = rubricSchema as Record<string, Record<string, string>>;
+  const out: RowRubricData = {};
+  for (const [cat, val] of Object.entries(raw)) {
+    out[cat] = {
+      "1": val["1"] ?? "",
+      "2": val["2"] ?? "",
+      "3": val["3"] ?? "",
+      "4": val["4"] ?? "",
+      "5": val["5"] ?? "",
+    };
+  }
+  return out;
 }

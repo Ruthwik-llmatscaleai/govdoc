@@ -60,22 +60,30 @@ export async function searchChunks(
   conversationId?: string,
 ): Promise<ScoredChunk[]> {
   const vec = `[${queryEmbedding.join(",")}]`;
-  const convFilter = conversationId
-    ? `AND d.conversation_id = '${conversationId}'`
-    : "";
 
-  // Fetch more chunks, then pick top-k ensuring all documents are represented
-  const rows = await prisma.$queryRawUnsafe<
-    Array<{ document_id: string; document_name: string; chunk_index: number; text: string; score: number }>
-  >(`
-    SELECT dc.document_id, d.name AS document_name, dc.chunk_index, dc.text,
-           1 - (dc.embedding <=> '${vec}'::vector) AS score
-    FROM document_chunks dc
-    JOIN documents d ON d.id = dc.document_id
-    WHERE d.user_id = $1 AND d.deleted_at IS NULL ${convFilter}
-    ORDER BY dc.embedding <=> '${vec}'::vector
-    LIMIT 30
-  `, userId);
+  const rows = conversationId
+    ? await prisma.$queryRawUnsafe<
+        Array<{ document_id: string; document_name: string; chunk_index: number; text: string; score: number }>
+      >(`
+        SELECT dc.document_id, d.name AS document_name, dc.chunk_index, dc.text,
+               1 - (dc.embedding <=> '${vec}'::vector) AS score
+        FROM document_chunks dc
+        JOIN documents d ON d.id = dc.document_id
+        WHERE d.user_id = $1 AND d.deleted_at IS NULL AND d.conversation_id = $2
+        ORDER BY dc.embedding <=> '${vec}'::vector
+        LIMIT 30
+      `, userId, conversationId)
+    : await prisma.$queryRawUnsafe<
+        Array<{ document_id: string; document_name: string; chunk_index: number; text: string; score: number }>
+      >(`
+        SELECT dc.document_id, d.name AS document_name, dc.chunk_index, dc.text,
+               1 - (dc.embedding <=> '${vec}'::vector) AS score
+        FROM document_chunks dc
+        JOIN documents d ON d.id = dc.document_id
+        WHERE d.user_id = $1 AND d.deleted_at IS NULL
+        ORDER BY dc.embedding <=> '${vec}'::vector
+        LIMIT 30
+      `, userId);
 
   // Ensure at least 2 chunks per document, then fill remaining slots by score
   const byDoc = new Map<string, typeof rows>();
@@ -107,6 +115,43 @@ export async function searchChunks(
     embedding: [],
     score: Number(r.score),
   }));
+}
+
+export async function saveSpreadsheetDocument(
+  userId: string,
+  documentId: string,
+  name: string,
+  textContent: string,
+  conversationId?: string,
+): Promise<void> {
+  await prisma.document.create({
+    data: {
+      userId,
+      name,
+      pageCount: 1,
+      status: "SPREADSHEET",
+      textContent,
+      ...(conversationId ? { conversationId } : {}),
+    },
+  });
+}
+
+export async function loadSpreadsheetDocuments(
+  userId: string,
+  conversationId?: string,
+): Promise<Array<{ id: string; name: string; textContent: string }>> {
+  const docs = await prisma.document.findMany({
+    where: {
+      userId,
+      deletedAt: null,
+      status: "SPREADSHEET",
+      ...(conversationId ? { conversationId } : {}),
+    },
+    orderBy: { uploadedAt: "desc" },
+  });
+  return docs
+    .filter((d) => d.textContent)
+    .map((d) => ({ id: d.id, name: d.name, textContent: d.textContent! }));
 }
 
 export async function clearUserDocuments(userId: string): Promise<void> {
