@@ -90,6 +90,8 @@ export function CucpStepper({
   const [stagedCounts, setStagedCounts] = useState({ l1: 0, l2: 0, l3: 0 });
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const [sessionExpired, setSessionExpired] = useState(false);
+
   async function postJson(url: string, body?: unknown): Promise<Response | null> {
     setActionError(null);
     const res = await fetch(url, {
@@ -101,6 +103,10 @@ export function CucpStepper({
     });
     if (!res.ok) {
       const detail = (await res.text().catch(() => "")) || res.statusText;
+      if (res.status === 404 && detail.includes("not waiting")) {
+        setSessionExpired(true);
+        return null;
+      }
       setActionError(`Request failed (${res.status}): ${detail}`);
       return null;
     }
@@ -208,6 +214,24 @@ export function CucpStepper({
       setStep("done");
       onComplete();
     }
+  }
+
+  if (sessionExpired) {
+    return (
+      <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-5">
+        <h3 className="text-sm font-semibold text-destructive">Evaluation session expired</h3>
+        <p className="text-sm text-foreground/85">
+          The evaluation run was interrupted (server restarted or timed out). Your staged corrections have been lost.
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="rounded-md bg-[var(--color-govdoc-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-govdoc-deep)]"
+        >
+          Re-run evaluation
+        </button>
+      </div>
+    );
   }
 
   return (
