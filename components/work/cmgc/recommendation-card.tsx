@@ -30,17 +30,6 @@ export function RecommendationCard({ recommendation, matrix }: Props) {
             {primaryTotal} pts
           </span>
         )}
-        <span className="rounded-md border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-2 py-1 font-medium text-[var(--color-ink)]">
-          Composite {recommendation.composite_score.toFixed(3)} / 3.000
-        </span>
-        {recommendation.is_borderline && (
-          <span
-            data-testid="borderline-chip"
-            className="rounded-md border border-amber-400 bg-amber-50 px-2 py-1 font-medium text-amber-700"
-          >
-            Borderline
-          </span>
-        )}
         {runnerUp && (
           <span className="text-[var(--color-ink-mute)]">
             Runner-up:{" "}

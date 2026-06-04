@@ -14,15 +14,15 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   dashboard.mergeCells("A1:D1");
 
   dashboard.getCell("A3").value = "Recommended Method:";
-  dashboard.getCell("B3").value = result.recommendation.recommended_method;
-  dashboard.getCell("A4").value = "Runner-Up:";
-  dashboard.getCell("B4").value = result.recommendation.runner_up_method ?? "";
-  dashboard.getCell("A5").value = "Composite Score:";
-  dashboard.getCell("B5").value = `${result.recommendation.composite_score.toFixed(3)} / 3.000`;
-  dashboard.getCell("A6").value = "Borderline:";
-  dashboard.getCell("B6").value = result.recommendation.is_borderline ? "Yes" : "No";
-  dashboard.getCell("A7").value = "Overrides Triggered:";
-  dashboard.getCell("B7").value = result.recommendation.override_status.filter((o) => o.triggered).length;
+  dashboard.getCell("B3").value = result.matrix?.recommended_label ?? result.recommendation.recommended_method;
+  dashboard.getCell("A4").value = "Total Score:";
+  dashboard.getCell("B4").value = result.matrix?.recommended_total ?? "";
+  dashboard.getCell("A5").value = "Runner-Up:";
+  dashboard.getCell("B5").value = result.matrix?.runner_up_label ?? result.recommendation.runner_up_method ?? "";
+  dashboard.getCell("A6").value = "Runner-Up Score:";
+  dashboard.getCell("B6").value = result.matrix?.runner_up_total ?? "";
+  dashboard.getCell("A7").value = "No-Go Methods:";
+  dashboard.getCell("B7").value = result.matrix?.no_go_methods.join(", ") ?? "";
 
   dashboard.getCell("A9").value = "Section Score Breakdown";
   dashboard.getCell("A9").font = { bold: true };
