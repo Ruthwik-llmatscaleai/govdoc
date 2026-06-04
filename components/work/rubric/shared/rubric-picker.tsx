@@ -1,13 +1,24 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { RubricsManifestEntry } from "@/features/rubrics/store";
+
+type VersionEntry = {
+  id: string;
+  createdAt: string;
+  source: string;
+  note?: string;
+};
 
 type Props = {
   rubrics: readonly RubricsManifestEntry[];
   selectedId: string;
+  usecaseId: string;
+  /** The version currently loaded in the editor. Null = latest (default). */
+  currentVersionId?: string | null;
+  /** Bumped after saves/restores so the picker refetches versions. */
+  versionsNonce?: number;
   onSelect: (id: string) => void;
-  // When mode === "manage", the picker also surfaces Create / Set-default /
-  // Delete affordances. In "read-only" mode only the dropdown shows.
+  onVersionSelect?: (versionId: string | null) => void;
   mode: "read-only" | "manage";
   onCreateClick?: () => void;
   onUploadClick?: () => void;
@@ -19,7 +30,11 @@ type Props = {
 export function RubricPicker({
   rubrics,
   selectedId,
+  usecaseId,
+  currentVersionId = null,
+  versionsNonce = 0,
   onSelect,
+  onVersionSelect,
   mode,
   onCreateClick,
   onUploadClick,
@@ -29,6 +44,22 @@ export function RubricPicker({
 }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const [versions, setVersions] = useState<VersionEntry[]>([]);
+
+  const fetchVersions = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/usecases/${usecaseId}/rubrics/${selectedId}/versions`);
+      if (!res.ok) return;
+      const body = (await res.json()) as { versions: VersionEntry[] };
+      setVersions(body.versions);
+    } catch {
+      // silent
+    }
+  }, [usecaseId, selectedId]);
+
+  useEffect(() => {
+    fetchVersions();
+  }, [fetchVersions, versionsNonce]);
 
   useEffect(() => {
     if (!open) return;
@@ -49,12 +80,9 @@ export function RubricPicker({
   const selected = rubrics.find((r) => r.id === selectedId) ?? rubrics[0];
   if (!selected) return null;
 
-  const showAdminActions = mode === "manage" && !selected.isDefault;
-
-  // Avoid the "Default [Default]" duplication when the rubric's own label is
-  // already "Default" (the seeded entry's label collides with the badge text).
-  const labelDuplicatesDefault = (label: string) =>
-    label.trim().toLowerCase() === "default";
+  const isDefault = selected.isDefault;
+  const newestVersionId = versions[0]?.id ?? null;
+  const displayVersion = currentVersionId ?? newestVersionId;
 
   return (
     <div className="flex flex-wrap items-center gap-2.5">
@@ -62,6 +90,7 @@ export function RubricPicker({
         Rubric
       </span>
 
+      {/* Version dropdown */}
       <div ref={ref} className="relative inline-block">
         <button
           type="button"
@@ -71,10 +100,12 @@ export function RubricPicker({
           disabled={busy}
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground transition hover:bg-muted disabled:opacity-50"
         >
-          <span>{selected.label}</span>
-          {selected.isDefault && !labelDuplicatesDefault(selected.label) && (
+          <span className="font-mono font-semibold">
+            {displayVersion ?? "default"}
+          </span>
+          {(!currentVersionId || currentVersionId === newestVersionId) && (
             <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground">
-              Default
+              default
             </span>
           )}
           <svg
@@ -97,34 +128,43 @@ export function RubricPicker({
         {open && (
           <div
             role="listbox"
-            aria-label="Rubric"
-            className="absolute left-0 top-full z-20 mt-1 min-w-[240px] overflow-hidden rounded-lg border border-border bg-card shadow-lg"
+            aria-label="Version"
+            className="absolute left-0 top-full z-20 mt-1 min-w-[220px] max-h-[240px] overflow-y-auto overflow-x-hidden rounded-lg border border-border bg-card shadow-lg"
           >
-            {rubrics.map((r) => {
-              const isActive = r.id === selectedId;
-              return (
-                <button
-                  key={r.id}
-                  type="button"
-                  role="option"
-                  aria-selected={isActive}
-                  onClick={() => {
-                    setOpen(false);
-                    if (!isActive) onSelect(r.id);
-                  }}
-                  className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition hover:bg-muted ${
-                    isActive ? "bg-muted/60 font-medium" : ""
-                  }`}
-                >
-                  <span className="text-foreground">{r.label}</span>
-                  {r.isDefault && !labelDuplicatesDefault(r.label) && (
-                    <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground">
-                      Default
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {versions.length === 0 ? (
+              <div className="px-3 py-2 text-xs text-muted-foreground">
+                No versions yet. Save to create the first.
+              </div>
+            ) : (
+              versions.map((v, i) => {
+                const isNewest = i === 0;
+                const isActive = currentVersionId === v.id || (!currentVersionId && isNewest);
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    onClick={() => {
+                      setOpen(false);
+                      if (!isActive) {
+                        onVersionSelect?.(isNewest ? null : v.id);
+                      }
+                    }}
+                    className={`flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition hover:bg-muted ${
+                      isActive ? "bg-muted/60 font-medium" : ""
+                    }`}
+                  >
+                    <span className="font-mono font-semibold text-foreground">{v.id}</span>
+                    {isNewest && (
+                      <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground">
+                        default
+                      </span>
+                    )}
+                  </button>
+                );
+              })
+            )}
           </div>
         )}
       </div>
@@ -151,7 +191,7 @@ export function RubricPicker({
         </button>
       )}
 
-      {showAdminActions && onSetDefault && (
+      {mode === "manage" && !isDefault && onSetDefault && (
         <button
           type="button"
           onClick={() => onSetDefault(selected.id)}
@@ -162,11 +202,12 @@ export function RubricPicker({
         </button>
       )}
 
-      {showAdminActions && onDelete && (
+      {mode === "manage" && onDelete && (
         <button
           type="button"
-          onClick={() => onDelete(selected.id)}
-          disabled={busy}
+          onClick={() => !isDefault && onDelete(selected.id)}
+          disabled={busy || isDefault}
+          title={isDefault ? "Cannot delete the default rubric. Promote another rubric first." : undefined}
           className="rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/5 disabled:opacity-50"
         >
           Delete rubric

@@ -18,7 +18,7 @@ type Props<T> = {
     rubricId: string;
     baselineVersionId?: string | null;
     loadedFromHistory?: boolean;
-    onSaved?: () => void | Promise<void>;
+    onSaved?: (versionId?: string) => void | Promise<void>;
   }>;
 };
 
@@ -51,6 +51,8 @@ export function EditTabContent<T>({
   // The version the editor's current `data` came from. Null = live file head.
   const [baselineVersionId, setBaselineVersionId] = useState<string | null>(null);
   const [loadedFromHistory, setLoadedFromHistory] = useState(false);
+  // The latest saved version ID — shown in the picker to indicate current state.
+  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
 
   async function fetchRubricContent(rubricId: string, versionId?: string): Promise<T> {
     const params = new URLSearchParams();
@@ -89,6 +91,7 @@ export function EditTabContent<T>({
       setData(next);
       setBaselineVersionId(null);
       setLoadedFromHistory(false);
+      setCurrentVersionId(null);
       setDataNonce((n) => n + 1);
     });
   }
@@ -109,9 +112,14 @@ export function EditTabContent<T>({
       setRubrics(list);
       setSelectedId(input.id);
       setData(content);
+      setBaselineVersionId(null);
+      setLoadedFromHistory(false);
       return true;
     });
-    if (created) setShowCreate(false);
+    if (created) {
+      setShowCreate(false);
+      setDataNonce((n) => n + 1);
+    }
   }
 
   async function handleSetDefault(id: string) {
@@ -164,7 +172,20 @@ export function EditTabContent<T>({
       <RubricPicker
         rubrics={rubrics}
         selectedId={selectedId}
+        usecaseId={usecaseId}
+        currentVersionId={currentVersionId}
+        versionsNonce={versionsNonce}
         onSelect={handleSelect}
+        onVersionSelect={async (versionId) => {
+          await withBusy(async () => {
+            const content = await fetchRubricContent(selectedId, versionId ?? undefined);
+            setData(content);
+            setBaselineVersionId(versionId);
+            setLoadedFromHistory(!!versionId);
+            setCurrentVersionId(versionId);
+          });
+          setDataNonce((n) => n + 1);
+        }}
         mode="manage"
         busy={busy}
         onCreateClick={() => setShowCreate(true)}
@@ -188,13 +209,14 @@ export function EditTabContent<T>({
         rubricId={selectedId}
         baselineVersionId={baselineVersionId}
         loadedFromHistory={loadedFromHistory}
-        onSaved={async () => {
+        onSaved={async (versionId) => {
           // A save appended a new version. Refresh the manifest (so updatedAt
           // stays current) and bump versions so the history panel refetches.
           await withBusy(async () => {
             const list = await fetchManifest();
             setRubrics(list);
           });
+          if (versionId) setCurrentVersionId(versionId);
           setVersionsNonce((n) => n + 1);
           setLoadedFromHistory(false);
         }}

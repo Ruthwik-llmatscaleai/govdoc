@@ -145,6 +145,7 @@ export function VersionHistoryPanel({
             const isOnly = versions.length === 1;
             const canDelete = !isNewest && !isOnly;
             const canRestore = !isNewest;
+            const isAlreadyLoaded = v.id === baselineVersionId || (isNewest && baselineVersionId === null);
             return (
               <li
                 key={v.id}
@@ -166,7 +167,8 @@ export function VersionHistoryPanel({
                     type="button"
                     aria-label={`Load ${v.id} into editor`}
                     onClick={() => onLoad?.(v.id)}
-                    disabled={!onLoad || v.id === baselineVersionId || busyId !== null}
+                    disabled={!onLoad || isAlreadyLoaded || busyId !== null}
+                    title={isAlreadyLoaded ? "Already editing this version" : undefined}
                     className="rounded border border-border px-2 py-0.5 text-[11px] font-medium text-foreground transition hover:bg-muted disabled:opacity-40"
                   >
                     Load
@@ -176,6 +178,7 @@ export function VersionHistoryPanel({
                     aria-label={`Restore ${v.id}`}
                     onClick={() => handleRestore(v.id)}
                     disabled={!canRestore || busyId !== null}
+                    title={isNewest ? "Already the current version" : `Create a new version from ${v.id}`}
                     className="rounded border border-border px-2 py-0.5 text-[11px] font-medium text-foreground transition hover:bg-muted disabled:opacity-40"
                   >
                     Restore
@@ -185,6 +188,7 @@ export function VersionHistoryPanel({
                     aria-label={`Delete ${v.id}`}
                     onClick={() => handleDelete(v.id)}
                     disabled={!canDelete || busyId !== null}
+                    title={isNewest ? "Cannot delete the newest version" : isOnly ? "Cannot delete the only version" : `Delete ${v.id}`}
                     className="rounded border border-destructive/40 px-2 py-0.5 text-[11px] font-medium text-destructive transition hover:bg-destructive/5 disabled:opacity-40"
                   >
                     Delete

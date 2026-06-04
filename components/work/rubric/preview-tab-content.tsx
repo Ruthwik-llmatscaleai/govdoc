@@ -52,6 +52,7 @@ export function PreviewTabContent<T>({ usecaseId, rubrics, initialData, View }: 
           <RubricPicker
             rubrics={rubrics}
             selectedId={selectedId}
+            usecaseId={usecaseId}
             onSelect={handleSelect}
             mode="read-only"
             busy={loading}

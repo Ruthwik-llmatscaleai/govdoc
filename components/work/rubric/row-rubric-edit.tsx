@@ -28,7 +28,7 @@ export function RowRubricEdit({
   rubricId: string;
   baselineVersionId?: string | null;
   loadedFromHistory?: boolean;
-  onSaved?: () => void | Promise<void>;
+  onSaved?: (versionId?: string) => void | Promise<void>;
 }) {
   const rubricUrlBase = `/api/usecases/${usecaseId}/rubric`;
   const rubricQuery = `?rubric=${encodeURIComponent(rubricId)}`;
@@ -134,7 +134,7 @@ export function RowRubricEdit({
       const body = (await res.json()) as { versionId: string };
       setMsg(draft.mode === "overwrite" ? `Overwrote ${body.versionId}.` : `Saved as ${body.versionId}.`);
       setDirty(false);
-      await onSaved?.();
+      await onSaved?.(body.versionId);
     } catch (e) {
       setMsg(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {

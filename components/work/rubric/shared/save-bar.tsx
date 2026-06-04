@@ -110,7 +110,7 @@ export function SaveBar({
             type="button"
             onClick={triggerSave}
             disabled={saving || !dirty}
-            className="rounded-l-lg bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)] disabled:opacity-50"
+            className="rounded-l-lg bg-[var(--color-govdoc-deep)] px-4 py-1.5 text-sm font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-primary)] disabled:opacity-50"
           >
             {saving ? "Saving…" : splitLabel}
           </button>
@@ -119,7 +119,7 @@ export function SaveBar({
             aria-label="Save options"
             onClick={() => setOpen((v) => !v)}
             disabled={saving || !dirty}
-            className="rounded-r-lg border-l border-primary-foreground/20 bg-primary px-2 py-1.5 text-primary-foreground transition hover:bg-[var(--color-govdoc-deep)] disabled:opacity-50"
+            className="rounded-r-lg border-l border-primary-foreground/20 bg-[var(--color-govdoc-deep)] px-2 py-1.5 text-primary-foreground transition hover:bg-[var(--color-govdoc-primary)] disabled:opacity-50"
           >
             <ChevronUp className={`size-4 transition-transform ${open ? "" : "rotate-180"}`} />
           </button>
