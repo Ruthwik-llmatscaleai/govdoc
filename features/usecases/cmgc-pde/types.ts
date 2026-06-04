@@ -86,4 +86,5 @@ export type CmgcRunResult = {
   evaluation: CmgcEvaluation;
   recommendation: RecommendationResult;
   multi_method: MultiMethodResult;
+  matrix?: import("./scoring/point-matrix").MatrixResult;
 };

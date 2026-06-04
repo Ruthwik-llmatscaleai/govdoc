@@ -34,6 +34,7 @@ import type { CmgcRubricData } from "@/features/usecases/cmgc-pde/rubric-data";
 import type { UseCaseId } from "@/features/usecases/types";
 import { RecommendationCard } from "@/components/work/cmgc/recommendation-card";
 import { MethodRanking } from "@/components/work/cmgc/method-ranking";
+import { MatrixScoring } from "@/components/work/cmgc/matrix-scoring";
 import { HiflWizard, type HiflOverrideEntry } from "@/components/work/cmgc/hifl-wizard";
 import type { OverrideCardQuestion } from "@/components/work/cmgc/override-card";
 import { RUBRIC_QUESTIONS } from "@/features/usecases/cmgc-pde/rubric";
@@ -321,6 +322,7 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
       <div className="space-y-6">
         <DoneSummaryBar ucLabel={ucLabel} reset={reset} />
         <RecommendationCard recommendation={result.recommendation} />
+        {result.matrix && <MatrixScoring matrix={result.matrix} />}
         <MethodRanking multiMethod={result.multi_method} />
         {role === "district" ? (
           <>

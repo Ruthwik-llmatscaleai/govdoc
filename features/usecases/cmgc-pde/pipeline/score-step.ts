@@ -2,6 +2,7 @@ import type { PipelineStep } from "@/features/usecases/types";
 import type { CmgcRating } from "../types";
 import { computeDeliveryRecommendation } from "../scoring/compute-recommendation";
 import { scoreAllMethods } from "../scoring/score-all-methods";
+import { computeMatrixScores, type Rating as MatrixRating } from "../scoring/point-matrix";
 
 export const scoreStep: PipelineStep<FormData> = {
   id: "score",
@@ -18,6 +19,15 @@ export const scoreStep: PipelineStep<FormData> = {
 
     const recommendation = computeDeliveryRecommendation(ratings);
     const multiMethod = scoreAllMethods(ratings);
+
+    // Caltrans point-matrix scoring (matches the official Excel exactly)
+    const matrixRatings: Record<string, MatrixRating> = {};
+    for (const r of ratings) {
+      if (r.question_id && r.selected_rating) {
+        matrixRatings[r.question_id] = (r.selected_rating.toUpperCase() || "B") as MatrixRating;
+      }
+    }
+    const matrix = computeMatrixScores(matrixRatings);
 
     yield { type: "progress", stage: "score", pct: 50, message: "Computing recommendation" };
 
@@ -58,6 +68,6 @@ export const scoreStep: PipelineStep<FormData> = {
       }
     }
 
-    yield { type: "stage-done", stage: "score", data: { recommendation, multi_method: multiMethod } };
+    yield { type: "stage-done", stage: "score", data: { recommendation, multi_method: multiMethod, matrix } };
   },
 };
