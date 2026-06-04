@@ -1,4 +1,5 @@
 import prisma from "@/lib/db";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { computeNextVersionId, type VersionBump } from "./version";
 
 const KNOWN_IDS = new Set(["cmgc-pde", "cucp-reevals", "row-appraisal"]);
@@ -57,7 +58,7 @@ async function ensureDefaultRubric(usecaseId: string): Promise<void> {
         slug: "default",
         label: "Default",
         isDefault: true,
-        content: null,
+        content: Prisma.DbNull,
       },
     });
   }
@@ -244,7 +245,7 @@ export async function resetRubricContent(
 
   await prisma.rubric.update({
     where: { id: rubric.id },
-    data: { content: null },
+    data: { content: Prisma.DbNull },
   });
 }
 
@@ -332,11 +333,10 @@ export async function deleteVersion(
 
   const target = versions.find((v) => v.versionId === versionId);
   if (!target) throw new Error(`Unknown version id: ${versionId}`);
-  if (versions.length <= 1) throw new Error("Cannot delete the only remaining version");
 
   const newest = versions[0]!;
   if (newest.versionId === versionId) {
-    throw new Error("Cannot delete the newest version. Restore an older version first.");
+    throw new Error("Cannot delete the default version.");
   }
 
   await prisma.rubricVersion.delete({ where: { id: target.id } });

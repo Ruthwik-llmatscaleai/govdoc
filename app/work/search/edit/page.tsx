@@ -69,7 +69,6 @@ function serializeRow(data: Array<{ name: string; tiers: Record<string, string> 
 /* ─── Main Page ─── */
 export default function ManageRubricsPage() {
   const [activeTab, setActiveTab] = useState(0);
-  const [showNewSection, setShowNewSection] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
@@ -292,7 +291,6 @@ export default function ManageRubricsPage() {
     if (!newKey) return;
     setCmgcSections((prev) => [...prev, { key: newKey, name, weight, questions: [] }]);
     markDirty();
-    setShowNewSection(false);
   }
   function updateQuestion(sectionKey: string, questionId: string, updates: Partial<CmgcQuestion>) {
     setCmgcSections((prev) => prev.map((s) =>
@@ -455,11 +453,6 @@ export default function ManageRubricsPage() {
         <button type="button" onClick={() => setShowCreateDialog(true)} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-govdoc-primary)] px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-[var(--color-govdoc-deep)]">
           <Plus className="size-3" /> Create Rubric
         </button>
-        {activeTab === 0 && (
-          <button type="button" onClick={() => setShowNewSection(true)} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-govdoc-deep)] px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-[var(--color-govdoc-primary)]">
-            <Plus className="size-3" /> New Section
-          </button>
-        )}
         <button type="button" onClick={() => setShowUploadModal(true)} className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--color-ink-soft)] transition-colors hover:bg-[var(--color-cream)]">
           <Upload className="size-3" /> Upload
         </button>
@@ -468,11 +461,9 @@ export default function ManageRubricsPage() {
             Set Default
           </button>
         )}
-        {!isDefault && (
-          <button type="button" onClick={handleDeleteRubric} className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-red-700 transition-colors hover:bg-red-100">
-            <Trash2 className="size-3" /> Delete Rubric
-          </button>
-        )}
+        <button type="button" onClick={handleDeleteRubric} disabled={isDefault} title={isDefault ? "Cannot delete the default rubric. Promote another first." : undefined} className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-red-700 transition-colors hover:bg-red-100 disabled:opacity-40 disabled:cursor-not-allowed">
+          <Trash2 className="size-3" /> Delete Rubric
+        </button>
       </div>
 
       {/* Weight warning */}
@@ -485,12 +476,9 @@ export default function ManageRubricsPage() {
       {/* Loading */}
       {loading && <p className="py-8 text-center text-sm text-[var(--color-ink-faint)]">Loading rubric…</p>}
 
-      {/* New Section form (Project tab) */}
-      {showNewSection && activeTab === 0 && <NewSectionForm onAdd={addSection} onCancel={() => setShowNewSection(false)} />}
-
       {/* Tab content */}
       {!loading && activeTab === 0 && (
-        <ProjectTab sections={cmgcSections} onUpdateSection={updateSection} onDeleteSection={deleteSection} onUpdateQuestion={updateQuestion} onDeleteQuestion={deleteQuestion} onAddQuestion={addQuestion} />
+        <ProjectTab sections={cmgcSections} onUpdateSection={updateSection} onDeleteSection={deleteSection} onUpdateQuestion={updateQuestion} onDeleteQuestion={deleteQuestion} onAddQuestion={addQuestion} onAddSection={addSection} />
       )}
       {!loading && activeTab === 1 && (
         <AppraisalTab categories={rowCategories} onUpdateTier={updateRowTier} onAddCategory={addRowCategory} onDeleteCategory={deleteRowCategory} />
@@ -499,9 +487,9 @@ export default function ManageRubricsPage() {
         <NarrativeTab data={cucpData} onUpdateCriterion={updateCriterion} onAddCriterion={addCriterion} onDeleteCriterion={deleteCriterion} />
       )}
 
-      {/* Version History */}
+      {/* Version History — keyed by rubric so it resets on rubric switch */}
       <div className="mt-10">
-        <VersionHistoryPanel usecaseId={usecaseId} rubricId={rubricId} refreshNonce={versionNonce} baselineVersionId={baselineVersionId} onChanged={() => setVersionNonce((n) => n + 1)} onLoad={(vid) => setBaselineVersionId(vid)} />
+        <VersionHistoryPanel key={`${usecaseId}:${rubricId}`} usecaseId={usecaseId} rubricId={rubricId} refreshNonce={versionNonce} baselineVersionId={baselineVersionId} onChanged={() => setVersionNonce((n) => n + 1)} onLoad={(vid) => setBaselineVersionId(vid)} />
       </div>
 
       {/* Save bar */}
@@ -543,18 +531,20 @@ function NewSectionForm({ onAdd, onCancel }: { onAdd: (name: string, weight: num
 }
 
 /* ─── Project (CMGC) Tab ─── */
-function ProjectTab({ sections, onUpdateSection, onDeleteSection, onUpdateQuestion, onDeleteQuestion, onAddQuestion }: {
+function ProjectTab({ sections, onUpdateSection, onDeleteSection, onUpdateQuestion, onDeleteQuestion, onAddQuestion, onAddSection }: {
   sections: SectionGroup[];
   onUpdateSection: (key: string, u: Partial<{ name: string; weight: number }>) => void;
   onDeleteSection: (key: string) => void;
   onUpdateQuestion: (secKey: string, qId: string, u: Partial<CmgcQuestion>) => void;
   onDeleteQuestion: (secKey: string, qId: string) => void;
   onAddQuestion: (secKey: string, q: string, a: string, b: string, c: string) => void;
+  onAddSection: (name: string, weight: number) => void;
 }) {
   const [expanded, setExpanded] = useState<string>(sections[0]?.key ?? "");
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [editingQuestion, setEditingQuestion] = useState<string | null>(null);
   const [addingTo, setAddingTo] = useState<string | null>(null);
+  const [addingSection, setAddingSection] = useState(false);
 
   return (
     <div className="space-y-0">
@@ -638,7 +628,14 @@ function ProjectTab({ sections, onUpdateSection, onDeleteSection, onUpdateQuesti
           </div>
         );
       })}
-      {sections.length === 0 && <p className="py-8 text-center text-sm text-[var(--color-ink-faint)] italic">No sections. Click "New Section" to add one.</p>}
+      {sections.length === 0 && !addingSection && <p className="py-8 text-center text-sm text-[var(--color-ink-faint)] italic">No sections yet. Click "Add section" below.</p>}
+      {addingSection ? (
+        <NewSectionForm onAdd={(name, weight) => { onAddSection(name, weight); setAddingSection(false); }} onCancel={() => setAddingSection(false)} />
+      ) : (
+        <button type="button" onClick={() => setAddingSection(true)} className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--color-line)] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-mute)] transition-colors hover:border-[var(--color-govdoc-primary)] hover:text-[var(--color-govdoc-primary)]">
+          <Plus className="size-3" /> Add section
+        </button>
+      )}
     </div>
   );
 }
