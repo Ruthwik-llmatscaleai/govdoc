@@ -333,13 +333,22 @@ export async function deleteVersion(
 
   const target = versions.find((v) => v.versionId === versionId);
   if (!target) throw new Error(`Unknown version id: ${versionId}`);
-
-  const newest = versions[0]!;
-  if (newest.versionId === versionId) {
-    throw new Error("Cannot delete the default version.");
-  }
+  if (versions.length <= 1) throw new Error("Cannot delete the only remaining version.");
 
   await prisma.rubricVersion.delete({ where: { id: target.id } });
+
+  // If we deleted the newest, promote the next one as the live content
+  const newest = versions[0]!;
+  if (newest.versionId === versionId) {
+    const nextNewest = versions[1]!;
+    const content = await prisma.rubricVersion.findFirst({ where: { id: nextNewest.id } });
+    if (content) {
+      await prisma.rubric.update({
+        where: { id: rubric.id },
+        data: { content: content.content as any },
+      });
+    }
+  }
 }
 
 export async function deleteRubric(

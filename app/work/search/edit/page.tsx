@@ -448,6 +448,11 @@ export default function ManageRubricsPage() {
           <select value={selectedRubricId} onChange={(e) => { setSelectedRubricId(e.target.value); setBaselineVersionId(null); setVersionNonce((n) => n + 1); }} className="rounded-md border border-[var(--color-line)] bg-[var(--color-paper)] px-2 py-1 font-mono text-[11px] font-medium uppercase text-[var(--color-ink)]">
             {rubrics.map((r) => <option key={r.id} value={r.id}>{r.label}{r.isDefault ? " (default)" : ""}</option>)}
           </select>
+          {baselineVersionId && (
+            <span className="rounded bg-[var(--color-govdoc-primary)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-govdoc-primary)]">
+              {baselineVersionId}
+            </span>
+          )}
         </div>
         <div className="mx-2 h-5 w-px bg-[var(--color-line)]" />
         <button type="button" onClick={() => setShowCreateDialog(true)} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-govdoc-primary)] px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-[var(--color-govdoc-deep)]">

@@ -142,7 +142,8 @@ export function VersionHistoryPanel({
         <ul className="space-y-1.5">
           {versions.map((v) => {
             const isNewest = v.id === newestId;
-            const canDelete = !isNewest;
+            const isOnly = versions.length === 1;
+            const canDelete = !isOnly;
             const canRestore = !isNewest;
             const isAlreadyLoaded = v.id === baselineVersionId || (isNewest && baselineVersionId === null);
             return (
@@ -187,7 +188,7 @@ export function VersionHistoryPanel({
                     aria-label={`Delete ${v.id}`}
                     onClick={() => handleDelete(v.id)}
                     disabled={!canDelete || busyId !== null}
-                    title={isNewest ? "Cannot delete the default version" : `Delete ${v.id}`}
+                    title={isOnly ? "Cannot delete the only remaining version" : `Delete ${v.id}`}
                     className="rounded border border-destructive/40 px-2 py-0.5 text-[11px] font-medium text-destructive transition hover:bg-destructive/5 disabled:opacity-40"
                   >
                     Delete

@@ -304,16 +304,16 @@ export function CucpStepper({
             onClear={postClearL1}
             stagedCount={stagedCounts.l1}
             persistentCount={persistentCounts.l1}
-            disabled={isReRunning}
+            disabled={isReRunning || l1Approved}
           />
           <div className="flex justify-end">
             <button
               type="button"
               className={PRIMARY_BTN_CLASS}
-              onClick={postApproveL1}
+              onClick={l1Approved ? () => setStep("l2") : postApproveL1}
               disabled={isReRunning}
             >
-              Approve & Continue →
+              {l1Approved ? "Continue →" : "Approve & Continue →"}
             </button>
           </div>
         </div>
@@ -325,7 +325,7 @@ export function CucpStepper({
           <L2OverrideForm
             rows={classifications}
             onSaveOverride={postOverrideL2}
-            disabled={isReRunning}
+            disabled={isReRunning || l2Approved}
           />
           <div className="flex items-center justify-between">
             <button
@@ -338,10 +338,10 @@ export function CucpStepper({
             <button
               type="button"
               className={PRIMARY_BTN_CLASS}
-              onClick={postApproveL2}
+              onClick={l2Approved ? () => setStep("l3") : postApproveL2}
               disabled={isReRunning}
             >
-              Approve & Continue →
+              {l2Approved ? "Continue →" : "Approve & Continue →"}
             </button>
           </div>
         </div>
