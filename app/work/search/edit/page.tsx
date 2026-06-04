@@ -456,7 +456,7 @@ export default function ManageRubricsPage() {
           <Plus className="size-3" /> Create Rubric
         </button>
         {activeTab === 0 && (
-          <button type="button" onClick={() => setShowNewSection(true)} className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-emerald-700">
+          <button type="button" onClick={() => setShowNewSection(true)} className="inline-flex items-center gap-1.5 rounded-md bg-[var(--color-govdoc-deep)] px-3 py-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-white transition-colors hover:bg-[var(--color-govdoc-primary)]">
             <Plus className="size-3" /> New Section
           </button>
         )}
@@ -900,17 +900,21 @@ function AddCriterionForm({ onAdd, onCancel }: { onAdd: (name: string, pass: str
 }
 
 function CriterionEditForm({ criterion, onSave, onCancel }: { criterion: CucpL3; onSave: (u: Partial<CucpL3>) => void; onCancel: () => void }) {
+  const [name, setName] = useState(criterion.name ?? "");
+  const [title, setTitle] = useState(criterion.title ?? "");
   const [pass, setPass] = useState(criterion.pass ?? "");
   const [fail, setFail] = useState(criterion.fail ?? "");
   const [rule, setRule] = useState(criterion.rule ?? "");
   return (
     <div className="border-t border-[var(--color-line-soft)] bg-amber-50/40 px-5 py-4 space-y-3">
       <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-amber-700"><Pencil className="inline size-3 mr-1" />Editing Criterion</div>
+      <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-faint)]">Criterion Name *</span><input type="text" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" /></label>
+      <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-faint)]">Display Title</span><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Optional display title" className="mt-1 w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" /></label>
       <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-ink-faint)]">Rule / Note</span><input type="text" value={rule} onChange={(e) => setRule(e.target.value)} className="mt-1 w-full rounded-md border border-[var(--color-line)] bg-white px-2.5 py-1.5 text-sm" /></label>
       <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Pass criteria</span><textarea value={pass} onChange={(e) => setPass(e.target.value)} rows={2} className="mt-1 w-full rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 text-sm" /></label>
       <label className="block"><span className="text-[10px] font-bold uppercase tracking-wider text-red-700">Fail criteria</span><textarea value={fail} onChange={(e) => setFail(e.target.value)} rows={2} className="mt-1 w-full rounded-md border border-red-200 bg-white px-2.5 py-1.5 text-sm" /></label>
       <div className="flex gap-2">
-        <button type="button" onClick={() => onSave({ pass, fail, rule: rule || undefined })} className="rounded-md bg-[var(--color-govdoc-primary)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-govdoc-deep)]">Save</button>
+        <button type="button" onClick={() => onSave({ name: name.trim() || undefined, title: title.trim() || undefined, pass, fail, rule: rule || undefined })} className="rounded-md bg-[var(--color-govdoc-primary)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-govdoc-deep)]">Save</button>
         <button type="button" onClick={onCancel} className="rounded-md border border-[var(--color-line)] px-3 py-1.5 text-xs font-medium text-[var(--color-ink-mute)] hover:bg-[var(--color-cream)]">Cancel</button>
       </div>
     </div>

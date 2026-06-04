@@ -11,7 +11,6 @@ import {
   type EditorSelect,
 } from "./shared/rubric-editor-card";
 import { ConfirmDialog, type ConfirmRequest } from "./shared/confirm-dialog";
-import { CreateNewMenu } from "./shared/create-new-menu";
 import { SaveBar } from "./shared/save-bar";
 import type { SaveDraft } from "./shared/save-options-popover";
 
@@ -91,19 +90,6 @@ export function CmgcRubricEdit({
   }
   const sections = Array.from(sectionsMap.values());
 
-  function openCreate(kind: "section" | "question") {
-    if (kind === "section") {
-      setTarget({ kind: "addSection" });
-    } else {
-      const first = sections[0];
-      if (!first) return;
-      setTarget({
-        kind: "addQuestion",
-        sectionKey: first.key,
-        sectionLabel: sectionLabel(first.key, first.name),
-      });
-    }
-  }
 
   function applyEditor(values: Record<string, string>) {
     if (!target) return;
@@ -351,6 +337,17 @@ export function CmgcRubricEdit({
               <div className="mb-3 flex items-center justify-end gap-2">
                 <button
                   type="button"
+                  onClick={() => setTarget({
+                    kind: "addQuestion",
+                    sectionKey: s.key,
+                    sectionLabel: sectionLabel(s.key, s.name),
+                  })}
+                  className={chip()}
+                >
+                  Add question
+                </button>
+                <button
+                  type="button"
                   onClick={() => setTarget({ kind: "editSection", sectionKey: s.key })}
                   className={chip()}
                 >
@@ -414,13 +411,13 @@ export function CmgcRubricEdit({
       </RubricShell>
 
       <div className="flex items-center justify-end">
-        <CreateNewMenu
-          options={[
-            { value: "section", label: "Section" },
-            { value: "question", label: "Question", disabled: sections.length === 0 },
-          ]}
-          onPick={(v) => openCreate(v as "section" | "question")}
-        />
+        <button
+          type="button"
+          onClick={() => setTarget({ kind: "addSection" })}
+          className="shrink-0 rounded-lg bg-[var(--color-govdoc-deep)] px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:bg-[var(--color-govdoc-primary)]"
+        >
+          Create section
+        </button>
       </div>
 
       <SaveBar
