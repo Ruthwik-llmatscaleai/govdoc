@@ -321,7 +321,7 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
     return (
       <div className="space-y-6">
         <DoneSummaryBar ucLabel={ucLabel} reset={reset} />
-        <RecommendationCard recommendation={result.recommendation} />
+        <RecommendationCard recommendation={result.recommendation} matrix={result.matrix} />
         {result.matrix && <MatrixScoring matrix={result.matrix} />}
         <MethodRanking multiMethod={result.multi_method} />
         {role === "district" ? (

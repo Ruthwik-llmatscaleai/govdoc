@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import type { Exporter } from "@/features/usecases/types";
 import type { CmgcRunResult } from "../types";
 import { SECTION_WEIGHTS } from "../rubric";
+import { ALL_METHODS, METHOD_LABELS, type DeliveryMethod } from "../scoring/point-matrix";
 
 export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: string): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
@@ -96,6 +97,135 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
       m.key_factors_reasoning ?? "",
     ];
   });
+
+  // Sheet 5: Selection Matrix (Caltrans format)
+  if (result.matrix) {
+    const mx = wb.addWorksheet("Selection Matrix");
+    mx.getCell("A1").value = "Project Delivery Selection Matrix";
+    mx.getCell("A1").font = { bold: true, size: 12 };
+    mx.mergeCells("A1:G1");
+
+    mx.getCell("A3").value = "SCORING SUMMARY";
+    mx.getCell("A3").font = { bold: true };
+
+    mx.getRow(5).values = ["", "DBB", "Design-Seq", "DB/Low Bid", "DB/Best-Value", "CM/GC", "Prog. DB"];
+    mx.getRow(5).font = { bold: true };
+
+    const ordered = ALL_METHODS.map((method) => result.matrix!.method_scores.find((m) => m.method === method)!);
+
+    mx.getRow(7).values = ["Worksheet 1 (A1-A10)", ...ordered.map((m) => m.worksheet1)];
+    mx.getRow(8).values = ["Worksheet 2 (B-F)", ...ordered.map((m) => m.worksheet2)];
+    mx.getRow(9).values = ["Total Score", ...ordered.map((m) => m.total)];
+    mx.getRow(9).font = { bold: true };
+    mx.getRow(10).values = ["Status", ...ordered.map((m) => m.noGo ? "NO-GO" : "Eligible")];
+
+    mx.getCell("A12").value = `Recommended: ${result.matrix.recommended_label} (${result.matrix.recommended_total} pts)`;
+    mx.getCell("A12").font = { bold: true };
+    if (result.matrix.runner_up_label) {
+      mx.getCell("A13").value = `Runner-up: ${result.matrix.runner_up_label} (${result.matrix.runner_up_total} pts)`;
+    }
+
+    // Per-question detail
+    mx.getCell("A15").value = "PER-QUESTION POINT BREAKDOWN";
+    mx.getCell("A15").font = { bold: true };
+    mx.getRow(16).values = ["Question", "DBB", "Design-Seq", "DB/Low Bid", "DB/Best-Value", "CM/GC", "Prog. DB"];
+    mx.getRow(16).font = { bold: true };
+
+    let mxRow = 17;
+    const questions = Object.keys(result.matrix.per_question).sort((a, b) => {
+      const sa = a[0]!, sb = b[0]!;
+      if (sa !== sb) return sa.localeCompare(sb);
+      return parseInt(a.slice(1)) - parseInt(b.slice(1));
+    });
+    for (const qid of questions) {
+      const pts = result.matrix.per_question[qid]!;
+      mx.getRow(mxRow).values = [
+        qid,
+        ...ALL_METHODS.map((m) => pts[m] === -1 ? "No-Go" : pts[m]),
+      ];
+      mxRow++;
+    }
+  }
+
+  // Sheet 6+: Per-method reasoning
+  if (result.multi_method.method_scores.length > 0) {
+    for (const m of result.multi_method.method_scores) {
+      const label = (METHOD_LABELS[m.method as DeliveryMethod] ?? m.method).substring(0, 31);
+      const methodSheet = wb.addWorksheet(label);
+      methodSheet.getCell("A1").value = m.method;
+      methodSheet.getCell("A1").font = { bold: true, size: 12 };
+
+      methodSheet.getCell("A3").value = "Rank:";
+      methodSheet.getCell("B3").value = m.rank;
+      methodSheet.getCell("A4").value = "Score:";
+      methodSheet.getCell("B4").value = m.score;
+      methodSheet.getCell("A5").value = "Status:";
+      methodSheet.getCell("B5").value = m.blocked ? "Blocked" : "Eligible";
+
+      if (result.matrix) {
+        const matrixEntry = result.matrix.method_scores.find((ms) => ms.method === m.method);
+        if (matrixEntry) {
+          methodSheet.getCell("A6").value = "Matrix Points:";
+          methodSheet.getCell("B6").value = matrixEntry.total;
+          methodSheet.getCell("A7").value = "No-Go:";
+          methodSheet.getCell("B7").value = matrixEntry.noGo ? `Yes (${matrixEntry.noGoQuestions.join(", ")})` : "No";
+        }
+      }
+
+      let r = 9;
+      if (m.key_factors_reasoning) {
+        methodSheet.getCell(`A${r}`).value = "Reasoning:";
+        methodSheet.getCell(`A${r}`).font = { bold: true };
+        r++;
+        methodSheet.getCell(`A${r}`).value = m.key_factors_reasoning;
+        methodSheet.mergeCells(`A${r}:D${r}`);
+        r += 2;
+      }
+
+      if (m.key_factors.length > 0) {
+        methodSheet.getCell(`A${r}`).value = "Key Factors:";
+        methodSheet.getCell(`A${r}`).font = { bold: true };
+        r++;
+        for (const kf of m.key_factors) {
+          methodSheet.getCell(`A${r}`).value = `• ${kf}`;
+          r++;
+        }
+        r++;
+      }
+
+      if (m.pros.length > 0) {
+        methodSheet.getCell(`A${r}`).value = "Pros:";
+        methodSheet.getCell(`A${r}`).font = { bold: true };
+        r++;
+        for (const p of m.pros) {
+          methodSheet.getCell(`A${r}`).value = `• ${p}`;
+          r++;
+        }
+        r++;
+      }
+
+      if (m.cons.length > 0) {
+        methodSheet.getCell(`A${r}`).value = "Cons:";
+        methodSheet.getCell(`A${r}`).font = { bold: true };
+        r++;
+        for (const c of m.cons) {
+          methodSheet.getCell(`A${r}`).value = `• ${c}`;
+          r++;
+        }
+        r++;
+      }
+
+      if (m.block_reasons.length > 0) {
+        methodSheet.getCell(`A${r}`).value = "Block Reasons:";
+        methodSheet.getCell(`A${r}`).font = { bold: true };
+        r++;
+        for (const br of m.block_reasons) {
+          methodSheet.getCell(`A${r}`).value = `• ${br}`;
+          r++;
+        }
+      }
+    }
+  }
 
   // Set reasonable column widths
   for (const ws of wb.worksheets) {
