@@ -4,9 +4,10 @@ import type { MatrixResult } from "@/features/usecases/cmgc-pde/scoring/point-ma
 type Props = {
   recommendation: RecommendationResult;
   matrix?: MatrixResult | null;
+  showScores?: boolean;
 };
 
-export function RecommendationCard({ recommendation, matrix }: Props) {
+export function RecommendationCard({ recommendation, matrix, showScores = false }: Props) {
   const primaryMethod = matrix?.recommended_label ?? recommendation.recommended_method ?? "—";
   const primaryTotal = matrix?.recommended_total ?? null;
   const runnerUp = matrix?.runner_up_label ?? recommendation.runner_up_method;
@@ -21,23 +22,23 @@ export function RecommendationCard({ recommendation, matrix }: Props) {
         </p>
         <h2 className="text-2xl font-medium tracking-[-0.01em] text-[var(--color-ink)]" style={{ fontFamily: "var(--font-display)" }}>
           {primaryMethod}
+          {showScores && primaryTotal != null && (
+            <span className="ml-3 text-[16px] font-mono font-bold text-[var(--color-govdoc-primary)]">
+              {primaryTotal} pts
+            </span>
+          )}
         </h2>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        {primaryTotal != null && (
-          <span className="rounded-md border border-[var(--color-govdoc-primary)] bg-[var(--color-accent-soft)] px-2 py-1 font-mono font-bold text-[var(--color-govdoc-primary)]">
-            {primaryTotal} pts
-          </span>
-        )}
-        {runnerUp && (
-          <span className="text-[var(--color-ink-mute)]">
-            Runner-up:{" "}
-            <span className="font-medium text-[var(--color-ink)]">{runnerUp}</span>
-            {runnerUpTotal != null && <span className="font-mono"> ({runnerUpTotal} pts)</span>}
-          </span>
-        )}
-      </div>
+      {runnerUp && (
+        <p className="text-sm text-[var(--color-ink-mute)]">
+          Runner-up:{" "}
+          <span className="font-medium text-[var(--color-ink)]">{runnerUp}</span>
+          {showScores && runnerUpTotal != null && (
+            <span className="ml-1 font-mono text-[var(--color-ink-mute)]">({runnerUpTotal} pts)</span>
+          )}
+        </p>
+      )}
 
       {noGoMethods.length > 0 && (
         <div className="flex flex-wrap gap-1.5">

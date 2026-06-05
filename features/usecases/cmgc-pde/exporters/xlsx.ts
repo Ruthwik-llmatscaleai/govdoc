@@ -78,26 +78,57 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   summary.getCell("A5").value = "Date:";
   summary.getCell("B5").value = result.evaluation.evaluation_date ?? "";
 
+  const borderThinS: Partial<ExcelJS.Border> = { style: "thin" };
+  const bordersS: Partial<ExcelJS.Borders> = { top: borderThinS, bottom: borderThinS, left: borderThinS, right: borderThinS };
+  const centerAlignS: Partial<ExcelJS.Alignment> = { horizontal: "center", vertical: "middle" };
+
   summary.getCell("A7").value = "SCORING SUMMARY";
   summary.getCell("A7").font = { bold: true, size: 11 };
 
-  summary.getRow(9).values = ["", ...ALL_METHODS.map((m) => METHOD_SHORT[m])];
-  summary.getRow(9).font = { bold: true };
-  summary.getRow(9).eachCell((cell) => { cell.alignment = { horizontal: "center" }; });
+  // Scoring table with borders
+  const sumHdrRow = summary.getRow(9);
+  sumHdrRow.values = ["", ...ALL_METHODS.map((m) => METHOD_SHORT[m])];
+  sumHdrRow.font = { bold: true, size: 9 };
+  sumHdrRow.eachCell((cell, colNum) => { if (colNum > 1) { cell.border = bordersS; cell.alignment = centerAlignS; } });
 
-  summary.getRow(11).values = ["Project Scope & Characteristics (WS1)", ...ALL_METHODS.map((m) => methodTotals[m].ws1)];
-  summary.getRow(12).values = ["Success Criteria (WS2)", ...ALL_METHODS.map((m) => methodTotals[m].ws2)];
-  summary.getRow(13).values = ["Total Score", ...ALL_METHODS.map((m) => methodTotals[m].total)];
-  summary.getRow(13).font = { bold: true };
+  const ws1Row = summary.getRow(11);
+  ws1Row.values = ["Project Scope & Characteristics (WS1)", ...ALL_METHODS.map((m) => methodTotals[m].ws1)];
+  ws1Row.eachCell((cell, colNum) => { cell.border = bordersS; if (colNum > 1) cell.alignment = centerAlignS; });
 
-  // Find winner
+  const ws2Row = summary.getRow(12);
+  ws2Row.values = ["Success Criteria (WS2)", ...ALL_METHODS.map((m) => methodTotals[m].ws2)];
+  ws2Row.eachCell((cell, colNum) => { cell.border = bordersS; if (colNum > 1) cell.alignment = centerAlignS; });
+
+  const totalRow = summary.getRow(13);
+  totalRow.values = ["Total Score", ...ALL_METHODS.map((m) => methodTotals[m].total)];
+  totalRow.font = { bold: true, size: 11 };
+  totalRow.eachCell((cell, colNum) => { cell.border = bordersS; if (colNum > 1) cell.alignment = centerAlignS; });
+
+  // Final Selection
   const eligible = ALL_METHODS.filter((m) => methodTotals[m].noGo.length === 0);
   const sorted = [...eligible].sort((a, b) => methodTotals[b].total - methodTotals[a].total);
   const winner = sorted[0];
   summary.getCell("A15").value = "Final Selection:";
   summary.getCell("A15").font = { bold: true };
   summary.getCell("B15").value = winner ? `${METHOD_SHORT[winner]} (${methodTotals[winner].total} pts)` : "—";
-  summary.getCell("B15").font = { bold: true };
+  summary.getCell("B15").font = { bold: true, size: 12 };
+
+  // Override Rules table
+  if (result.recommendation.override_reasons.length > 0) {
+    summary.getCell("A17").value = "OVERRIDE RULES TRIGGERED";
+    summary.getCell("A17").font = { bold: true, size: 10 };
+
+    const ruleHdr = summary.getRow(18);
+    ruleHdr.values = ["#", "Rule"];
+    ruleHdr.font = { bold: true };
+    ruleHdr.eachCell((cell) => { cell.border = bordersS; });
+
+    result.recommendation.override_reasons.forEach((reason, i) => {
+      const rr = summary.getRow(19 + i);
+      rr.values = [i + 1, reason];
+      rr.eachCell((cell) => { cell.border = bordersS; });
+    });
+  }
 
   // ─── Sheet 2: Questionnaire (matches Caltrans Template format) ───
   const template = wb.addWorksheet("Questionnaire");
@@ -223,6 +254,9 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   });
 
   // ─── Sheet 3+: Per delivery method ───
+  const bdr: Partial<ExcelJS.Borders> = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } };
+  const ctr: Partial<ExcelJS.Alignment> = { horizontal: "center", vertical: "middle" };
+
   for (const method of ALL_METHODS) {
     const label = METHOD_SHORT[method].replace(/[/\\?*[\]]/g, "-").substring(0, 31);
     const ms = wb.addWorksheet(label);
@@ -231,20 +265,36 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
     ms.getCell("A1").value = METHOD_SHORT[method];
     ms.getCell("A1").font = { bold: true, size: 14 };
 
-    ms.getCell("A3").value = "Total Score:";
-    ms.getCell("B3").value = t.total;
-    ms.getCell("B3").font = { bold: true };
-    ms.getCell("A4").value = "Worksheet 1:";
-    ms.getCell("B4").value = t.ws1;
-    ms.getCell("A5").value = "Worksheet 2:";
-    ms.getCell("B5").value = t.ws2;
-    ms.getCell("A6").value = "Status:";
-    ms.getCell("B6").value = t.noGo.length > 0 ? `NO-GO (${t.noGo.join(", ")})` : "Eligible";
+    // ── Table 1: Summary ──
+    ms.getCell("A3").value = "SUMMARY";
+    ms.getCell("A3").font = { bold: true, size: 10 };
 
-    // Per-question points for this method
-    let r = 8;
-    ms.getRow(r).values = ["Question", "Selected", "Points", "Reasoning"];
-    ms.getRow(r).font = { bold: true };
+    const sumRows: [string, string | number][] = [
+      ["Total Score", t.total],
+      ["Worksheet 1 (Project Scope)", t.ws1],
+      ["Worksheet 2 (Success Criteria)", t.ws2],
+      ["Status", t.noGo.length > 0 ? `NO-GO (${t.noGo.join(", ")})` : "Eligible"],
+    ];
+    sumRows.forEach(([k, v], i) => {
+      const rw = ms.getRow(4 + i);
+      rw.getCell(1).value = k;
+      rw.getCell(1).border = bdr;
+      rw.getCell(1).font = { bold: true, size: 9 };
+      rw.getCell(2).value = v;
+      rw.getCell(2).border = bdr;
+      rw.getCell(2).font = i === 0 ? { bold: true, size: 11 } : {};
+    });
+
+    // ── Table 2: Per-question points ──
+    let r = 10;
+    ms.getCell(`A${r}`).value = "PER-QUESTION SCORING";
+    ms.getCell(`A${r}`).font = { bold: true, size: 10 };
+    r++;
+
+    const tblHdr = ms.getRow(r);
+    tblHdr.values = ["Question", "Answer", "Points", "Evidence"];
+    tblHdr.font = { bold: true, size: 9 };
+    tblHdr.eachCell((cell) => { cell.border = bdr; cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF3EEE0" } }; });
     r++;
 
     for (const qid of [...WS1_IDS, ...WS2_IDS]) {
@@ -252,34 +302,52 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
       const pts = SCORING_MATRIX[qid]?.[answer]?.[method] ?? 0;
       const ratingEntry = result.evaluation.ratings.find((x) => x.question_id === qid);
       const reasoning = ratingEntry?.source_reasoning?.slice(0, 200) ?? "";
-      ms.getRow(r).values = [qid, answer, pts === -1 ? "No-Go" : pts, reasoning];
+      const rw = ms.getRow(r);
+      rw.values = [qid, answer, pts === -1 ? "No-Go" : pts, reasoning];
+      rw.eachCell((cell) => { cell.border = bdr; });
+      rw.getCell(2).alignment = ctr;
+      rw.getCell(3).alignment = ctr;
+      if (pts === -1) rw.getCell(3).font = { bold: true, color: { argb: "FFCC0000" } };
       r++;
     }
 
-    // LLM reasoning if available
+    // ── Table 3: AI Analysis (if available) ──
     if (result.multi_method?.method_scores) {
       const mm = result.multi_method.method_scores.find((x) => x.method === method || x.method === METHOD_SHORT[method]);
-      if (mm) {
+      if (mm && (mm.key_factors_reasoning || mm.pros.length > 0 || mm.cons.length > 0)) {
         r += 2;
+        ms.getCell(`A${r}`).value = "AI ANALYSIS";
+        ms.getCell(`A${r}`).font = { bold: true, size: 10 };
+        r++;
+
         if (mm.key_factors_reasoning) {
-          ms.getCell(`A${r}`).value = "AI Reasoning:";
-          ms.getCell(`A${r}`).font = { bold: true };
+          const rw = ms.getRow(r);
+          rw.getCell(1).value = "Reasoning";
+          rw.getCell(1).font = { bold: true };
+          rw.getCell(1).border = bdr;
+          rw.getCell(2).value = mm.key_factors_reasoning;
+          rw.getCell(2).border = bdr;
           r++;
-          ms.getCell(`A${r}`).value = mm.key_factors_reasoning;
-          r += 2;
         }
+
         if (mm.pros.length > 0) {
-          ms.getCell(`A${r}`).value = "Pros:";
-          ms.getCell(`A${r}`).font = { bold: true };
-          r++;
-          for (const p of mm.pros) { ms.getCell(`A${r}`).value = `• ${p}`; r++; }
+          const rw = ms.getRow(r);
+          rw.getCell(1).value = "Pros";
+          rw.getCell(1).font = { bold: true };
+          rw.getCell(1).border = bdr;
+          rw.getCell(2).value = mm.pros.join("; ");
+          rw.getCell(2).border = bdr;
           r++;
         }
+
         if (mm.cons.length > 0) {
-          ms.getCell(`A${r}`).value = "Cons:";
-          ms.getCell(`A${r}`).font = { bold: true };
+          const rw = ms.getRow(r);
+          rw.getCell(1).value = "Cons";
+          rw.getCell(1).font = { bold: true };
+          rw.getCell(1).border = bdr;
+          rw.getCell(2).value = mm.cons.join("; ");
+          rw.getCell(2).border = bdr;
           r++;
-          for (const c of mm.cons) { ms.getCell(`A${r}`).value = `• ${c}`; r++; }
         }
       }
     }
