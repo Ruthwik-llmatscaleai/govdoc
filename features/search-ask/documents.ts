@@ -95,7 +95,7 @@ async function chunkText(text: string): Promise<string[]> {
 /**
  * Call the OpenAI embeddings API (text-embedding-3-small, 1536-dim).
  */
-async function callOpenAiEmbeddings(texts: string[]): Promise<number[][]> {
+async function callOpenAiEmbeddings(texts: string[], attempt = 0): Promise<number[][]> {
   const key = process.env.OPENAI_API_KEY;
   if (!key) throw new Error("OPENAI_API_KEY not set");
   const res = await fetch("https://api.openai.com/v1/embeddings", {
@@ -104,7 +104,15 @@ async function callOpenAiEmbeddings(texts: string[]): Promise<number[][]> {
     body: JSON.stringify({ model: EMBEDDING_MODEL, input: texts }),
   });
   if (!res.ok) {
-    throw new Error(`OpenAI Embeddings API error: ${res.status} ${await res.text()}`);
+    const body = await res.text();
+    // Retry transient rate-limit / server errors with exponential backoff.
+    // Do NOT retry insufficient_quota (billing) — that won't resolve by waiting.
+    const retryable = (res.status === 429 || res.status >= 500) && !body.includes("insufficient_quota");
+    if (retryable && attempt < 5) {
+      await new Promise((r) => setTimeout(r, 2000 * 2 ** attempt));
+      return callOpenAiEmbeddings(texts, attempt + 1);
+    }
+    throw new Error(`OpenAI Embeddings API error: ${res.status} ${body}`);
   }
   const json = (await res.json()) as { data: { embedding: number[]; index: number }[] };
   return json.data.sort((a, b) => a.index - b.index).map((d) => d.embedding);

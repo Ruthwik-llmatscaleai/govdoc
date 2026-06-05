@@ -24,8 +24,13 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { ChatMarkdown } from "@/components/work/chat/chat-markdown";
+import { extractArtifacts, hasArtifacts, segmentMessageText } from "@/lib/artifacts";
+import { useArtifacts } from "@/store/use-artifacts";
+import { ArtifactTile } from "@/components/work/chat/artifacts/artifact-tile";
+import { ArtifactPanel } from "@/components/work/chat/artifacts/artifact-panel";
+import { StreamingContent } from "@/components/work/chat/streaming-content";
 
 const FALLBACK_USER_ID = "dev";
 const FALLBACK_USER_NAME = "User";
@@ -69,6 +74,7 @@ function relativeDate(iso: string): string {
 
 
 export default function SearchAskPage() {
+  const artifactOpen = useArtifacts((s) => s.open);
   const [documents, setDocuments] = useState<ProcessedDocument[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
@@ -76,6 +82,7 @@ export default function SearchAskPage() {
   const [inputValue, setInputValue] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isAnswering, setIsAnswering] = useState(false);
+  const [streamingContent, setStreamingContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
@@ -266,34 +273,85 @@ export default function SearchAskPage() {
     const controller = new AbortController();
     abortRef.current = controller;
 
+    setStreamingContent("");
+
     try {
       setTimeout(() => { if (abortRef.current === controller) setThinkingPhase("Generating answer..."); }, 2000);
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userMessage.content, chatHistory, conversationId: convId }),
+        body: JSON.stringify({ question: userMessage.content, chatHistory, conversationId: convId, stream: true }),
         signal: controller.signal,
       });
-      const data = await response.json();
-      if (data.success) {
-        const elapsed = (Date.now() - startedAt) / 1000;
-        setResponseTimes((prev) => ({ ...prev, [newHistory.length]: elapsed }));
 
-        await fetch("/api/storage/save-message", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            role: "assistant",
-            content: data.answer.content,
-            sources: data.answer.sources,
-            conversationId: convId,
-          }),
-        });
-        setChatHistory([...newHistory, data.answer]);
-        refreshConversations();
-      } else {
-        setChatHistory([...newHistory, { role: "assistant", content: `Error: ${data.error}`, timestamp: new Date().toISOString() }]);
+      if (!response.ok || !response.body) {
+        throw new Error(`Request failed (${response.status})`);
       }
+
+      // Consume the Server-Sent Events stream.
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let acc = "";
+      let sources: ChatMessage["sources"];
+      let streamError: string | null = null;
+
+      let chunk = await reader.read();
+      while (!chunk.done) {
+        buffer += decoder.decode(chunk.value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? "";
+        for (const part of parts) {
+          const line = part.trim();
+          if (!line.startsWith("data:")) continue; // ignore heartbeats / comments
+          const json = line.slice(5).trim();
+          if (!json) continue;
+          const ev = JSON.parse(json) as
+            | { type: "text"; delta: string }
+            | { type: "sources"; sources: ChatMessage["sources"] }
+            | { type: "error"; message: string }
+            | { type: "done" };
+          if (ev.type === "text") {
+            acc += ev.delta;
+            setStreamingContent(acc);
+          } else if (ev.type === "sources") {
+            sources = ev.sources;
+          } else if (ev.type === "error") {
+            streamError = ev.message;
+          }
+        }
+        chunk = await reader.read();
+      }
+
+      if (streamError) throw new Error(streamError);
+
+      const elapsed = (Date.now() - startedAt) / 1000;
+      setResponseTimes((prev) => ({ ...prev, [newHistory.length]: elapsed }));
+
+      const finalMessage: ChatMessage = {
+        role: "assistant",
+        content: acc,
+        sources,
+        timestamp: new Date().toISOString(),
+      };
+
+      await fetch("/api/storage/save-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: "assistant",
+          content: finalMessage.content,
+          sources: finalMessage.sources,
+          conversationId: convId,
+        }),
+      });
+      setChatHistory([...newHistory, finalMessage]);
+      refreshConversations();
+
+      // Auto-open a finance dashboard in the side panel when one was produced.
+      const finalArts = extractArtifacts(acc);
+      const vizIdx = finalArts.findIndex((a) => a.strategy === "viz");
+      if (vizIdx >= 0) useArtifacts.getState().openArtifact(finalArts, vizIdx);
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
         setInputValue(userMessage.content);
@@ -302,6 +360,7 @@ export default function SearchAskPage() {
         setChatHistory([...newHistory, { role: "assistant", content: "Failed to get answer. Please try again.", timestamp: new Date().toISOString() }]);
       }
     } finally {
+      setStreamingContent(null);
       setIsAnswering(false);
       setThinkingPhase("");
       abortRef.current = null;
@@ -427,8 +486,8 @@ export default function SearchAskPage() {
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      {/* LEFT SIDEBAR */}
-      {sidebarOpen && (
+      {/* LEFT SIDEBAR — auto-hidden while the artifact/visual panel is open */}
+      {sidebarOpen && !artifactOpen && (
       <aside className="flex w-[300px] shrink-0 flex-col border-r border-[#d6cfba] bg-[#f7f2e6]">
         <div className="flex h-[52px] items-center justify-between border-b border-[#d6cfba] bg-[#fcfaf3] px-[14px]">
           <div className="flex items-center gap-2">
@@ -524,7 +583,9 @@ export default function SearchAskPage() {
       )}
 
       {/* MAIN CHAT AREA */}
-      <main className="relative flex flex-1 flex-col overflow-hidden bg-[#F3EEE0]">
+      <PanelGroup direction="horizontal" className="flex flex-1 overflow-hidden">
+        <Panel order={1} defaultSize={50} minSize={30} className="flex flex-col">
+          <main className="relative flex h-full w-full flex-col overflow-hidden bg-[#F3EEE0]">
         {/* Minimal top bar */}
         <div className="relative z-10 flex h-[52px] shrink-0 items-center gap-3 border-b border-[#d6cfba]/60 bg-[#F7F2E6] px-[16px]">
           {!sidebarOpen && (
@@ -656,7 +717,7 @@ export default function SearchAskPage() {
                   ),
                 )}
 
-                {isAnswering && (
+                {isAnswering && !streamingContent && (
                   <div className="flex items-start gap-3">
                     <div
                       className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-[#3D5740] text-[#FCFAF3]"
@@ -688,6 +749,31 @@ export default function SearchAskPage() {
                     </div>
                   </div>
                 )}
+                {isAnswering && streamingContent ? (
+                  <div className="group flex items-start gap-3">
+                    <div
+                      className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-[#0e1410] text-[#fcfaf3]"
+                      style={{ fontFamily: "var(--font-display)", fontSize: "15px", fontWeight: 700 }}
+                    >
+                      G
+                    </div>
+                    <div className="flex-1">
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="uppercase text-[#556157]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700, letterSpacing: "1.5px" }}>GOVDOC</span>
+                        <span className="uppercase text-[#3D5740]" style={{ fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 700 }}>· GENERATING</span>
+                      </div>
+                      <StreamingContent text={streamingContent} />
+                      <button
+                        onClick={handleStop}
+                        className="mt-2 flex w-fit items-center gap-1.5 rounded-md border border-[#d6cfba] px-2 py-1 text-[11px] text-[#6E706A] transition-colors hover:border-[#8B877D] hover:text-[#0E1410]"
+                        style={{ fontFamily: "var(--font-mono)" }}
+                      >
+                        <Square className="size-2.5" fill="currentColor" />
+                        Stop
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
                 <div ref={messagesEndRef} />
               </div>
             </div>
@@ -712,7 +798,17 @@ export default function SearchAskPage() {
             </div>
           </>
         )}
-      </main>
+          </main>
+        </Panel>
+        {artifactOpen && (
+          <>
+            <PanelResizeHandle className="w-1.5 cursor-col-resize bg-[#d6cfba] transition-colors hover:bg-[#3D5740]/40" />
+            <Panel order={2} defaultSize={50} minSize={25} className="flex flex-col">
+              <ArtifactPanel />
+            </Panel>
+          </>
+        )}
+      </PanelGroup>
 
       {/* RIGHT ARTIFACTS PANEL */}
       {artifactsOpen && (
@@ -869,6 +965,23 @@ function UserMessage({ msg, idx, editingIdx, editValue, setEditValue, onEditStar
   );
 }
 
+function AssistantBody({ content }: { content: string }) {
+  const openArtifact = useArtifacts((s) => s.openArtifact);
+  if (!hasArtifacts(content)) return <ChatMarkdown content={content} />;
+
+  const segments = segmentMessageText(content);
+  const arts = segments.flatMap((s) => (s.kind === "artifact" ? [s.artifact] : []));
+  return (
+    <>
+      {segments.map((seg, si) => {
+        if (seg.kind === "text") return <ChatMarkdown key={si} content={seg.text} />;
+        const idx = arts.indexOf(seg.artifact);
+        return <ArtifactTile key={si} artifact={seg.artifact} onOpen={() => openArtifact(arts, idx)} />;
+      })}
+    </>
+  );
+}
+
 function AssistantMessage({ msg, idx, isLast, isAnswering, responseTimes, copiedIdx, onCopy, onRetry }: {
   msg: ChatMessage; idx: number; isLast: boolean; isAnswering: boolean;
   responseTimes: Record<number, number>; copiedIdx: number | null;
@@ -895,53 +1008,7 @@ function AssistantMessage({ msg, idx, isLast, isAnswering, responseTimes, copied
           )}
         </div>
 
-        <div className="text-[15px] leading-[1.6] text-[#202821]" style={{ fontFamily: "var(--font-sans)" }}>
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              p({ children }) { return <p className="my-2.5 leading-[1.6]">{children}</p>; },
-              strong({ children }) { return <strong className="font-semibold text-[#0E1410]">{children}</strong>; },
-              em({ children }) { return <em className="italic">{children}</em>; },
-              h1({ children }) { return <h1 className="mb-2 mt-5 text-[22px] font-semibold tracking-[-0.012em] text-[#0E1410]" style={{ fontFamily: "var(--font-display)" }}>{children}</h1>; },
-              h2({ children }) { return <h2 className="mb-2 mt-4 text-[19px] font-semibold tracking-[-0.012em] text-[#0E1410]" style={{ fontFamily: "var(--font-display)" }}>{children}</h2>; },
-              h3({ children }) { return <h3 className="mb-1 mt-3 text-[17px] font-medium text-[#0E1410]" style={{ fontFamily: "var(--font-display)" }}>{children}</h3>; },
-              ul({ children }) { return <ul className="my-2.5 list-disc space-y-1 pl-5">{children}</ul>; },
-              ol({ children }) { return <ol className="my-2.5 list-decimal space-y-1 pl-5">{children}</ol>; },
-              li({ children }) { return <li className="leading-[1.6]">{children}</li>; },
-              blockquote({ children }) { return <blockquote className="my-3 border-l-[3px] border-[#3D5740]/50 pl-3 text-[15px] italic leading-[1.6] text-[#556157]">{children}</blockquote>; },
-              a({ href, children }) { return <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#3D5740] underline underline-offset-[3px] hover:text-[#0E1410]">{children}</a>; },
-              code({ className, children }) {
-                const lang = (className ?? "").replace(/^language-/, "");
-                if (!className) {
-                  return <code className="rounded bg-[#F3EEE0] px-1.5 py-0.5 text-[12.5px] font-mono text-[#0E1410]">{children}</code>;
-                }
-                return (
-                  <div className="my-3 overflow-hidden rounded-xl border border-[#d6cfba] bg-[#1f1f1d]">
-                    <div className="flex items-center justify-between border-b border-white/10 bg-[#0f0f0e] px-3 py-1.5">
-                      <span className="text-[11px] font-medium uppercase tracking-wider text-white/60">{lang || "code"}</span>
-                    </div>
-                    <pre className="overflow-x-auto px-4 py-3 font-mono text-[13.5px] leading-[1.55] text-[#e8e6df]"><code>{children}</code></pre>
-                  </div>
-                );
-              },
-              pre({ children }) { return <>{children}</>; },
-              table({ children }) {
-                return (
-                  <div className="my-4 overflow-hidden rounded-xl border border-[#d6cfba] bg-[#FCFAF3] shadow-[0_4px_12px_-8px_rgba(40,69,53,0.2)]">
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full border-separate border-spacing-0 text-[14px] [&_tbody_tr:nth-child(even)]:bg-[#f7f5ed] [&_tbody_tr:hover]:bg-[#e8eadf]">{children}</table>
-                    </div>
-                  </div>
-                );
-              },
-              thead({ children }) { return <thead className="bg-[#f7f2e6] text-[11px] font-semibold uppercase tracking-[0.12em] text-[#556157]">{children}</thead>; },
-              th({ children }) { return <th className="border-b border-[#d6cfba] px-4 py-2.5 text-left">{children}</th>; },
-              td({ children }) { return <td className="border-b border-[#d6cfba]/50 px-4 py-3 leading-[1.5] text-[#0E1410]">{children}</td>; },
-            }}
-          >
-            {msg.content}
-          </ReactMarkdown>
-        </div>
+        <AssistantBody content={msg.content} />
 
         {/* Citations */}
         {msg.sources && msg.sources.length > 0 && (

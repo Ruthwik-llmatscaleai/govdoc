@@ -24,8 +24,12 @@ COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 COPY --from=build /app/artifacts ./artifacts
 COPY --from=build /app/features/usecases/row-appraisal/assets ./features/usecases/row-appraisal/assets
+# Runtime config is loaded from .env.local by start.sh (EB environment properties
+# are not injected into the container on this platform, so the app relies on this).
 COPY .env.local ./.env.local
 COPY start.sh ./start.sh
-RUN chmod +x start.sh
+# Normalize CRLF -> LF and ensure executable, then invoke via sh explicitly.
+# (Exit 127 in prior deploys was the classic CRLF-in-entrypoint failure.)
+RUN sed -i 's/\r$//' start.sh && chmod +x start.sh
 EXPOSE 8080
-CMD ["./start.sh"]
+CMD ["/bin/sh", "start.sh"]

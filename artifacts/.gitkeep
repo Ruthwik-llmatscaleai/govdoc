@@ -1,0 +1,3 @@
+# Keeps the artifacts/ directory present in the deploy bundle.
+# The Dockerfile does `COPY --from=build /app/artifacts ./artifacts`, which fails
+# if this directory is absent. Runtime contents (precedents/, rubrics/) are gitignored.

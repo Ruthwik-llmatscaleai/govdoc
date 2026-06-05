@@ -1,0 +1,5 @@
+# Force LF for shell scripts so the Docker entrypoint never gets CRLF on a
+# Windows checkout (CRLF in start.sh causes the container to exit 127).
+*.sh text eol=lf
+start.sh text eol=lf
+Dockerfile text eol=lf
