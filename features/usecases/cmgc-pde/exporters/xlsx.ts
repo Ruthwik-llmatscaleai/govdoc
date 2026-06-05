@@ -142,11 +142,17 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   template.getCell("A1").font = { bold: true, size: 11 };
   template.mergeCells("A1:G1");
 
-  // Column headers
-  template.getRow(3).values = ["Project Scope and Characteristic Criteria", ...ALL_METHODS.map((m) => METHOD_SHORT[m])];
+  // Column headers: Question | Selected | Conf | DBB | DS | DB/LB | DB/BV | CM/GC | PDB
+  template.getRow(3).values = ["Criteria", "Ans", "Conf", ...ALL_METHODS.map((m) => METHOD_SHORT[m])];
   template.getRow(3).font = { bold: true, size: 9 };
   template.getRow(3).eachCell((cell) => { cell.border = borders; cell.alignment = centerAlign; });
-  template.getRow(3).getCell(1).alignment = { horizontal: "left", vertical: "middle" };
+  template.getRow(3).getCell(1).alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+
+  // Set column widths
+  template.getColumn(1).width = 55;
+  template.getColumn(2).width = 5;
+  template.getColumn(3).width = 6;
+  for (let i = 4; i <= 9; i++) template.getColumn(i).width = 14;
 
   let row = 5;
   function writeQuestion(qid: string) {
@@ -155,44 +161,47 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
     const pts = SCORING_MATRIX[qid]?.[answer];
     if (!meta || !pts) return;
 
-    // Question row: "A1. [C] Question text" + awarded points per method
-    const qCell = template.getCell(row, 1);
-    qCell.value = `${qid}. ${meta.text}`;
-    qCell.font = { bold: true, size: 10 };
-    // Write awarded points
-    ALL_METHODS.forEach((m, i) => {
-      const cell = template.getCell(row, i + 2);
-      cell.value = pts[m] === -1 ? "No-Go" : pts[m];
-      cell.alignment = centerAlign;
-      cell.font = { bold: true };
-      cell.border = borders;
+    // Find confidence for this question
+    const ratingEntry = result.evaluation.ratings.find((x) => x.question_id === qid);
+    const conf = ratingEntry?.confidence != null ? ratingEntry.confidence.toFixed(2) : "";
+
+    // Question row: question text + selected answer + confidence + points per method
+    const qRow = template.getRow(row);
+    qRow.values = [
+      `${qid}. ${meta.text}  —  ${answer}. ${meta.options[answer]}`,
+      answer,
+      conf,
+      ...ALL_METHODS.map((m) => pts[m] === -1 ? "No-Go" : pts[m]),
+    ];
+    qRow.font = { bold: true, size: 9 };
+    qRow.getCell(1).alignment = { wrapText: true, vertical: "top" };
+    qRow.getCell(2).alignment = centerAlign;
+    qRow.getCell(3).alignment = centerAlign;
+    qRow.eachCell((cell, colNum) => {
+      if (colNum >= 4) { cell.alignment = centerAlign; cell.border = borders; }
     });
-    // Selected answer badge in question cell
-    const answerCell = template.getCell(row, 1);
-    answerCell.value = { richText: [
-      { text: `${qid}. `, font: { bold: true, size: 10 } },
-      { text: `[${answer}] `, font: { bold: true, size: 10, color: { argb: "FF3D5740" } } },
-      { text: meta.text, font: { size: 10 } },
-    ] };
+    qRow.getCell(1).border = borders;
+    qRow.getCell(2).border = borders;
+    qRow.getCell(3).border = borders;
     row++;
 
-    // Option rows
+    // Option rows — show only the NON-selected options (for reference, greyed out)
     for (const opt of ["A", "B", "C"] as Rating[]) {
+      if (opt === answer) continue; // skip selected — already shown in question row
       const optPts = SCORING_MATRIX[qid]![opt];
-      const isSelected = opt === answer;
-      const optCell = template.getCell(row, 1);
-      optCell.value = `     ${opt}. ${meta.options[opt]}`;
-      optCell.font = isSelected ? { bold: true, size: 9 } : { size: 9, color: { argb: "FF666666" } };
-      ALL_METHODS.forEach((m, i) => {
-        const cell = template.getCell(row, i + 2);
-        cell.value = optPts[m] === -1 ? "No-Go" : `${optPts[m]} pts`;
-        cell.alignment = centerAlign;
-        cell.font = isSelected ? { bold: true, size: 9 } : { size: 9, color: { argb: "FF666666" } };
-        if (isSelected) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEDF7EE" } };
-      });
+      const optRow = template.getRow(row);
+      optRow.values = [
+        `     ${opt}. ${meta.options[opt]}`,
+        "",
+        "",
+        ...ALL_METHODS.map((m) => optPts[m] === -1 ? "No-Go" : optPts[m]),
+      ];
+      optRow.font = { size: 8, color: { argb: "FF999999" } };
+      optRow.getCell(1).alignment = { wrapText: true, vertical: "top" };
+      for (let c = 4; c <= 9; c++) { optRow.getCell(c).alignment = centerAlign; }
       row++;
     }
-    row++; // spacing
+    row++; // spacing between questions
   }
 
   for (const qid of WS1_IDS) writeQuestion(qid);
@@ -200,8 +209,9 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   // WS1 subtotal
   template.getCell(row, 1).value = "Project Characteristics Subtotal (A1-A10)";
   template.getCell(row, 1).font = { bold: true };
+  template.getCell(row, 1).border = borders;
   ALL_METHODS.forEach((m, i) => {
-    const cell = template.getCell(row, i + 2);
+    const cell = template.getCell(row, i + 4);
     cell.value = methodTotals[m].ws1;
     cell.font = { bold: true };
     cell.alignment = centerAlign;
@@ -233,8 +243,9 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   // WS2 subtotal
   template.getCell(row, 1).value = "Success Criteria Subtotal (B-F)";
   template.getCell(row, 1).font = { bold: true };
+  template.getCell(row, 1).border = borders;
   ALL_METHODS.forEach((m, i) => {
-    const cell = template.getCell(row, i + 2);
+    const cell = template.getCell(row, i + 4);
     cell.value = methodTotals[m].ws2;
     cell.font = { bold: true };
     cell.alignment = centerAlign;
@@ -245,8 +256,9 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   // Grand total
   template.getCell(row, 1).value = "TOTAL";
   template.getCell(row, 1).font = { bold: true, size: 12 };
+  template.getCell(row, 1).border = borders;
   ALL_METHODS.forEach((m, i) => {
-    const cell = template.getCell(row, i + 2);
+    const cell = template.getCell(row, i + 4);
     cell.value = methodTotals[m].total;
     cell.font = { bold: true, size: 12 };
     cell.alignment = centerAlign;
@@ -353,14 +365,17 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
     }
   }
 
-  // Set column widths
+  // Set column widths for non-questionnaire sheets
   for (const ws of wb.worksheets) {
+    if (ws.name === "Questionnaire") continue; // already set above
     if (ws.columns) {
       ws.columns.forEach((col, i) => {
-        col.width = i === 0 ? 50 : 18;
+        col.width = i === 0 ? 45 : 20;
       });
     }
   }
+  // Summary sheet wider first col
+  if (summary.columns) summary.getColumn(1).width = 40;
 
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
