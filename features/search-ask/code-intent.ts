@@ -26,6 +26,22 @@ const CODE_TERMS = [
   "lot coverage",
   "accessory dwelling",
   "adu",
+  // General Provisions / code-enforcement vocabulary (Title 1 et al.)
+  "citation",
+  "administrative citation",
+  "penalty",
+  "violation",
+  "nuisance",
+  "misdemeanor",
+  "infraction",
+  "ordinance",
+  "abatement",
+  "code enforcement",
+  "enforcement officer",
+  "compliance order",
+  "hearing officer",
+  "fine amount",
+  "fines",
 ];
 
 const UPLOAD_REFERENCE_TERMS = [
