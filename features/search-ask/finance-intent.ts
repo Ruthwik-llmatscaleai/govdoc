@@ -1,13 +1,26 @@
-// Lightweight intent detection for routing chat questions to the curated
-// Sunnyvale Finance Knowledge Base. Keyword heuristic only — zero latency/cost,
+// Lightweight intent detection for routing chat questions to the curated city
+// Finance Knowledge Bases. Keyword heuristic only — zero latency/cost,
 // deterministic, and unit-testable. The query embedding is accepted (unused today)
 // so a semantic second gate can be added later without changing the call site.
 
+// Registry of cities that have an ingested finance KB. Add a new city here and
+// ingest it with `--city=<key>` to make it available for routing + comparison.
+export const CITY_KBS = [
+  { key: "sunnyvale", kb: "sunnyvale-finance", label: "Sunnyvale", aliases: ["sunnyvale"] },
+  { key: "fremont", kb: "fremont-finance", label: "Fremont", aliases: ["fremont"] },
+] as const;
+export type CityKb = (typeof CITY_KBS)[number];
+
+/** Cities explicitly named in the text (by alias). */
+export function detectCities(text: string): CityKb[] {
+  const q = text.toLowerCase();
+  return CITY_KBS.filter((c) => c.aliases.some((a) => q.includes(a)));
+}
+
 const CITY_TERMS = [
-  "sunnyvale",
   "city budget",
   "the city",
-  "city of sunnyvale",
+  ...CITY_KBS.flatMap((c) => c.aliases),
 ];
 
 const FINANCE_TERMS = [

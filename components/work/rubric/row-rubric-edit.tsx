@@ -293,48 +293,48 @@ function chipDanger() {
 }
 
 function buildCompose(target: ComposeTarget, schema?: RowRubricData): {
-  mode: “create” | “edit”;
+  mode: "create" | "edit";
   title: string;
   saveLabel: string;
   fields: EditorField[];
   initial: Record<string, string>;
 } {
-  if (target.kind === “addCategory”) {
+  if (target.kind === "addCategory") {
     return {
-      mode: “create”,
-      title: “Category”,
-      saveLabel: “Add category”,
+      mode: "create",
+      title: "Category",
+      saveLabel: "Add category",
       fields: [
-        { name: “name”, label: “Category name”, type: “text”, required: true },
-        { name: “tier_1”, label: “Tier 1 — Unacceptable”, type: “textarea” },
-        { name: “tier_2”, label: “Tier 2 — Poor”, type: “textarea” },
-        { name: “tier_3”, label: “Tier 3 — Acceptable”, type: “textarea” },
-        { name: “tier_4”, label: “Tier 4 — Good”, type: “textarea” },
-        { name: “tier_5”, label: “Tier 5 — Excellent”, type: “textarea” },
+        { name: "name", label: "Category name", type: "text", required: true },
+        { name: "tier_1", label: "Tier 1 — Unacceptable", type: "textarea" },
+        { name: "tier_2", label: "Tier 2 — Poor", type: "textarea" },
+        { name: "tier_3", label: "Tier 3 — Acceptable", type: "textarea" },
+        { name: "tier_4", label: "Tier 4 — Good", type: "textarea" },
+        { name: "tier_5", label: "Tier 5 — Excellent", type: "textarea" },
       ],
-      initial: { name: “”, tier_1: “”, tier_2: “”, tier_3: “”, tier_4: “”, tier_5: “” },
+      initial: { name: "", tier_1: "", tier_2: "", tier_3: "", tier_4: "", tier_5: "" },
     };
   }
   const tiers = schema?.[target.name];
   return {
-    mode: “edit”,
+    mode: "edit",
     title: target.name,
-    saveLabel: “Save changes”,
+    saveLabel: "Save changes",
     fields: [
-      { name: “name”, label: “Category name”, type: “text”, required: true },
-      { name: “tier_1”, label: “Tier 1 — Unacceptable”, type: “textarea” },
-      { name: “tier_2”, label: “Tier 2 — Poor”, type: “textarea” },
-      { name: “tier_3”, label: “Tier 3 — Acceptable”, type: “textarea” },
-      { name: “tier_4”, label: “Tier 4 — Good”, type: “textarea” },
-      { name: “tier_5”, label: “Tier 5 — Excellent”, type: “textarea” },
+      { name: "name", label: "Category name", type: "text", required: true },
+      { name: "tier_1", label: "Tier 1 — Unacceptable", type: "textarea" },
+      { name: "tier_2", label: "Tier 2 — Poor", type: "textarea" },
+      { name: "tier_3", label: "Tier 3 — Acceptable", type: "textarea" },
+      { name: "tier_4", label: "Tier 4 — Good", type: "textarea" },
+      { name: "tier_5", label: "Tier 5 — Excellent", type: "textarea" },
     ],
     initial: {
       name: target.name,
-      tier_1: tiers?.[“1”] ?? “”,
-      tier_2: tiers?.[“2”] ?? “”,
-      tier_3: tiers?.[“3”] ?? “”,
-      tier_4: tiers?.[“4”] ?? “”,
-      tier_5: tiers?.[“5”] ?? “”,
+      tier_1: tiers?.["1"] ?? "",
+      tier_2: tiers?.["2"] ?? "",
+      tier_3: tiers?.["3"] ?? "",
+      tier_4: tiers?.["4"] ?? "",
+      tier_5: tiers?.["5"] ?? "",
     },
   };
 }

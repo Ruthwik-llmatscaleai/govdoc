@@ -67,3 +67,9 @@ artifacts/rubrics/
 .superpowers/
 .designs/
 service_account.json
+*accessKeys*.csv
+danish-llm_accessKeys.csv
+/env
+
+# Deploy bundles — contain baked .env.local secrets; never commit
+*.zip

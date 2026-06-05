@@ -168,13 +168,14 @@ export async function deleteKbDocuments(kb: string): Promise<void> {
 /**
  * Persist a processed document into a curated Knowledge Base. Mirrors saveDocument
  * but tags the document with { kb } and stores per-chunk citation metadata
- * (title / volume / page) so retrieved chunks can cite their source page.
+ * (the returned object is stored verbatim as the chunk's JSON metadata; it should
+ * include a `title` since searchKbChunks returns metadata->>'title' as documentName).
  */
 export async function saveKbDocument(
   ownerUserId: string,
   kb: string,
   doc: ProcessedDocument,
-  chunkMeta: (chunkIndex: number) => { title: string; volume: number; page?: number },
+  chunkMeta: (chunkIndex: number) => Record<string, unknown>,
 ): Promise<void> {
   const created = await prisma.document.create({
     data: {
