@@ -1,7 +1,6 @@
 import ExcelJS from "exceljs";
 import type { Exporter } from "@/features/usecases/types";
 import type { CmgcRunResult } from "../types";
-import { SECTION_WEIGHTS } from "../rubric";
 import { ALL_METHODS, METHOD_LABELS, type DeliveryMethod } from "../scoring/point-matrix";
 
 export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: string): Promise<Buffer> {
@@ -24,17 +23,18 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   dashboard.getCell("A7").value = "No-Go Methods:";
   dashboard.getCell("B7").value = result.matrix?.no_go_methods.join(", ") ?? "";
 
-  dashboard.getCell("A9").value = "Section Score Breakdown";
-  dashboard.getCell("A9").font = { bold: true };
-  dashboard.getRow(10).values = ["Section", "Avg Score", "Weight", "Weighted"];
-  dashboard.getRow(10).font = { bold: true };
-
-  let rowIdx = 11;
-  for (const [sec, avg] of Object.entries(result.recommendation.section_scores)) {
-    const weight = SECTION_WEIGHTS[sec as keyof typeof SECTION_WEIGHTS] ?? 0;
-    const weighted = result.recommendation.weighted_scores[sec as keyof typeof result.recommendation.weighted_scores] ?? 0;
-    dashboard.getRow(rowIdx).values = [sec, (avg as number).toFixed(3), weight, (weighted as number).toFixed(4)];
-    rowIdx++;
+  if (result.matrix) {
+    dashboard.getCell("A9").value = "All Method Scores";
+    dashboard.getCell("A9").font = { bold: true };
+    dashboard.getRow(10).values = ["Method", "WS1", "WS2", "Total", "Status"];
+    dashboard.getRow(10).font = { bold: true };
+    let rowIdx = 11;
+    for (const method of ALL_METHODS) {
+      const m = result.matrix.method_scores.find((ms) => ms.method === method);
+      if (!m) continue;
+      dashboard.getRow(rowIdx).values = [m.label, m.worksheet1, m.worksheet2, m.total, m.noGo ? "No-Go" : "Eligible"];
+      rowIdx++;
+    }
   }
 
   // Sheet 2: Rubric
@@ -52,34 +52,30 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
     ];
   });
 
-  // Sheet 3: Scoring
-  const scoring = wb.addWorksheet("Scoring");
-  scoring.getCell("A1").value = "Section Scores";
-  scoring.getCell("A1").font = { bold: true };
-  scoring.getRow(2).values = ["Section", "Average", "Weight", "Weighted Contribution"];
-  scoring.getRow(2).font = { bold: true };
-  let scoreRow = 3;
-  for (const [sec, avg] of Object.entries(result.recommendation.section_scores)) {
-    const weight = SECTION_WEIGHTS[sec as keyof typeof SECTION_WEIGHTS] ?? 0;
-    const weighted = result.recommendation.weighted_scores[sec as keyof typeof result.recommendation.weighted_scores] ?? 0;
-    scoring.getRow(scoreRow).values = [sec, (avg as number).toFixed(3), weight, (weighted as number).toFixed(4)];
-    scoreRow++;
+  // Sheet 3: Per-Question Points
+  const scoring = wb.addWorksheet("Per-Question Points");
+  if (result.matrix) {
+    scoring.getRow(1).values = ["Question", "Rating", "DBB", "Design-Seq", "DB/Low Bid", "DB/Best-Value", "CM/GC", "Prog. DB"];
+    scoring.getRow(1).font = { bold: true };
+    const questions = Object.keys(result.matrix.per_question).sort((a, b) => {
+      if (a[0] !== b[0]) return a[0]!.localeCompare(b[0]!);
+      return parseInt(a.slice(1)) - parseInt(b.slice(1));
+    });
+    questions.forEach((qid, i) => {
+      const pts = result.matrix!.per_question[qid]!;
+      const rating = result.evaluation.ratings.find((r) => r.question_id === qid)?.selected_rating || "—";
+      scoring.getRow(i + 2).values = [
+        qid,
+        rating,
+        pts.DBB === -1 ? "No-Go" : pts.DBB,
+        pts.DS === -1 ? "No-Go" : pts.DS,
+        pts.DB_LB === -1 ? "No-Go" : pts.DB_LB,
+        pts.DB_BV === -1 ? "No-Go" : pts.DB_BV,
+        pts.CMGC === -1 ? "No-Go" : pts.CMGC,
+        pts.PDB === -1 ? "No-Go" : pts.PDB,
+      ];
+    });
   }
-
-  const driversStart = scoreRow + 2;
-  scoring.getCell(`A${driversStart}`).value = "Top 5 Key Drivers";
-  scoring.getCell(`A${driversStart}`).font = { bold: true };
-  scoring.getRow(driversStart + 1).values = ["Question ID", "Section", "Rating", "Raw Score", "Weighted Contribution"];
-  scoring.getRow(driversStart + 1).font = { bold: true };
-  result.recommendation.key_drivers.forEach((d, i) => {
-    scoring.getRow(driversStart + 2 + i).values = [
-      d.question_id,
-      d.section,
-      d.rating,
-      d.raw_score,
-      d.weighted_contribution,
-    ];
-  });
 
   // Sheet 4: Multi-Method
   const mm = wb.addWorksheet("Multi-Method");

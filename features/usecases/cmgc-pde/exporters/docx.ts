@@ -1,11 +1,11 @@
 import { Document, Packer, Paragraph, HeadingLevel, TextRun } from "docx";
 import type { Exporter } from "@/features/usecases/types";
 import type { CmgcRunResult } from "../types";
+import { ALL_METHODS } from "../scoring/point-matrix";
 
 export async function buildEvaluationDocx(result: CmgcRunResult, projectName: string): Promise<Buffer> {
   const children: Paragraph[] = [];
 
-  // Title page
   children.push(
     new Paragraph({
       heading: HeadingLevel.TITLE,
@@ -18,16 +18,29 @@ export async function buildEvaluationDocx(result: CmgcRunResult, projectName: st
     }),
   );
 
-  // Recommendation summary
-  children.push(
-    new Paragraph({
-      heading: HeadingLevel.HEADING_1,
-      children: [new TextRun(`Recommended: ${result.recommendation.recommended_method}`)],
-    }),
-  );
-  children.push(new Paragraph(`Composite score: ${result.recommendation.composite_score.toFixed(3)} / 3.000`));
-  children.push(new Paragraph(`Runner-up: ${result.recommendation.runner_up_method ?? "—"}`));
-  children.push(new Paragraph(`Borderline: ${result.recommendation.is_borderline ? "Yes" : "No"}`));
+  // Recommendation — matrix-based
+  if (result.matrix) {
+    children.push(
+      new Paragraph({
+        heading: HeadingLevel.HEADING_1,
+        children: [new TextRun(`Recommended: ${result.matrix.recommended_label}`)],
+      }),
+    );
+    children.push(new Paragraph(`Score: ${result.matrix.recommended_total} pts`));
+    if (result.matrix.runner_up_label) {
+      children.push(new Paragraph(`Runner-up: ${result.matrix.runner_up_label} (${result.matrix.runner_up_total} pts)`));
+    }
+    if (result.matrix.no_go_methods.length > 0) {
+      children.push(new Paragraph(`No-Go methods: ${result.matrix.no_go_methods.join(", ")}`));
+    }
+  } else {
+    children.push(
+      new Paragraph({
+        heading: HeadingLevel.HEADING_1,
+        children: [new TextRun(`Recommended: ${result.recommendation.recommended_method}`)],
+      }),
+    );
+  }
 
   // Override reasons
   if (result.recommendation.override_reasons.length > 0) {
@@ -42,37 +55,20 @@ export async function buildEvaluationDocx(result: CmgcRunResult, projectName: st
     }
   }
 
-  // Section breakdown
-  children.push(
-    new Paragraph({
-      heading: HeadingLevel.HEADING_2,
-      children: [new TextRun("Section Scores")],
-    }),
-  );
-  for (const [sec, score] of Object.entries(result.recommendation.section_scores)) {
-    children.push(new Paragraph(`${sec}: ${(score as number).toFixed(2)} / 3.00`));
-  }
-
-  // Top 3 methods
-  children.push(
-    new Paragraph({
-      heading: HeadingLevel.HEADING_2,
-      children: [new TextRun("Top 3 Methods")],
-    }),
-  );
-  for (const m of result.multi_method.method_scores.slice(0, 3)) {
+  // Selection Matrix scores
+  if (result.matrix) {
     children.push(
       new Paragraph({
-        heading: HeadingLevel.HEADING_3,
-        children: [
-          new TextRun(
-            `${m.rank}. ${m.method} (score ${m.score.toFixed(4)}${m.blocked ? ", BLOCKED" : ""})`,
-          ),
-        ],
+        heading: HeadingLevel.HEADING_2,
+        children: [new TextRun("Selection Matrix Scores")],
       }),
     );
-    if (m.pros.length > 0) children.push(new Paragraph(`Pros: ${m.pros.join("; ")}`));
-    if (m.cons.length > 0) children.push(new Paragraph(`Cons: ${m.cons.join("; ")}`));
+    for (const method of ALL_METHODS) {
+      const m = result.matrix.method_scores.find((ms) => ms.method === method);
+      if (!m) continue;
+      const status = m.noGo ? `NO-GO (${m.noGoQuestions.join(", ")})` : "Eligible";
+      children.push(new Paragraph(`${m.label}: WS1=${m.worksheet1}, WS2=${m.worksheet2}, Total=${m.total} — ${status}`));
+    }
   }
 
   // Rubric ratings

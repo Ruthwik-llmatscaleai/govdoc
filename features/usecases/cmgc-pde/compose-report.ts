@@ -1,4 +1,5 @@
 import type { CmgcRunResult } from "./types";
+import { ALL_METHODS } from "./scoring/point-matrix";
 
 export type ReportOverride = {
   question_id: string;
@@ -7,16 +8,11 @@ export type ReportOverride = {
   reason: string;
 };
 
-function fmt(n: number | null | undefined, digits = 2): string {
-  if (n == null || Number.isNaN(n)) return "—";
-  return n.toFixed(digits);
-}
-
 export function composeCmgcReport(
   result: CmgcRunResult,
   overrides: readonly ReportOverride[] = [],
 ): string {
-  const { evaluation, recommendation, multi_method } = result;
+  const { evaluation, recommendation, matrix } = result;
   const lines: string[] = [];
 
   lines.push(`# Project Delivery Evaluation`);
@@ -26,16 +22,17 @@ export function composeCmgcReport(
 
   lines.push(`## Recommendation`);
   lines.push(``);
-  lines.push(`**Recommended method:** ${recommendation.recommended_method ?? "—"}`);
-  lines.push(`Composite score: ${fmt(recommendation.composite_score, 3)} / 3.000`);
-  if (recommendation.runner_up_method) {
-    lines.push(
-      `Runner-up: ${recommendation.runner_up_method} (${fmt(recommendation.runner_up_score, 3)})`,
-    );
-  }
-  if (recommendation.is_borderline) {
-    lines.push(``);
-    lines.push(`> ⚠ Borderline result — top two methods are within a narrow margin. Review the comparison below before finalizing.`);
+  if (matrix) {
+    lines.push(`**Recommended method:** ${matrix.recommended_label}`);
+    lines.push(`**Score:** ${matrix.recommended_total} pts`);
+    if (matrix.runner_up_label) {
+      lines.push(`**Runner-up:** ${matrix.runner_up_label} (${matrix.runner_up_total} pts)`);
+    }
+    if (matrix.no_go_methods.length > 0) {
+      lines.push(`**No-Go:** ${matrix.no_go_methods.join(", ")}`);
+    }
+  } else {
+    lines.push(`**Recommended method:** ${recommendation.recommended_method ?? "—"}`);
   }
   lines.push(``);
 
@@ -67,47 +64,16 @@ export function composeCmgcReport(
     lines.push(``);
   }
 
-  const top = multi_method.method_scores.slice(0, 3);
-  if (top.length > 0) {
-    lines.push(`## Top methods`);
+  if (matrix) {
+    lines.push(`## Selection Matrix Scores`);
     lines.push(``);
-    lines.push(`| Rank | Method | Score | Status |`);
-    lines.push(`|---|---|---|---|`);
-    for (const m of top) {
-      lines.push(
-        `| ${m.rank} | ${m.method} | ${fmt(m.score, 3)} | ${m.blocked ? "Blocked" : "Eligible"} |`,
-      );
-    }
-    lines.push(``);
-
-    for (const m of top) {
-      lines.push(`### ${m.rank}. ${m.method} — ${fmt(m.score, 3)}`);
-      if (m.blocked && m.block_reasons.length > 0) {
-        lines.push(``);
-        lines.push(`*Blocked:* ${m.block_reasons.join("; ")}`);
-      }
-      if (m.pros.length > 0) {
-        lines.push(``);
-        lines.push(`**Pros:**`);
-        for (const p of m.pros) lines.push(`- ${p}`);
-      }
-      if (m.cons.length > 0) {
-        lines.push(``);
-        lines.push(`**Cons:**`);
-        for (const c of m.cons) lines.push(`- ${c}`);
-      }
-      lines.push(``);
-    }
-  }
-
-  const sectionEntries = Object.entries(recommendation.section_scores ?? {});
-  if (sectionEntries.length > 0) {
-    lines.push(`## Section scores`);
-    lines.push(``);
-    lines.push(`| Section | Score |`);
-    lines.push(`|---|---|`);
-    for (const [sec, score] of sectionEntries) {
-      lines.push(`| ${sec} | ${fmt(score as number, 2)} / 3.00 |`);
+    lines.push(`| Method | WS1 | WS2 | Total | Status |`);
+    lines.push(`|---|---|---|---|---|`);
+    for (const method of ALL_METHODS) {
+      const m = matrix.method_scores.find((ms) => ms.method === method);
+      if (!m) continue;
+      const status = m.noGo ? `No-Go (${m.noGoQuestions.join(", ")})` : "Eligible";
+      lines.push(`| ${m.label} | ${m.worksheet1} | ${m.worksheet2} | **${m.total}** | ${status} |`);
     }
     lines.push(``);
   }
