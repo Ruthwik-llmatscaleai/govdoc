@@ -34,6 +34,7 @@ import type { CmgcRubricData } from "@/features/usecases/cmgc-pde/rubric-data";
 import type { UseCaseId } from "@/features/usecases/types";
 import { RecommendationCard } from "@/components/work/cmgc/recommendation-card";
 import { MatrixScoring } from "@/components/work/cmgc/matrix-scoring";
+import { computeMatrixScores, type Rating as MatrixRating, type MatrixResult } from "@/features/usecases/cmgc-pde/scoring/point-matrix";
 import { HiflWizard, type HiflOverrideEntry } from "@/components/work/cmgc/hifl-wizard";
 import type { OverrideCardQuestion } from "@/components/work/cmgc/override-card";
 import { RUBRIC_QUESTIONS } from "@/features/usecases/cmgc-pde/rubric";
@@ -256,6 +257,16 @@ function IdleLayout({
 
 const RUBRIC_BY_ID = new Map(RUBRIC_QUESTIONS.map((q) => [q.id, q]));
 
+function computeMatrixFromRatings(ratings: { question_id: string; selected_rating: string }[]): MatrixResult {
+  const ratingsMap: Record<string, MatrixRating> = {};
+  for (const r of ratings) {
+    if (r.question_id && r.selected_rating) {
+      ratingsMap[r.question_id] = (r.selected_rating.toUpperCase() || "B") as MatrixRating;
+    }
+  }
+  return computeMatrixScores(ratingsMap);
+}
+
 function toOverrideCardQuestion(r: { question_id: string; question_text: string; selected_rating: string; confidence: number; source_reasoning: string }): OverrideCardQuestion {
   const rubric = RUBRIC_BY_ID.get(r.question_id);
   return {
@@ -320,7 +331,7 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
     return (
       <div className="space-y-6">
         <DoneSummaryBar ucLabel={ucLabel} reset={reset} />
-        <RecommendationCard recommendation={result.recommendation} matrix={result.matrix} showScores={role === "hifl"} />
+        <RecommendationCard recommendation={result.recommendation} matrix={result.matrix ?? computeMatrixFromRatings(result.evaluation.ratings)} showScores={role === "hifl"} />
         {role === "district" ? (
           <>
             <div className="space-y-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-5">
@@ -379,7 +390,7 @@ function CmgcHiflSection({
 
   return (
     <>
-      {r.matrix && <MatrixScoring matrix={r.matrix} />}
+      <MatrixScoring matrix={r.matrix ?? computeMatrixFromRatings(r.evaluation.ratings)} />
       <HiflWizard
         questions={r.evaluation.ratings.map(toOverrideCardQuestion)}
         recommendationLabel={recommendationLabel}
