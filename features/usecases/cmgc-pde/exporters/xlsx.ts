@@ -1,233 +1,251 @@
 import ExcelJS from "exceljs";
 import type { Exporter } from "@/features/usecases/types";
 import type { CmgcRunResult } from "../types";
-import { ALL_METHODS, METHOD_LABELS, type DeliveryMethod } from "../scoring/point-matrix";
+import { SCORING_MATRIX, ALL_METHODS, type DeliveryMethod, type Rating } from "../scoring/point-matrix";
+
+const QUESTIONS_META: Record<string, { text: string; options: Record<string, string> }> = {
+  A1: { text: "Where is the project in the project development process?", options: { A: "Detailed or final engineering stage", B: "Preliminary design", C: "Conceptual engineering stage" } },
+  A2: { text: "What is the size of the project?", options: { A: "Small project (less than $25 million)", B: "Medium size project ($25M–$75M)", C: "Large project (greater than $75 million)" } },
+  A3: { text: "What is the complexity of the project?", options: { A: "Relatively simple project", B: "More technically complex components", C: "Very complex project with significant schedule complexity" } },
+  A4: { text: "Does the project involve significant impacts to highway users and local businesses/community during construction?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  A5: { text: "Does the project present right-of-way limitations that would benefit from entity's assistance?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  A6: { text: "Does the project present environmental permitting issues that would benefit from entity's assistance?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  A7: { text: "Does the project present utility or third-party issues that would benefit from entity's assistance?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  A8: { text: "Does the project present unique work restrictions or traffic maintenance requirements?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  A9: { text: "Would the Project benefit by packaging features of work to allow early lock-in of construction materials/labor pricing?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  A10: { text: "Would the project benefit by raising quality standards/benchmarks to minimize maintenance and achieve lower life-cycle cost?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  B1: { text: "Can timesavings be realized through concurrent design and construction activities (fast-tracking)?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  B2: { text: "Can the schedule be compressed?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  C1: { text: "Will the project scope allow for innovation?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  C2: { text: "Must the project scope be primarily defined in terms of prescriptive or performance specifications?", options: { A: "Primarily prescriptive specifications", B: "Combination of prescriptive and performance", C: "Performance specifications for significant elements" } },
+  D1: { text: "Will there be opportunities for contractors to provide materials or methods that provide greater value?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  D2: { text: "Will there be the opportunity for realization of greater value due to designs tailored to entity's expertise?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  D3: { text: "Will warranties or maintenance agreements be used?", options: { A: "No", B: "Limited to short-term workmanship and materials", C: "Much more than typical" } },
+  E1: { text: "Will there be opportunities for entity to provide designs with lower initial construction costs?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  E2: { text: "Will there be opportunities for contractors to provide alternate design concepts with lower lifecycle costs?", options: { A: "No more than typical", B: "More than typical", C: "Much more than typical" } },
+  E3: { text: "Is funding for the project committed and available?", options: { A: "Secured for design phase only", B: "Funding can accommodate fast-tracking to some extent", C: "Funding will accommodate compressed schedule/fast-tracking" } },
+  E4: { text: "Will the cost of procurement affect the number of bidders?", options: { A: "Procurement cost would significantly limit competition", B: "Procurement cost could affect the number of bidders", C: "Procurement cost would not be a significant issue" } },
+  E5: { text: "Will project budget control benefit from the use of formal contingencies?", options: { A: "No benefit", B: "A formal contingency may permit adding scope", C: "A formal contingency is required to maximize scope and quality" } },
+  F1: { text: "Does the Department have the expertise and resources necessary for a complicated procurement process?", options: { A: "Inadequate resources or expertise", B: "Limited resources or expertise", C: "Adequate resources and expertise" } },
+  F2: { text: "Are resources available to complete the design?", options: { A: "Resources are available to complete design", B: "Resources are available for partial design", C: "Specialized expertise, not available in-house, is required" } },
+  F3: { text: "Are resources available to provide construction oversight?", options: { A: "Resources are available", B: "Full-time oversight could strain staff", C: "Resources are unavailable" } },
+};
+
+const WS1_IDS = ["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10"];
+const WS2_IDS = ["B1","B2","C1","C2","D1","D2","D3","E1","E2","E3","E4","E5","F1","F2","F3"];
+const METHOD_SHORT: Record<DeliveryMethod, string> = { DBB: "Design-Bid-Build", DS: "Design-Sequencing", DB_LB: "Design-Build/Low Bid", DB_BV: "Design-Build/Best-Value", CMGC: "CM/GC", PDB: "Progressive Design-Build" };
+
+function ptsLabel(pts: number): string {
+  if (pts === -1) return "No-Go";
+  return `${pts} pts`;
+}
 
 export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: string): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
 
-  // Sheet 1: Dashboard
-  const dashboard = wb.addWorksheet("Dashboard");
-  dashboard.getCell("A1").value = `Project Delivery Evaluation — ${projectName}`;
-  dashboard.getCell("A1").font = { bold: true, size: 14 };
-  dashboard.mergeCells("A1:D1");
-
-  dashboard.getCell("A3").value = "Recommended Method:";
-  dashboard.getCell("B3").value = result.matrix?.recommended_label ?? result.recommendation.recommended_method;
-  dashboard.getCell("A4").value = "Total Score:";
-  dashboard.getCell("B4").value = result.matrix?.recommended_total ?? "";
-  dashboard.getCell("A5").value = "Runner-Up:";
-  dashboard.getCell("B5").value = result.matrix?.runner_up_label ?? result.recommendation.runner_up_method ?? "";
-  dashboard.getCell("A6").value = "Runner-Up Score:";
-  dashboard.getCell("B6").value = result.matrix?.runner_up_total ?? "";
-  dashboard.getCell("A7").value = "No-Go Methods:";
-  dashboard.getCell("B7").value = result.matrix?.no_go_methods.join(", ") ?? "";
-
-  if (result.matrix) {
-    dashboard.getCell("A9").value = "All Method Scores";
-    dashboard.getCell("A9").font = { bold: true };
-    dashboard.getRow(10).values = ["Method", "WS1", "WS2", "Total", "Status"];
-    dashboard.getRow(10).font = { bold: true };
-    let rowIdx = 11;
-    for (const method of ALL_METHODS) {
-      const m = result.matrix.method_scores.find((ms) => ms.method === method);
-      if (!m) continue;
-      dashboard.getRow(rowIdx).values = [m.label, m.worksheet1, m.worksheet2, m.total, m.noGo ? "No-Go" : "Eligible"];
-      rowIdx++;
+  // Build ratings lookup
+  const ratings: Record<string, Rating> = {};
+  for (const r of result.evaluation.ratings) {
+    if (r.question_id && r.selected_rating) {
+      ratings[r.question_id] = (r.selected_rating.toUpperCase() || "B") as Rating;
     }
   }
 
-  // Sheet 2: Rubric
-  const rubric = wb.addWorksheet("Rubric");
-  rubric.getRow(1).values = ["Question ID", "Question", "Selected Rating", "Confidence", "Source Reasoning", "Missing Info"];
-  rubric.getRow(1).font = { bold: true };
-  result.evaluation.ratings.forEach((r, i) => {
-    rubric.getRow(i + 2).values = [
-      r.question_id,
-      r.question_text,
-      r.selected_rating || "—",
-      r.confidence,
-      r.source_reasoning,
-      r.missing_info_reasoning,
-    ];
-  });
-
-  // Sheet 3: Per-Question Points
-  const scoring = wb.addWorksheet("Per-Question Points");
-  if (result.matrix) {
-    scoring.getRow(1).values = ["Question", "Rating", "DBB", "Design-Seq", "DB/Low Bid", "DB/Best-Value", "CM/GC", "Prog. DB"];
-    scoring.getRow(1).font = { bold: true };
-    const questions = Object.keys(result.matrix.per_question).sort((a, b) => {
-      if (a[0] !== b[0]) return a[0]!.localeCompare(b[0]!);
-      return parseInt(a.slice(1)) - parseInt(b.slice(1));
-    });
-    questions.forEach((qid, i) => {
-      const pts = result.matrix!.per_question[qid]!;
-      const rating = result.evaluation.ratings.find((r) => r.question_id === qid)?.selected_rating || "—";
-      scoring.getRow(i + 2).values = [
-        qid,
-        rating,
-        pts.DBB === -1 ? "No-Go" : pts.DBB,
-        pts.DS === -1 ? "No-Go" : pts.DS,
-        pts.DB_LB === -1 ? "No-Go" : pts.DB_LB,
-        pts.DB_BV === -1 ? "No-Go" : pts.DB_BV,
-        pts.CMGC === -1 ? "No-Go" : pts.CMGC,
-        pts.PDB === -1 ? "No-Go" : pts.PDB,
-      ];
-    });
-  }
-
-  // Sheet 4: Multi-Method
-  const mm = wb.addWorksheet("Multi-Method");
-  mm.getRow(1).values = ["Rank", "Method", "Score", "Blocked", "Pros", "Cons", "Key Factors", "Reasoning"];
-  mm.getRow(1).font = { bold: true };
-  result.multi_method.method_scores.forEach((m, i) => {
-    mm.getRow(i + 2).values = [
-      m.rank,
-      m.method,
-      m.score,
-      m.blocked ? "Yes" : "No",
-      m.pros.join("; "),
-      m.cons.join("; "),
-      m.key_factors.join("; "),
-      m.key_factors_reasoning ?? "",
-    ];
-  });
-
-  // Sheet 5: Selection Matrix (Caltrans format)
-  if (result.matrix) {
-    const mx = wb.addWorksheet("Selection Matrix");
-    mx.getCell("A1").value = "Project Delivery Selection Matrix";
-    mx.getCell("A1").font = { bold: true, size: 12 };
-    mx.mergeCells("A1:G1");
-
-    mx.getCell("A3").value = "SCORING SUMMARY";
-    mx.getCell("A3").font = { bold: true };
-
-    mx.getRow(5).values = ["", "DBB", "Design-Seq", "DB/Low Bid", "DB/Best-Value", "CM/GC", "Prog. DB"];
-    mx.getRow(5).font = { bold: true };
-
-    const ordered = ALL_METHODS.map((method) => result.matrix!.method_scores.find((m) => m.method === method)!);
-
-    mx.getRow(7).values = ["Worksheet 1 (A1-A10)", ...ordered.map((m) => m.worksheet1)];
-    mx.getRow(8).values = ["Worksheet 2 (B-F)", ...ordered.map((m) => m.worksheet2)];
-    mx.getRow(9).values = ["Total Score", ...ordered.map((m) => m.total)];
-    mx.getRow(9).font = { bold: true };
-    mx.getRow(10).values = ["Status", ...ordered.map((m) => m.noGo ? "NO-GO" : "Eligible")];
-
-    mx.getCell("A12").value = `Recommended: ${result.matrix.recommended_label} (${result.matrix.recommended_total} pts)`;
-    mx.getCell("A12").font = { bold: true };
-    if (result.matrix.runner_up_label) {
-      mx.getCell("A13").value = `Runner-up: ${result.matrix.runner_up_label} (${result.matrix.runner_up_total} pts)`;
-    }
-
-    // Per-question detail
-    mx.getCell("A15").value = "PER-QUESTION POINT BREAKDOWN";
-    mx.getCell("A15").font = { bold: true };
-    mx.getRow(16).values = ["Question", "DBB", "Design-Seq", "DB/Low Bid", "DB/Best-Value", "CM/GC", "Prog. DB"];
-    mx.getRow(16).font = { bold: true };
-
-    let mxRow = 17;
-    const questions = Object.keys(result.matrix.per_question).sort((a, b) => {
-      const sa = a[0]!, sb = b[0]!;
-      if (sa !== sb) return sa.localeCompare(sb);
-      return parseInt(a.slice(1)) - parseInt(b.slice(1));
-    });
-    for (const qid of questions) {
-      const pts = result.matrix.per_question[qid]!;
-      mx.getRow(mxRow).values = [
-        qid,
-        ...ALL_METHODS.map((m) => pts[m] === -1 ? "No-Go" : pts[m]),
-      ];
-      mxRow++;
-    }
-  }
-
-  // Sheet 6+: Per-method reasoning
-  if (result.multi_method.method_scores.length > 0) {
-    for (const m of result.multi_method.method_scores) {
-      const label = (METHOD_LABELS[m.method as DeliveryMethod] ?? m.method).replace(/[/\\?*[\]]/g, "-").substring(0, 31);
-      const methodSheet = wb.addWorksheet(label);
-      methodSheet.getCell("A1").value = m.method;
-      methodSheet.getCell("A1").font = { bold: true, size: 12 };
-
-      methodSheet.getCell("A3").value = "Rank:";
-      methodSheet.getCell("B3").value = m.rank;
-      methodSheet.getCell("A4").value = "Score:";
-      methodSheet.getCell("B4").value = m.score;
-      methodSheet.getCell("A5").value = "Status:";
-      methodSheet.getCell("B5").value = m.blocked ? "Blocked" : "Eligible";
-
-      if (result.matrix) {
-        const matrixEntry = result.matrix.method_scores.find((ms) => ms.method === m.method || ms.label === m.method);
-        if (matrixEntry) {
-          methodSheet.getCell("A6").value = "Matrix Points:";
-          methodSheet.getCell("B6").value = matrixEntry.total;
-          methodSheet.getCell("A7").value = "No-Go:";
-          methodSheet.getCell("B7").value = matrixEntry.noGo ? `Yes (${matrixEntry.noGoQuestions.join(", ")})` : "No";
-        }
+  // Compute scores per method
+  const methodTotals: Record<DeliveryMethod, { ws1: number; ws2: number; total: number; noGo: string[] }> = {} as any;
+  for (const m of ALL_METHODS) methodTotals[m] = { ws1: 0, ws2: 0, total: 0, noGo: [] };
+  for (const qid of [...WS1_IDS, ...WS2_IDS]) {
+    const answer = ratings[qid] ?? "B";
+    const row = SCORING_MATRIX[qid]?.[answer];
+    if (!row) continue;
+    const isWs1 = WS1_IDS.includes(qid);
+    for (const m of ALL_METHODS) {
+      if (row[m] === -1) { methodTotals[m].noGo.push(qid); }
+      else {
+        methodTotals[m].total += row[m];
+        if (isWs1) methodTotals[m].ws1 += row[m];
+        else methodTotals[m].ws2 += row[m];
       }
+    }
+  }
 
-      let r = 9;
-      if (m.key_factors_reasoning) {
-        methodSheet.getCell(`A${r}`).value = "Reasoning:";
-        methodSheet.getCell(`A${r}`).font = { bold: true };
-        r++;
-        methodSheet.getCell(`A${r}`).value = m.key_factors_reasoning;
-        methodSheet.mergeCells(`A${r}:D${r}`);
+  // ─── Sheet 1: SUMMARY ───
+  const summary = wb.addWorksheet("SUMMARY");
+  summary.getCell("B1").value = "Project Delivery Selection Tool";
+  summary.getCell("B1").font = { bold: true, size: 14 };
+  summary.getCell("B2").value = "Project Summary Worksheet";
+  summary.getCell("B2").font = { bold: true, size: 12 };
+
+  summary.getCell("A4").value = "Project Name:";
+  summary.getCell("B4").value = projectName;
+  summary.getCell("B4").font = { bold: true };
+  summary.getCell("A5").value = "Date:";
+  summary.getCell("B5").value = result.evaluation.evaluation_date ?? "";
+
+  summary.getCell("A7").value = "SCORING SUMMARY";
+  summary.getCell("A7").font = { bold: true, size: 11 };
+
+  summary.getRow(9).values = ["", ...ALL_METHODS.map((m) => METHOD_SHORT[m])];
+  summary.getRow(9).font = { bold: true };
+  summary.getRow(9).eachCell((cell) => { cell.alignment = { horizontal: "center" }; });
+
+  summary.getRow(11).values = ["Project Scope & Characteristics (WS1)", ...ALL_METHODS.map((m) => methodTotals[m].ws1)];
+  summary.getRow(12).values = ["Success Criteria (WS2)", ...ALL_METHODS.map((m) => methodTotals[m].ws2)];
+  summary.getRow(13).values = ["Total Score", ...ALL_METHODS.map((m) => methodTotals[m].total)];
+  summary.getRow(13).font = { bold: true };
+
+  // Find winner
+  const eligible = ALL_METHODS.filter((m) => methodTotals[m].noGo.length === 0);
+  const sorted = [...eligible].sort((a, b) => methodTotals[b].total - methodTotals[a].total);
+  const winner = sorted[0];
+  summary.getCell("A15").value = "Final Selection:";
+  summary.getCell("A15").font = { bold: true };
+  summary.getCell("B15").value = winner ? `${METHOD_SHORT[winner]} (${methodTotals[winner].total} pts)` : "—";
+  summary.getCell("B15").font = { bold: true };
+
+  // ─── Sheet 2: Questionnaire (matches Template format) ───
+  const template = wb.addWorksheet("Questionnaire");
+  const hdr = ["Question", "Selected", ...ALL_METHODS.map((m) => METHOD_SHORT[m])];
+  template.getRow(1).values = ["", "", "", "WORKSHEET 1: EVALUATION OF PROJECT SCOPE AND CHARACTERISTICS"];
+  template.getRow(1).font = { bold: true };
+  template.getRow(3).values = hdr;
+  template.getRow(3).font = { bold: true };
+
+  let row = 4;
+  function writeQuestion(qid: string) {
+    const meta = QUESTIONS_META[qid];
+    const answer = ratings[qid] ?? "B";
+    const pts = SCORING_MATRIX[qid]?.[answer];
+    if (!meta || !pts) return;
+
+    // Question row with selected answer and awarded points
+    template.getRow(row).values = [
+      `${qid}. ${meta.text}`,
+      answer,
+      ...ALL_METHODS.map((m) => pts[m] === -1 ? "No-Go" : pts[m]),
+    ];
+    template.getRow(row).font = { bold: true };
+    row++;
+
+    // Option rows showing all possible points
+    for (const opt of ["A", "B", "C"] as Rating[]) {
+      const optPts = SCORING_MATRIX[qid]![opt];
+      const isSelected = opt === answer;
+      template.getRow(row).values = [
+        `  ${opt}. ${meta.options[opt]}`,
+        isSelected ? "◄" : "",
+        ...ALL_METHODS.map((m) => ptsLabel(optPts[m])),
+      ];
+      if (isSelected) template.getRow(row).font = { bold: true };
+      row++;
+    }
+    row++; // blank row between questions
+  }
+
+  for (const qid of WS1_IDS) writeQuestion(qid);
+
+  // WS1 subtotal
+  template.getRow(row).values = ["Worksheet 1 Subtotal", "", ...ALL_METHODS.map((m) => methodTotals[m].ws1)];
+  template.getRow(row).font = { bold: true };
+  row += 3;
+
+  // Worksheet 2 header
+  template.getRow(row).values = ["", "", "", "WORKSHEET 2: SUCCESS CRITERIA"];
+  template.getRow(row).font = { bold: true };
+  row += 2;
+
+  const sections: Record<string, string[]> = {
+    "B - Schedule Issues": ["B1", "B2"],
+    "C - Opportunity for Innovation": ["C1", "C2"],
+    "D - Quality Enhancement": ["D1", "D2", "D3"],
+    "E - Cost Issues": ["E1", "E2", "E3", "E4", "E5"],
+    "F - Staffing Issues": ["F1", "F2", "F3"],
+  };
+
+  for (const [secLabel, qids] of Object.entries(sections)) {
+    template.getRow(row).values = [secLabel];
+    template.getRow(row).font = { bold: true, italic: true };
+    row += 2;
+    for (const qid of qids) writeQuestion(qid);
+  }
+
+  // WS2 subtotal
+  template.getRow(row).values = ["Worksheet 2 Subtotal", "", ...ALL_METHODS.map((m) => methodTotals[m].ws2)];
+  template.getRow(row).font = { bold: true };
+  row += 2;
+
+  // Grand total
+  template.getRow(row).values = ["TOTAL", "", ...ALL_METHODS.map((m) => methodTotals[m].total)];
+  template.getRow(row).font = { bold: true, size: 12 };
+
+  // ─── Sheet 3+: Per delivery method ───
+  for (const method of ALL_METHODS) {
+    const label = METHOD_SHORT[method].replace(/[/\\?*[\]]/g, "-").substring(0, 31);
+    const ms = wb.addWorksheet(label);
+    const t = methodTotals[method];
+
+    ms.getCell("A1").value = METHOD_SHORT[method];
+    ms.getCell("A1").font = { bold: true, size: 14 };
+
+    ms.getCell("A3").value = "Total Score:";
+    ms.getCell("B3").value = t.total;
+    ms.getCell("B3").font = { bold: true };
+    ms.getCell("A4").value = "Worksheet 1:";
+    ms.getCell("B4").value = t.ws1;
+    ms.getCell("A5").value = "Worksheet 2:";
+    ms.getCell("B5").value = t.ws2;
+    ms.getCell("A6").value = "Status:";
+    ms.getCell("B6").value = t.noGo.length > 0 ? `NO-GO (${t.noGo.join(", ")})` : "Eligible";
+
+    // Per-question points for this method
+    let r = 8;
+    ms.getRow(r).values = ["Question", "Selected", "Points", "Reasoning"];
+    ms.getRow(r).font = { bold: true };
+    r++;
+
+    for (const qid of [...WS1_IDS, ...WS2_IDS]) {
+      const answer = ratings[qid] ?? "B";
+      const pts = SCORING_MATRIX[qid]?.[answer]?.[method] ?? 0;
+      const ratingEntry = result.evaluation.ratings.find((x) => x.question_id === qid);
+      const reasoning = ratingEntry?.source_reasoning?.slice(0, 200) ?? "";
+      ms.getRow(r).values = [qid, answer, pts === -1 ? "No-Go" : pts, reasoning];
+      r++;
+    }
+
+    // LLM reasoning if available
+    if (result.multi_method?.method_scores) {
+      const mm = result.multi_method.method_scores.find((x) => x.method === method || x.method === METHOD_SHORT[method]);
+      if (mm) {
         r += 2;
-      }
-
-      if (m.key_factors.length > 0) {
-        methodSheet.getCell(`A${r}`).value = "Key Factors:";
-        methodSheet.getCell(`A${r}`).font = { bold: true };
-        r++;
-        for (const kf of m.key_factors) {
-          methodSheet.getCell(`A${r}`).value = `• ${kf}`;
+        if (mm.key_factors_reasoning) {
+          ms.getCell(`A${r}`).value = "AI Reasoning:";
+          ms.getCell(`A${r}`).font = { bold: true };
+          r++;
+          ms.getCell(`A${r}`).value = mm.key_factors_reasoning;
+          r += 2;
+        }
+        if (mm.pros.length > 0) {
+          ms.getCell(`A${r}`).value = "Pros:";
+          ms.getCell(`A${r}`).font = { bold: true };
+          r++;
+          for (const p of mm.pros) { ms.getCell(`A${r}`).value = `• ${p}`; r++; }
           r++;
         }
-        r++;
-      }
-
-      if (m.pros.length > 0) {
-        methodSheet.getCell(`A${r}`).value = "Pros:";
-        methodSheet.getCell(`A${r}`).font = { bold: true };
-        r++;
-        for (const p of m.pros) {
-          methodSheet.getCell(`A${r}`).value = `• ${p}`;
+        if (mm.cons.length > 0) {
+          ms.getCell(`A${r}`).value = "Cons:";
+          ms.getCell(`A${r}`).font = { bold: true };
           r++;
-        }
-        r++;
-      }
-
-      if (m.cons.length > 0) {
-        methodSheet.getCell(`A${r}`).value = "Cons:";
-        methodSheet.getCell(`A${r}`).font = { bold: true };
-        r++;
-        for (const c of m.cons) {
-          methodSheet.getCell(`A${r}`).value = `• ${c}`;
-          r++;
-        }
-        r++;
-      }
-
-      if (m.block_reasons.length > 0) {
-        methodSheet.getCell(`A${r}`).value = "Block Reasons:";
-        methodSheet.getCell(`A${r}`).font = { bold: true };
-        r++;
-        for (const br of m.block_reasons) {
-          methodSheet.getCell(`A${r}`).value = `• ${br}`;
-          r++;
+          for (const c of mm.cons) { ms.getCell(`A${r}`).value = `• ${c}`; r++; }
         }
       }
     }
   }
 
-  // Set reasonable column widths
+  // Set column widths
   for (const ws of wb.worksheets) {
     if (ws.columns) {
-      ws.columns.forEach((col) => {
-        col.width = Math.max(col.width ?? 0, 18);
+      ws.columns.forEach((col, i) => {
+        col.width = i === 0 ? 50 : 18;
       });
     }
   }

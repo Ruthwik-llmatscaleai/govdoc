@@ -18,7 +18,7 @@ export default function ReviewPicker() {
       <WorkBreadcrumbs
         crumbs={[
           { label: "Workspace", href: "/workspace" },
-          { label: "Review Documents" },
+          { label: "Validate Documents" },
         ]}
       />
 
