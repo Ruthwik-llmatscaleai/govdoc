@@ -38,8 +38,6 @@ export function CucpRubricEdit({
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [mandatoryTitle, setMandatoryTitle] = useState("Mandatory Eligibility Requirements");
-  const [evaluationTitle, setEvaluationTitle] = useState("Scored Evaluation Criteria");
 
   const mandatory = l3.filter((c) => c.s_no <= 3);
   const evaluation = l3.filter((c) => c.s_no >= 4);
@@ -185,11 +183,10 @@ export function CucpRubricEdit({
         ) : (
           <>
             <RubricSection
-              title={mandatoryTitle}
+              title="Mandatory Eligibility Requirements"
               count={mandatory.length}
               countLabel="criterion"
               defaultOpen
-              onRenameTitle={(t) => { setMandatoryTitle(t); setDirty(true); }}
             >
               <ol className="flex list-none flex-col">
                 {mandatory.map((c) => (
@@ -204,10 +201,9 @@ export function CucpRubricEdit({
             </RubricSection>
 
             <RubricSection
-              title={evaluationTitle}
+              title="Scored Evaluation Criteria"
               count={evaluation.length}
               countLabel="criterion"
-              onRenameTitle={(t) => { setEvaluationTitle(t); setDirty(true); }}
             >
               <ol className="flex list-none flex-col">
                 {evaluation.map((c, i) => (

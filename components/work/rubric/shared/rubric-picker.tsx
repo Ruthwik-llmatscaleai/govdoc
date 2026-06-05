@@ -90,6 +90,24 @@ export function RubricPicker({
         Rubric
       </span>
 
+      <select
+        aria-label="Select Rubric"
+        value={selectedId}
+        onChange={(e) => onSelect(e.target.value)}
+        disabled={busy}
+        className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground hover:bg-muted focus:outline-none disabled:opacity-50"
+      >
+        {rubrics.map((r) => {
+          const showDefaultTag = r.isDefault && r.label.toLowerCase() !== "default";
+          return (
+            <option key={r.id} value={r.id}>
+              {r.label}
+              {showDefaultTag ? " (Default)" : ""}
+            </option>
+          );
+        })}
+      </select>
+
       {/* Version dropdown */}
       <div ref={ref} className="relative inline-block">
         <button
