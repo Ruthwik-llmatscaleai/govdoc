@@ -321,7 +321,6 @@ function CmgcView({ ucLabel, steps, exporters, current, reset }: ViewProps) {
       <div className="space-y-6">
         <DoneSummaryBar ucLabel={ucLabel} reset={reset} />
         <RecommendationCard recommendation={result.recommendation} matrix={result.matrix} />
-        {result.matrix && <MatrixScoring matrix={result.matrix} />}
         {role === "district" ? (
           <>
             <div className="space-y-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-paper)] p-5">
@@ -380,6 +379,7 @@ function CmgcHiflSection({
 
   return (
     <>
+      {r.matrix && <MatrixScoring matrix={r.matrix} />}
       <HiflWizard
         questions={r.evaluation.ratings.map(toOverrideCardQuestion)}
         recommendationLabel={recommendationLabel}

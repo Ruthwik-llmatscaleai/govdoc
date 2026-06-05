@@ -35,10 +35,6 @@ const WS1_IDS = ["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10"];
 const WS2_IDS = ["B1","B2","C1","C2","D1","D2","D3","E1","E2","E3","E4","E5","F1","F2","F3"];
 const METHOD_SHORT: Record<DeliveryMethod, string> = { DBB: "Design-Bid-Build", DS: "Design-Sequencing", DB_LB: "Design-Build/Low Bid", DB_BV: "Design-Build/Best-Value", CMGC: "CM/GC", PDB: "Progressive Design-Build" };
 
-function ptsLabel(pts: number): string {
-  if (pts === -1) return "No-Go";
-  return `${pts} pts`;
-}
 
 export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: string): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
@@ -103,55 +99,89 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   summary.getCell("B15").value = winner ? `${METHOD_SHORT[winner]} (${methodTotals[winner].total} pts)` : "—";
   summary.getCell("B15").font = { bold: true };
 
-  // ─── Sheet 2: Questionnaire (matches Template format) ───
+  // ─── Sheet 2: Questionnaire (matches Caltrans Template format) ───
   const template = wb.addWorksheet("Questionnaire");
-  const hdr = ["Question", "Selected", ...ALL_METHODS.map((m) => METHOD_SHORT[m])];
-  template.getRow(1).values = ["", "", "", "WORKSHEET 1: EVALUATION OF PROJECT SCOPE AND CHARACTERISTICS"];
-  template.getRow(1).font = { bold: true };
-  template.getRow(3).values = hdr;
-  template.getRow(3).font = { bold: true };
 
-  let row = 4;
+  const borderThin: Partial<ExcelJS.Border> = { style: "thin" };
+  const borders: Partial<ExcelJS.Borders> = { top: borderThin, bottom: borderThin, left: borderThin, right: borderThin };
+  const centerAlign: Partial<ExcelJS.Alignment> = { horizontal: "center", vertical: "middle" };
+
+  // Header
+  template.getCell("A1").value = "WORKSHEET 1: EVALUATION OF PROJECT SCOPE AND CHARACTERISTICS";
+  template.getCell("A1").font = { bold: true, size: 11 };
+  template.mergeCells("A1:G1");
+
+  // Column headers
+  template.getRow(3).values = ["Project Scope and Characteristic Criteria", ...ALL_METHODS.map((m) => METHOD_SHORT[m])];
+  template.getRow(3).font = { bold: true, size: 9 };
+  template.getRow(3).eachCell((cell) => { cell.border = borders; cell.alignment = centerAlign; });
+  template.getRow(3).getCell(1).alignment = { horizontal: "left", vertical: "middle" };
+
+  let row = 5;
   function writeQuestion(qid: string) {
     const meta = QUESTIONS_META[qid];
     const answer = ratings[qid] ?? "B";
     const pts = SCORING_MATRIX[qid]?.[answer];
     if (!meta || !pts) return;
 
-    // Question row with selected answer and awarded points
-    template.getRow(row).values = [
-      `${qid}. ${meta.text}`,
-      answer,
-      ...ALL_METHODS.map((m) => pts[m] === -1 ? "No-Go" : pts[m]),
-    ];
-    template.getRow(row).font = { bold: true };
+    // Question row: "A1. [C] Question text" + awarded points per method
+    const qCell = template.getCell(row, 1);
+    qCell.value = `${qid}. ${meta.text}`;
+    qCell.font = { bold: true, size: 10 };
+    // Write awarded points
+    ALL_METHODS.forEach((m, i) => {
+      const cell = template.getCell(row, i + 2);
+      cell.value = pts[m] === -1 ? "No-Go" : pts[m];
+      cell.alignment = centerAlign;
+      cell.font = { bold: true };
+      cell.border = borders;
+    });
+    // Selected answer badge in question cell
+    const answerCell = template.getCell(row, 1);
+    answerCell.value = { richText: [
+      { text: `${qid}. `, font: { bold: true, size: 10 } },
+      { text: `[${answer}] `, font: { bold: true, size: 10, color: { argb: "FF3D5740" } } },
+      { text: meta.text, font: { size: 10 } },
+    ] };
     row++;
 
-    // Option rows showing all possible points
+    // Option rows
     for (const opt of ["A", "B", "C"] as Rating[]) {
       const optPts = SCORING_MATRIX[qid]![opt];
       const isSelected = opt === answer;
-      template.getRow(row).values = [
-        `  ${opt}. ${meta.options[opt]}`,
-        isSelected ? "◄" : "",
-        ...ALL_METHODS.map((m) => ptsLabel(optPts[m])),
-      ];
-      if (isSelected) template.getRow(row).font = { bold: true };
+      const optCell = template.getCell(row, 1);
+      optCell.value = `     ${opt}. ${meta.options[opt]}`;
+      optCell.font = isSelected ? { bold: true, size: 9 } : { size: 9, color: { argb: "FF666666" } };
+      ALL_METHODS.forEach((m, i) => {
+        const cell = template.getCell(row, i + 2);
+        cell.value = optPts[m] === -1 ? "No-Go" : `${optPts[m]} pts`;
+        cell.alignment = centerAlign;
+        cell.font = isSelected ? { bold: true, size: 9 } : { size: 9, color: { argb: "FF666666" } };
+        if (isSelected) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEDF7EE" } };
+      });
       row++;
     }
-    row++; // blank row between questions
+    row++; // spacing
   }
 
   for (const qid of WS1_IDS) writeQuestion(qid);
 
   // WS1 subtotal
-  template.getRow(row).values = ["Worksheet 1 Subtotal", "", ...ALL_METHODS.map((m) => methodTotals[m].ws1)];
-  template.getRow(row).font = { bold: true };
+  template.getCell(row, 1).value = "Project Characteristics Subtotal (A1-A10)";
+  template.getCell(row, 1).font = { bold: true };
+  ALL_METHODS.forEach((m, i) => {
+    const cell = template.getCell(row, i + 2);
+    cell.value = methodTotals[m].ws1;
+    cell.font = { bold: true };
+    cell.alignment = centerAlign;
+    cell.border = borders;
+  });
   row += 3;
 
-  // Worksheet 2 header
-  template.getRow(row).values = ["", "", "", "WORKSHEET 2: SUCCESS CRITERIA"];
-  template.getRow(row).font = { bold: true };
+  // Worksheet 2
+  template.getCell(row, 1).value = "WORKSHEET 2: SUCCESS CRITERIA";
+  template.getCell(row, 1).font = { bold: true, size: 11 };
+  template.mergeCells(row, 1, row, 7);
   row += 2;
 
   const sections: Record<string, string[]> = {
@@ -163,20 +193,34 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   };
 
   for (const [secLabel, qids] of Object.entries(sections)) {
-    template.getRow(row).values = [secLabel];
-    template.getRow(row).font = { bold: true, italic: true };
+    template.getCell(row, 1).value = secLabel;
+    template.getCell(row, 1).font = { bold: true, italic: true, size: 10 };
     row += 2;
     for (const qid of qids) writeQuestion(qid);
   }
 
   // WS2 subtotal
-  template.getRow(row).values = ["Worksheet 2 Subtotal", "", ...ALL_METHODS.map((m) => methodTotals[m].ws2)];
-  template.getRow(row).font = { bold: true };
+  template.getCell(row, 1).value = "Success Criteria Subtotal (B-F)";
+  template.getCell(row, 1).font = { bold: true };
+  ALL_METHODS.forEach((m, i) => {
+    const cell = template.getCell(row, i + 2);
+    cell.value = methodTotals[m].ws2;
+    cell.font = { bold: true };
+    cell.alignment = centerAlign;
+    cell.border = borders;
+  });
   row += 2;
 
   // Grand total
-  template.getRow(row).values = ["TOTAL", "", ...ALL_METHODS.map((m) => methodTotals[m].total)];
-  template.getRow(row).font = { bold: true, size: 12 };
+  template.getCell(row, 1).value = "TOTAL";
+  template.getCell(row, 1).font = { bold: true, size: 12 };
+  ALL_METHODS.forEach((m, i) => {
+    const cell = template.getCell(row, i + 2);
+    cell.value = methodTotals[m].total;
+    cell.font = { bold: true, size: 12 };
+    cell.alignment = centerAlign;
+    cell.border = borders;
+  });
 
   // ─── Sheet 3+: Per delivery method ───
   for (const method of ALL_METHODS) {
