@@ -4,6 +4,7 @@ import { embedQuery } from "@/features/search-ask/documents";
 import { searchChunks, searchKbChunks, loadSpreadsheetDocuments } from "@/lib/document-store";
 import { detectFinanceIntent, detectCities, CITY_KBS } from "@/features/search-ask/finance-intent";
 import { detectCouncilIntent } from "@/features/search-ask/council-intent";
+import { detectCodeIntent } from "@/features/search-ask/code-intent";
 import { getRequestSession } from "@/lib/auth/require-user";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -67,9 +68,20 @@ export async function POST(request: NextRequest) {
     }
     const useCouncil = councilChunks.length > 0;
 
+    // Municipal Code KB — building/zoning/permit/code questions (checked after council).
+    const codeNow = detectCodeIntent(question);
+    const lastCodeMsg = [...recentUserMsgs].reverse().find((m) => detectCodeIntent(m));
+    const codeContext = !useCouncil && (codeNow || Boolean(lastCodeMsg));
+    let codeChunks: Awaited<ReturnType<typeof searchKbChunks>> = [];
+    if (codeContext) {
+      const kbEmbedding = codeNow ? queryEmbedding : await embedQuery(`${lastCodeMsg ?? ""}\n${question}`);
+      codeChunks = await searchKbChunks("sunnyvale-municode", kbEmbedding, 8);
+    }
+    const useCode = codeChunks.length > 0;
+
     const lastFinanceMsg = [...recentUserMsgs].reverse().find((m) => detectFinanceIntent(m));
     const financeNow = detectFinanceIntent(question, queryEmbedding);
-    const financeContext = !useCouncil && (financeNow || Boolean(lastFinanceMsg));
+    const financeContext = !useCouncil && !useCode && (financeNow || Boolean(lastFinanceMsg));
 
     // Resolve which cities this question targets: explicit in the question, else
     // inherited from a recent finance turn, else default to Sunnyvale.
@@ -90,9 +102,11 @@ export async function POST(request: NextRequest) {
     }
     const useFinanceKb = kbResults.length > 0;
 
-    const useKb = useCouncil || useFinanceKb;
+    const useKb = useCouncil || useCode || useFinanceKb;
     const topChunks = useCouncil
       ? councilChunks
+      : useCode
+      ? codeChunks
       : useFinanceKb
       ? kbResults.map((r) => r.chunk)
       : await searchChunks(userId, queryEmbedding, 5, conversationId);
@@ -133,6 +147,15 @@ export async function POST(request: NextRequest) {
           citations: { enabled: true },
         } as Anthropic.Messages.DocumentBlockParam);
       }
+    } else if (useCode) {
+      for (const chunk of codeChunks) {
+        userContent.push({
+          type: "document",
+          source: { type: "text", media_type: "text/plain", data: chunk.text },
+          title: chunk.documentName, // "§ {section} {heading}"
+          citations: { enabled: true },
+        } as Anthropic.Messages.DocumentBlockParam);
+      }
     } else if (useFinanceKb) {
       for (const { chunk, city } of kbResults) {
         userContent.push({
@@ -165,6 +188,8 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = (useCouncil
       ? "You answer questions about City of Sunnyvale City Council and commission MEETINGS, grounded ONLY in the provided caption-note excerpts (automatic speech-to-text transcripts of the public meetings). For each fact, cite the meeting name, date, and timestamp, e.g. \"[City Council — 12/18/2025 @ 00:14:22]\". These are ASR captions and may contain transcription errors and misheard names/numbers (e.g. \"7 0\" means a 7-0 vote); paraphrase tolerantly and do not over-rely on exact wording. If the excerpts do not cover the question, say so plainly rather than guessing. Be concise and neutral. Never use emojis."
+      : useCode
+      ? "You answer questions about the City of Sunnyvale Municipal Code, grounded ONLY in the provided code-section excerpts. For each statement, cite the exact section number and heading, e.g. \"§ 1.05.020 Definitions\". Quote or closely paraphrase the regulation precisely; do not invent requirements, numbers, or sections. If the provided sections do not cover the question, say so plainly and note that the municipal code may not be fully loaded yet (only some titles are ingested) — do not guess. Be precise and neutral. Never use emojis."
       : useFinanceKb
       ? `You answer questions about the FY 2025/26 Adopted Budget(s) of ${cityNames.join(", ")}, grounded in the provided budget excerpts. Cite the source (city + volume/page) for figures taken from the excerpts. Be concise and accurate. Never use emojis.\n\n` +
         "FORECASTING: For questions about future years (e.g., FY 2026/27 and beyond) where an explicit table is not in the excerpts, do NOT refuse. Project values by applying the City's stated growth assumptions (the per-year growth rates given in the excerpts, e.g. Property Tax growing about 5%/year, Sales Tax roughly flat) to the most recent stated base-year figure, year by year. Clearly label these as projected/estimated and state the assumption and base year you used. It is expected and acceptable to show estimated forward values for a forecast.\n\n" +
