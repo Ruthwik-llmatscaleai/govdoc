@@ -146,7 +146,7 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
   // Sheet 6+: Per-method reasoning
   if (result.multi_method.method_scores.length > 0) {
     for (const m of result.multi_method.method_scores) {
-      const label = (METHOD_LABELS[m.method as DeliveryMethod] ?? m.method).substring(0, 31);
+      const label = (METHOD_LABELS[m.method as DeliveryMethod] ?? m.method).replace(/[/\\?*[\]]/g, "-").substring(0, 31);
       const methodSheet = wb.addWorksheet(label);
       methodSheet.getCell("A1").value = m.method;
       methodSheet.getCell("A1").font = { bold: true, size: 12 };
@@ -159,7 +159,7 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
       methodSheet.getCell("B5").value = m.blocked ? "Blocked" : "Eligible";
 
       if (result.matrix) {
-        const matrixEntry = result.matrix.method_scores.find((ms) => ms.method === m.method);
+        const matrixEntry = result.matrix.method_scores.find((ms) => ms.method === m.method || ms.label === m.method);
         if (matrixEntry) {
           methodSheet.getCell("A6").value = "Matrix Points:";
           methodSheet.getCell("B6").value = matrixEntry.total;
@@ -225,9 +225,11 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
 
   // Set reasonable column widths
   for (const ws of wb.worksheets) {
-    ws.columns.forEach((col) => {
-      col.width = Math.max(col.width ?? 0, 18);
-    });
+    if (ws.columns) {
+      ws.columns.forEach((col) => {
+        col.width = Math.max(col.width ?? 0, 18);
+      });
+    }
   }
 
   return Buffer.from(await wb.xlsx.writeBuffer());
