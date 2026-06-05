@@ -31,6 +31,7 @@ export function HiflWizard({
   overrides,
   markdownReport,
   previewTable,
+  scoringSummary,
   rubricPreview,
   onApprove,
   onSaveOverride,
@@ -41,6 +42,7 @@ export function HiflWizard({
   overrides: readonly HiflOverrideEntry[];
   markdownReport?: string;
   previewTable?: React.ReactNode;
+  scoringSummary?: React.ReactNode;
   rubricPreview?: React.ReactNode;
   onApprove?: () => void;
   onSaveOverride: (entry: HiflOverrideEntry) => void;
@@ -255,6 +257,8 @@ export function HiflWizard({
               Your overrides are recorded. Use the Export buttons above to download the full evaluation.
             </p>
           </div>
+
+          {scoringSummary}
 
           {markdownReport && markdownReport.trim().length > 0 && (
             <ReportView markdown={markdownReport} />
