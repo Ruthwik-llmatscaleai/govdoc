@@ -20,14 +20,6 @@ type TabId = "cmgc-pde" | "cucp-reevals" | "row-appraisal";
 
 const SECTION_KEYS = ["A", "B", "C", "D", "E", "F"] as const;
 
-const SECTION_DESCRIPTIONS: Record<string, string> = {
-  "Project Scope & Characteristics": "Foundational definition of work and deliverables",
-  "Schedule Issues": "Timeline compression and fast-tracking opportunities",
-  "Opportunity for Innovation": "Scope for alternate designs and performance specs",
-  "Quality Enhancement": "Value engineering and maintenance provisions",
-  "Cost Issues": "Budget, funding, and procurement considerations",
-  "Staffing Issues": "Department expertise and resource availability",
-};
 
 function sectionNameOnly(label: string): string {
   const m = label.match(/^[A-Z]:\s*(.+)$/);
@@ -137,20 +129,20 @@ export function ReviewRubricsClient({
           active={activeTab === "cmgc-pde"}
           onClick={() => { setActiveTab("cmgc-pde"); setExpandedSections(new Set(["A"])); }}
           label="Validate Project"
-          count={25}
+          count={cmgcData.questions.length}
           accent
         />
         <TabBtn
           active={activeTab === "row-appraisal"}
           onClick={() => { setActiveTab("row-appraisal"); setExpandedSections(new Set()); }}
           label="Validate Appraisal"
-          count={12}
+          count={Object.keys(rowData).length}
         />
         <TabBtn
           active={activeTab === "cucp-reevals"}
           onClick={() => { setActiveTab("cucp-reevals"); setExpandedSections(new Set()); }}
           label="Validate Narrative"
-          count={12}
+          count={cucpData.l3.length}
         />
       </div>
 
@@ -177,13 +169,17 @@ export function ReviewRubricsClient({
               A / B / C
             </strong>
           </span>
-          <span className="text-[var(--color-line)]">|</span>
-          <span>
-            Delivery Methods:{" "}
-            <strong className="font-semibold text-[var(--color-ink)]">
-              08
-            </strong>
-          </span>
+          {activeTab === "cmgc-pde" && (
+            <>
+              <span className="text-[var(--color-line)]">|</span>
+              <span>
+                Delivery Methods:{" "}
+                <strong className="font-semibold text-[var(--color-ink)]">
+                  06
+                </strong>
+              </span>
+            </>
+          )}
         </div>
 
         {/* Rubric selector dropdown */}
@@ -245,8 +241,6 @@ export function ReviewRubricsClient({
           {sections.map((s, i) => {
             const isOpen = expandedSections.has(s.key);
             const weightPct = Math.round(s.weight * 100);
-            const desc =
-              SECTION_DESCRIPTIONS[s.name] ?? "";
             return (
               <div
                 key={s.key}
@@ -271,11 +265,6 @@ export function ReviewRubricsClient({
                     >
                       {s.name}
                     </span>
-                    {desc && (
-                      <span className="mt-0.5 block text-[12px] leading-[1.4] text-[var(--color-ink-faint)]">
-                        {desc}
-                      </span>
-                    )}
                   </div>
                   <span className="rounded-full border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
                     {s.qs.length} questions · {weightPct}%
@@ -318,9 +307,9 @@ export function ReviewRubricsClient({
                             </span>
                           </div>
                           <dl className="mt-2.5 ml-[36px] flex flex-col gap-1.5">
-                            <OptionRow letter="A" text={q.option_a} checked={true} />
-                            <OptionRow letter="B" text={q.option_b} checked={false} />
-                            <OptionRow letter="C" text={q.option_c} checked={false} />
+                            <OptionRow letter="A" text={q.option_a} />
+                            <OptionRow letter="B" text={q.option_b} />
+                            <OptionRow letter="C" text={q.option_c} />
                           </dl>
                         </li>
                       ))}
@@ -487,14 +476,10 @@ export function ReviewRubricsClient({
         </p>
         <div className="flex flex-wrap items-center gap-5 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">
           <span>
-            Rubric ID:{" "}
+            Rubric:{" "}
             <strong className="font-semibold text-[var(--color-ink)]">
-              VP-2026-05-09
+              {selectedEntry?.label ?? "Default"}
             </strong>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block size-[6px] rounded-full bg-[#2d8c4a]" />
-            Published &amp; Locked
           </span>
         </div>
       </footer>
@@ -502,13 +487,12 @@ export function ReviewRubricsClient({
   );
 }
 
-function OptionRow({ letter, text, checked = false }: { letter: "A" | "B" | "C"; text: string; checked?: boolean }) {
+function OptionRow({ letter, text }: { letter: "A" | "B" | "C"; text: string }) {
   return (
     <div className="flex items-center gap-3 py-1 text-left">
-      <div className={`flex size-[18px] shrink-0 items-center justify-center rounded-full border ${checked ? "bg-[#107e54] border-[#107e54] text-white" : "border-[var(--color-line)] bg-white text-transparent"}`}>
-        <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 8.5l3.5 3.5 6.5-7" strokeLinecap="round" strokeLinejoin="round"/></svg>
-      </div>
-      <span className="font-mono text-[11px] font-bold text-[var(--color-ink-faint)]">{letter}</span>
+      <span className="flex size-[18px] shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] bg-white font-mono text-[9px] font-bold text-[var(--color-ink-soft)]">
+        {letter}
+      </span>
       <span className="text-[13px] leading-[1.5] text-[var(--color-ink-soft)]">{text}</span>
     </div>
   );

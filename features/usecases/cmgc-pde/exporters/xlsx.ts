@@ -274,6 +274,11 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
     const ms = wb.addWorksheet(label);
     const t = methodTotals[method];
 
+    ms.getColumn(1).width = 12;
+    ms.getColumn(2).width = 10;
+    ms.getColumn(3).width = 10;
+    ms.getColumn(4).width = 50;
+
     ms.getCell("A1").value = METHOD_SHORT[method];
     ms.getCell("A1").font = { bold: true, size: 14 };
 
@@ -319,6 +324,7 @@ export async function buildEvaluationXlsx(result: CmgcRunResult, projectName: st
       rw.eachCell((cell) => { cell.border = bdr; });
       rw.getCell(2).alignment = ctr;
       rw.getCell(3).alignment = ctr;
+      rw.getCell(4).alignment = { wrapText: true, vertical: "top" };
       if (pts === -1) rw.getCell(3).font = { bold: true, color: { argb: "FFCC0000" } };
       r++;
     }

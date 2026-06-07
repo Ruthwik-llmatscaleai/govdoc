@@ -119,13 +119,8 @@ export function RubricPicker({
           className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground transition hover:bg-muted disabled:opacity-50"
         >
           <span className="font-mono font-semibold">
-            {displayVersion ?? "default"}
+            {displayVersion ?? "Latest"}
           </span>
-          {(!currentVersionId || currentVersionId === newestVersionId) && (
-            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground">
-              default
-            </span>
-          )}
           <svg
             aria-hidden="true"
             width="10"
@@ -176,7 +171,7 @@ export function RubricPicker({
                     <span className="font-mono font-semibold text-foreground">{v.id}</span>
                     {isNewest && (
                       <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground">
-                        default
+                        latest
                       </span>
                     )}
                   </button>

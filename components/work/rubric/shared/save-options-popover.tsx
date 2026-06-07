@@ -205,7 +205,7 @@ export function SaveOptionsPopover({
               maxLength={200}
               value={draft.note}
               onChange={(e) => onChange({ ...draft, note: e.target.value })}
-              className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
+              className="w-full rounded border border-border bg-white px-2 py-1 text-xs"
             />
           </label>
         )}

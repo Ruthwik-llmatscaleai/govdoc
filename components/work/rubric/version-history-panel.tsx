@@ -13,6 +13,7 @@ type VersionEntry = {
 export function VersionHistoryPanel({
   usecaseId,
   rubricId,
+  rubricLabel,
   refreshNonce = 0,
   baselineVersionId = null,
   onChanged,
@@ -20,6 +21,7 @@ export function VersionHistoryPanel({
 }: {
   usecaseId: string;
   rubricId: string;
+  rubricLabel?: string;
   /** Bumping this triggers a refetch — used by the parent after a save lands. */
   refreshNonce?: number;
   /** The version currently loaded into the editor. Used to disable Load on
@@ -118,7 +120,9 @@ export function VersionHistoryPanel({
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-3 flex items-baseline justify-between">
-        <h3 className="text-sm font-semibold text-foreground">Version history</h3>
+        <h3 className="text-sm font-semibold text-foreground">
+          Version history{rubricLabel ? ` — ${rubricLabel}` : ""}
+        </h3>
         <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
           {versions.length} version{versions.length === 1 ? "" : "s"}
         </span>

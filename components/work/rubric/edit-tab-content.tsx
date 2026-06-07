@@ -225,6 +225,7 @@ export function EditTabContent<T>({
       <VersionHistoryPanel
         usecaseId={usecaseId}
         rubricId={selectedId}
+        rubricLabel={rubrics.find((r) => r.id === selectedId)?.label}
         refreshNonce={versionsNonce}
         baselineVersionId={baselineVersionId}
         onChanged={async () => {

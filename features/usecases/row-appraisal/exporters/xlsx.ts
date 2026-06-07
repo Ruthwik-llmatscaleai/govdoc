@@ -16,6 +16,9 @@ export async function buildEvaluationXlsx(result: RowRunResult): Promise<Buffer>
   ];
 
   ws.getRow(1).font = { bold: true };
+  ws.getColumn(3).alignment = { wrapText: true, vertical: "top" };
+  ws.getColumn(4).alignment = { wrapText: true, vertical: "top" };
+  ws.getColumn(6).alignment = { wrapText: true, vertical: "top" };
 
   for (const r of result.evaluation_results) {
     ws.addRow({

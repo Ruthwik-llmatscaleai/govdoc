@@ -120,6 +120,27 @@ export async function buildCucpXlsx(bundle: Bundle): Promise<Buffer> {
     });
   }
 
+  // Set explicit widths for long-text columns on Reasoning sheet
+  rs.getColumn(4).width = 40;   // Rule Requires
+  rs.getColumn(5).width = 50;   // Evidence Summary
+  rs.getColumn(6).width = 50;   // Reasoning
+  rs.getColumn(7).width = 35;   // Decision Mapping
+
+  // Set widths for Facts sheet long-text columns
+  fs.getColumn(5).width = 40;   // What
+  fs.getColumn(9).width = 50;   // Source Quote
+
+  // Apply text wrapping to all data rows on all sheets
+  for (const ws of wb.worksheets) {
+    ws.eachRow((row, rowNum) => {
+      if (rowNum > 1) {
+        row.eachCell((cell) => {
+          cell.alignment = { ...cell.alignment, wrapText: true, vertical: "top" };
+        });
+      }
+    });
+  }
+
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 

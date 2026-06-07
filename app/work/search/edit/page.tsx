@@ -494,7 +494,7 @@ export default function ManageRubricsPage() {
 
       {/* Version History — keyed by rubric so it resets on rubric switch */}
       <div className="mt-10">
-        <VersionHistoryPanel key={`${usecaseId}:${rubricId}`} usecaseId={usecaseId} rubricId={rubricId} refreshNonce={versionNonce} baselineVersionId={baselineVersionId} onChanged={() => setVersionNonce((n) => n + 1)} onLoad={(vid) => setBaselineVersionId(vid)} />
+        <VersionHistoryPanel key={`${usecaseId}:${rubricId}`} usecaseId={usecaseId} rubricId={rubricId} rubricLabel={rubrics.find((r) => r.id === selectedRubricId)?.label} refreshNonce={versionNonce} baselineVersionId={baselineVersionId} onChanged={() => setVersionNonce((n) => n + 1)} onLoad={(vid) => setBaselineVersionId(vid)} />
       </div>
 
       {/* Save bar */}
