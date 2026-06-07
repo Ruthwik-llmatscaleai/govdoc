@@ -1,20 +1,17 @@
 import Link from "next/link";
 import { WorkBreadcrumbs } from "@/components/work/page-shell";
+import { listRubrics } from "@/features/rubrics/store";
 
-const RECENT_RUBRICS = [
-  { name: "Grievance Evaluation", category: "Public Records", questions: 24, version: "v2.1", ago: "2h ago" },
-  { name: "Audit Finding Review", category: "Compliance", questions: 18, version: "v3.0", ago: "Yesterday" },
-  { name: "Vendor Compliance", category: "Procurement", questions: 31, version: "v1.4", ago: "3d ago" },
-  { name: "Policy Exception Request", category: "Risk", questions: 12, version: "v1.2", ago: "5d ago" },
-];
+export default async function SearchAskPage() {
+  const [cmgcRubrics, cucpRubrics, rowRubrics] = await Promise.all([
+    listRubrics("cmgc-pde"),
+    listRubrics("cucp-reevals"),
+    listRubrics("row-appraisal"),
+  ]);
 
-const DRAFT_RUBRICS = [
-  { name: "Procurement Contract", version: "v0.9", progress: 70, status: "DRAFT", ago: "Today" },
-  { name: "Whistleblower Intake", version: "v0.4", progress: 35, status: "DRAFT", ago: "2d ago" },
-  { name: "FOIA Response Review", version: "v0.2", progress: 15, status: "DRAFT", ago: "1w ago" },
-];
+  const allRubrics = [...cmgcRubrics, ...cucpRubrics, ...rowRubrics];
+  const totalQuestions = cmgcRubrics.length * 25 + cucpRubrics.length * 12 + rowRubrics.length * 12;
 
-export default function SearchAskPage() {
   return (
     <div className="relative">
         {/* Breadcrumbs */}
@@ -47,17 +44,12 @@ export default function SearchAskPage() {
           {/* Stats bar */}
           <div className="flex items-center gap-7 font-mono text-center">
             <div>
-              <div className="text-[28px] font-medium leading-none tracking-tight text-[var(--color-ink)]">12</div>
+              <div className="text-[28px] font-medium leading-none tracking-tight text-[var(--color-ink)]">{allRubrics.length}</div>
               <div className="mt-1.5 text-[9px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">ACTIVE</div>
             </div>
             <span className="text-[var(--color-line)] text-xl">|</span>
             <div>
-              <div className="text-[28px] font-medium leading-none tracking-tight text-[var(--color-ink)]">3</div>
-              <div className="mt-1.5 text-[9px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">DRAFTS</div>
-            </div>
-            <span className="text-[var(--color-line)] text-xl">|</span>
-            <div>
-              <div className="text-[28px] font-medium leading-none tracking-tight text-[var(--color-ink)]">186</div>
+              <div className="text-[28px] font-medium leading-none tracking-tight text-[var(--color-ink)]">{totalQuestions}</div>
               <div className="mt-1.5 text-[9px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">QUESTIONS</div>
             </div>
           </div>
@@ -112,25 +104,22 @@ export default function SearchAskPage() {
             {/* Divider with label */}
             <div className="px-7">
               <div className="border-t border-[var(--color-line)] pt-4 pb-3 font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                ━━━ RECENT · 4 OF 12
+                ━━━ RUBRICS · {allRubrics.length} ACTIVE
               </div>
             </div>
 
-            {/* Recent rubrics list */}
+            {/* Rubrics list */}
             <div className="flex-1 px-7 pb-6">
               <ul className="space-y-4">
-                {RECENT_RUBRICS.map((r) => (
-                  <li key={r.name} className="flex items-center gap-3">
+                {allRubrics.slice(0, 6).map((r) => (
+                  <li key={r.id} className="flex items-center gap-3">
                     <span className="govdoc-dot-glow inline-block size-[5px] shrink-0 rounded-full bg-[var(--color-govdoc-primary)]" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[13px] font-semibold text-[var(--color-ink-soft)]">{r.name}</div>
-                      <div className="text-[11px] text-[var(--color-ink-faint)]">{r.category} · {r.questions} questions</div>
+                      <div className="text-[13px] font-semibold text-[var(--color-ink-soft)]">{r.label}</div>
+                      <div className="text-[11px] text-[var(--color-ink-faint)]">{r.isDefault ? "Default" : "Custom"}</div>
                     </div>
-                    <span className="shrink-0 rounded border border-[var(--color-line)] bg-[var(--color-cream-soft)] px-2 py-0.5 font-mono text-[10px] text-[var(--color-ink-mute)]">
-                      {r.version}
-                    </span>
                     <span className="shrink-0 font-mono text-[10px] text-[var(--color-ink-faint)]">
-                      {r.ago}
+                      {r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : ""}
                     </span>
                   </li>
                 ))}
@@ -142,7 +131,7 @@ export default function SearchAskPage() {
               <div className="flex gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-govdoc-primary)] px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-govdoc-primary)]">
                   <span className="govdoc-dot-glow size-[5px] rounded-full bg-[var(--color-govdoc-primary)]" />
-                  12 RUBRICS
+                  {allRubrics.length} RUBRICS
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-govdoc-primary)] px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-govdoc-primary)]">
                   <span className="govdoc-dot-glow size-[5px] rounded-full bg-[var(--color-govdoc-primary)]" />
@@ -223,28 +212,34 @@ export default function SearchAskPage() {
             {/* Divider with label */}
             <div className="px-7">
               <div className="border-t border-[var(--color-line)] pt-4 pb-3 font-mono text-[9px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">
-                ━━━ IN PROGRESS · 3 DRAFTS
+                ━━━ MANAGE RUBRICS
               </div>
             </div>
 
-            {/* Drafts list */}
+            {/* Use cases list */}
             <div className="flex-1 px-7 pb-6">
               <ul className="space-y-4">
-                {DRAFT_RUBRICS.map((d) => (
-                  <li key={d.name} className="flex items-center gap-3">
-                    <span className="inline-block size-[5px] shrink-0 rounded-full bg-[#b04a2f]" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13px] font-semibold text-[var(--color-ink-soft)]">{d.name}</div>
-                      <div className="text-[11px] text-[var(--color-ink-faint)]">{d.version} · {d.progress}% complete</div>
-                    </div>
-                    <span className="shrink-0 rounded border border-[#e8c4b9] bg-[#faf4f1] px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-[#b04a2f]">
-                      {d.status}
-                    </span>
-                    <span className="shrink-0 font-mono text-[10px] text-[var(--color-ink-faint)]">
-                      {d.ago}
-                    </span>
-                  </li>
-                ))}
+                <li className="flex items-center gap-3">
+                  <span className="inline-block size-[5px] shrink-0 rounded-full bg-[var(--color-govdoc-primary)]" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-semibold text-[var(--color-ink-soft)]">Validate Project (CMGC-PDE)</div>
+                    <div className="text-[11px] text-[var(--color-ink-faint)]">{cmgcRubrics.length} rubric{cmgcRubrics.length !== 1 ? "s" : ""}</div>
+                  </div>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="inline-block size-[5px] shrink-0 rounded-full bg-[var(--color-govdoc-primary)]" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-semibold text-[var(--color-ink-soft)]">Validate Narrative (CUCP-Reevals)</div>
+                    <div className="text-[11px] text-[var(--color-ink-faint)]">{cucpRubrics.length} rubric{cucpRubrics.length !== 1 ? "s" : ""}</div>
+                  </div>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="inline-block size-[5px] shrink-0 rounded-full bg-[var(--color-govdoc-primary)]" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-semibold text-[var(--color-ink-soft)]">Validate Appraisal (ROW)</div>
+                    <div className="text-[11px] text-[var(--color-ink-faint)]">{rowRubrics.length} rubric{rowRubrics.length !== 1 ? "s" : ""}</div>
+                  </div>
+                </li>
               </ul>
             </div>
 

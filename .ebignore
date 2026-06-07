@@ -1,0 +1,68 @@
+# dependencies
+node_modules/
+
+# next.js build output
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# env / secrets — BUT allow .env.local (needed for Docker build on EB)
+.env
+.env.*.local
+.env.local.*
+.env*.bak
+
+# editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# testing (not needed for deployment)
+coverage/
+playwright-report/
+test-results/
+tests/
+vitest.config.ts
+playwright.config.ts
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# private fixtures
+tests/fixtures-private/
+
+# Sunnyvale Finance KB source PDFs
+finance/*.pdf
+finance/.vision-cache/
+
+# misc
+*.log
+.cache/
+
+# git worktrees
+.worktrees/
+
+# AI agent configs
+CLAUDE.md
+GEMINI.md
+AGENTS.md
+.cursorrules
+.aider*
+.continue/
+.claude/
+
+# Internal planning docs
+docs/superpowers/
+
+# Runtime artifacts
+artifacts/precedents/
+artifacts/rubrics/
+.superpowers/
+.designs/
+service_account.json
+*accessKeys*.csv
+/env

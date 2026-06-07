@@ -121,7 +121,7 @@ export function VersionHistoryPanel({
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-3 flex items-baseline justify-between">
         <h3 className="text-sm font-semibold text-foreground">
-          Version history{rubricLabel ? ` — ${rubricLabel}` : ""}
+          Version history{rubricLabel && rubricLabel.toLowerCase() !== "default" ? ` — ${rubricLabel}` : ""}
         </h3>
         <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
           {versions.length} version{versions.length === 1 ? "" : "s"}
